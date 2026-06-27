@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="day">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Safeguarding &amp; Welfare — Archery.Services</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+:root{--tw:#FFFFFF;--tb:#1A1A1A;--tbl:#1A3A8C;--tr:#CC2222;--ty:#C9A227;--bg:#F5F7FA;--bg2:#FFFFFF;--ink:#0D1B2E;--dim:#334155;--faint:#8899AA;--line:rgba(26,58,140,.1);}
+body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;margin:0;}
+[data-theme="night"]{--bg:#0D1117;--bg2:#161B22;--ink:#E6EDF3;--dim:#8B949E;--faint:#4A5568;--line:rgba(255,255,255,.08);}
+.urgent-bar{background:#CC2222;color:#fff;text-align:center;padding:10px;font-size:12.5px;font-weight:700;}
+.urgent-bar a{color:#fff;}
+.page-hero{background:linear-gradient(135deg,#1A1A1A,#2D2D2D);padding:52px 24px 40px;text-align:center;color:#fff;}
+.page-hero h1{font-family:'Oswald',sans-serif;font-size:clamp(28px,5vw,48px);font-weight:700;text-transform:uppercase;margin:0 0 10px;}
+.page-hero h1 em{color:#C9A227;font-style:normal;}
+.page-hero p{font-size:15px;color:rgba(255,255,255,.7);max-width:560px;margin:0 auto;line-height:1.6;}
+.wrap{max-width:1080px;margin:0 auto;padding:36px 24px;}
+.tab-bar{display:flex;gap:0;border-bottom:2px solid var(--line);margin-bottom:32px;overflow-x:auto;}
+.tab-btn{padding:12px 24px;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;border:none;background:none;cursor:pointer;color:var(--faint);border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .2s;white-space:nowrap;}
+.tab-btn.active{color:#C9A227;border-bottom-color:#C9A227;}
+.tab-panel{display:none;}.tab-panel.active{display:block;}
+
+.protocol-card{background:var(--bg2);border-radius:10px;border:1px solid var(--line);margin-bottom:14px;overflow:hidden;transition:box-shadow .2s;}
+.protocol-card:hover{box-shadow:0 4px 20px rgba(0,0,0,.08);}
+.proto-head{display:flex;align-items:center;gap:16px;padding:18px 20px;cursor:pointer;}
+.proto-priority{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.p-critical{background:#CC2222;}
+.p-high{background:#C9A227;}
+.p-medium{background:#1A3A8C;}
+.proto-title{font-family:'Oswald',sans-serif;font-size:16px;font-weight:700;color:var(--ink);flex:1;}
+.proto-scope{font-size:11.5px;color:var(--faint);}
+.proto-badge{padding:4px 10px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;background:rgba(34,197,94,.1);color:#16A34A;}
+.proto-body{display:none;padding:0 20px 18px;font-size:13.5px;color:var(--dim);line-height:1.6;border-top:1px solid var(--line);margin-top:0;padding-top:14px;}
+.protocol-card.open .proto-body{display:block;}
+.proto-review{font-size:11px;color:var(--faint);margin-top:8px;}
+
+.officer-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
+.officer-card{background:var(--bg2);border-radius:10px;border:1px solid var(--line);padding:20px;}
+.officer-icon{width:48px;height:48px;border-radius:50%;background:#1A3A8C;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:12px;}
+.officer-name{font-family:'Oswald',sans-serif;font-size:16px;font-weight:700;color:var(--ink);margin-bottom:2px;}
+.officer-role{font-size:12px;color:var(--faint);margin-bottom:10px;}
+.officer-contact{display:flex;flex-direction:column;gap:4px;}
+.oc-row{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--dim);}
+.oc-icon{font-size:14px;width:18px;}
+.officer-qual{display:inline-block;margin-top:10px;padding:3px 10px;background:rgba(26,58,140,.07);border-radius:4px;font-size:11px;color:#1A3A8C;font-weight:600;}
+
+.report-form{background:var(--bg2);border-radius:12px;border:1px solid var(--line);overflow:hidden;max-width:640px;}
+.report-head{background:#CC2222;color:#fff;padding:20px 24px;}
+.report-head h2{font-family:'Oswald',sans-serif;font-size:20px;font-weight:700;margin:0 0 4px;}
+.report-head p{font-size:12px;color:rgba(255,255,255,.8);margin:0;}
+.report-body{padding:24px;}
+.field-group{margin-bottom:16px;}
+.field-label{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);display:block;margin-bottom:5px;}
+.field-input,.field-select,.field-textarea{width:100%;padding:10px 14px;border:1.5px solid var(--line);border-radius:6px;font-size:13.5px;font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);outline:none;box-sizing:border-box;}
+.field-input:focus,.field-select:focus,.field-textarea:focus{border-color:#CC2222;}
+.field-textarea{min-height:100px;resize:vertical;}
+.submit-btn{width:100%;padding:14px;background:#CC2222;color:#fff;border:none;border-radius:6px;font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;margin-top:8px;}
+.anon-note{font-size:12px;color:var(--faint);margin-top:10px;text-align:center;}
+
+.resource-list{display:flex;flex-direction:column;gap:10px;}
+.res-row{background:var(--bg2);border-radius:8px;border:1px solid var(--line);padding:16px 20px;display:flex;align-items:center;gap:14px;}
+.res-icon{font-size:22px;flex-shrink:0;}
+.res-type{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#CC2222;margin-bottom:3px;}
+.res-title{font-size:14px;font-weight:600;color:var(--ink);}
+.res-desc{font-size:12px;color:var(--faint);margin-top:2px;}
+.res-link{margin-left:auto;padding:7px 16px;border:1.5px solid var(--line);border-radius:6px;font-size:11px;font-weight:700;color:var(--dim);text-decoration:none;white-space:nowrap;}
+</style>
+</head>
+<body>
+
+<div class="urgent-bar">🚨 Immediate safeguarding concern? Call the 24-hour welfare line: <strong>+41 800 100 200</strong> — or <a href="#report">submit a confidential report below</a></div>
+
+<nav style="position:sticky;top:0;z-index:300;background:#fff;border-bottom:1px solid rgba(26,58,140,.1);display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:68px;">
+  <a href="/" style="font-family:'Oswald',sans-serif;font-size:20px;font-weight:700;color:#1A3A8C;text-decoration:none;">Archery<span style="color:#C9A227">.</span>Services</a>
+  <div style="display:flex;gap:24px;align-items:center;">
+    <a href="federation.html" style="font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#334155;text-decoration:none;">Federation</a>
+    <a href="anti-doping.html" style="font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#334155;text-decoration:none;">Anti-Doping</a>
+    <a href="pricing.html" style="padding:9px 20px;background:#C9A227;color:#1A1A1A;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;border-radius:4px;">Join Free</a>
+  </div>
+</nav>
+
+<div class="page-hero">
+  <h1>Safeguarding &amp; <em>Welfare</em></h1>
+  <p>Protecting every archer — athlete, junior, coach, and volunteer — is the foundation of a healthy sport.</p>
+</div>
+
+<div class="wrap">
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="setTab('protocols',this)">Protocols</button>
+    <button class="tab-btn" onclick="setTab('officers',this)">Welfare Officers</button>
+    <button class="tab-btn" onclick="setTab('report',this)" id="report">Report a Concern</button>
+    <button class="tab-btn" onclick="setTab('resources',this)">Resources</button>
+  </div>
+
+  <!-- PROTOCOLS -->
+  <div class="tab-panel active" id="tab-protocols">
+    <div id="protocols-list"></div>
+  </div>
+
+  <!-- OFFICERS -->
+  <div class="tab-panel" id="tab-officers">
+    <div class="officer-grid" id="officers-grid"></div>
+  </div>
+
+  <!-- REPORT -->
+  <div class="tab-panel" id="tab-report">
+    <div class="report-form">
+      <div class="report-head">
+        <h2>Report a Welfare Concern</h2>
+        <p>Your report is confidential. You may submit anonymously.</p>
+      </div>
+      <div class="report-body">
+        <div class="field-group">
+          <label class="field-label">Type of Concern</label>
+          <select class="field-select" id="r-type">
+            <option>Child protection</option>
+            <option>Adult safeguarding</option>
+            <option>Bullying or harassment</option>
+            <option>Inappropriate coaching behaviour</option>
+            <option>Photography / social media misuse</option>
+            <option>Anti-doping concern</option>
+            <option>Other welfare concern</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Your Name (optional — leave blank to report anonymously)</label>
+          <input class="field-input" id="r-name" placeholder="Optional — you may remain anonymous">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Contact Email (optional)</label>
+          <input class="field-input" id="r-email" type="email" placeholder="Optional — only if you want a response">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Description of Concern</label>
+          <textarea class="field-textarea" id="r-desc" placeholder="Describe the concern as specifically as possible — date, location, individuals involved (if known), and what happened or was observed."></textarea>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Urgency</label>
+          <select class="field-select" id="r-urgency">
+            <option>Not urgent — ongoing concern for review</option>
+            <option>Moderate — should be addressed within 5 days</option>
+            <option>Urgent — should be addressed within 24 hours</option>
+            <option>Emergency — call 24h welfare line immediately</option>
+          </select>
+        </div>
+        <button class="submit-btn" onclick="submitReport()">Submit Confidential Report</button>
+        <div class="anon-note">🔒 All reports are encrypted and reviewed only by the Welfare Officer team.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESOURCES -->
+  <div class="tab-panel" id="tab-resources">
+    <div class="resource-list" id="resources-list"></div>
+  </div>
+</div>
+
+<script>
+const PROTOCOLS = [
+  {title:'Child Protection Policy',priority:'critical',scope:'All juniors under 18',reviewed:'2026-01-15',summary:'All adults working with juniors must hold valid background-check clearance. No one-to-one coaching sessions without a second adult present. Minimum two-adult rule applies for all junior travel.'},
+  {title:'Reporting Obligations',priority:'critical',scope:'All club officers and coaches',reviewed:'2026-02-01',summary:'Any concern about a child must be reported to the Welfare Officer within 24 hours. Allegations against staff or coaches must be escalated to the federation welfare director immediately. Do not investigate independently.'},
+  {title:'Photography and Filming Policy',priority:'high',scope:'Events, training sessions, and social media',reviewed:'2025-11-20',summary:'No photography or filming of minors without written parental consent collected at registration. Consent forms reviewed annually. Social media sharing of identifiable images of juniors requires separate explicit consent.'},
+  {title:'Code of Conduct for Coaches',priority:'high',scope:'All licensed coaching staff',reviewed:'2026-01-10',summary:'Coaches must maintain professional boundaries at all times. No personal social media contact with athletes under 18. Training attire must be appropriate. Coach-athlete communication during events should be through official channels only.'},
+  {title:'Anti-Bullying Protocol',priority:'medium',scope:'All registered members',reviewed:'2025-09-01',summary:'Zero tolerance for physical, verbal, or online bullying at events, training venues, or on platform communications. Clubs must investigate within 5 days of a formal report. Sanction options range from formal warning to suspension.'},
+  {title:'Travel and Away Tournament Policy',priority:'high',scope:'Junior travel and overnight events',reviewed:'2025-12-10',summary:'Minimum two background-checked adults required for any junior away trip. Parental consent and emergency contacts required before departure. Accommodation must be registered with the federation. Room-sharing policies strictly enforced.'},
+  {title:'Mental Health and Wellbeing',priority:'medium',scope:'All members',reviewed:'2026-03-01',summary:'Welfare Officers trained to Mental Health First Aid level. Signposting to support services is part of all club inductions. Athletes experiencing performance anxiety, burnout, or eating issues should be referred to the welfare team, not coached through.'},
+  {title:'Social Media and Communication',priority:'medium',scope:'All members and staff',reviewed:'2026-01-20',summary:'Official club channels only for member communication involving under-18 athletes. Private messaging between coaches and junior athletes requires parent/guardian to be copied. Inappropriate contact is a reportable safeguarding incident.'},
+];
+
+const OFFICERS = [
+  {name:'Club Welfare Officer',role:'Club-Level Welfare',phone:'+41 79 100 2001',email:'welfare@archery-club.example',qualified:'Child Protection Level 3',area:'Local club',icon:'🛡'},
+  {name:'Regional Welfare Lead',role:'Regional Welfare Lead',phone:'+41 79 100 2002',email:'welfare.north@archery-fed.example',qualified:'Designated Safeguarding Lead',area:'Northern region',icon:'🌍'},
+  {name:'Federation Welfare Director',role:'National Federation',phone:'+41 22 456 7800',email:'welfare@archery-fed.example',qualified:'National Safeguarding Coordinator',area:'National level',icon:'🏛'},
+  {name:'Independent Safeguarding Advisor',role:'Independent Review',phone:'+41 22 456 7801',email:'independent@archery-fed.example',qualified:'Social Work & Child Protection PhD',area:'Independent',icon:'⚖️'},
+  {name:'Anti-Bullying Lead',role:'Welfare Specialist',phone:'+41 79 100 2003',email:'antibullying@archery-fed.example',qualified:'Mentoring and Mediation Certified',area:'All clubs',icon:'🤝'},
+  {name:'24-Hour Welfare Helpline',role:'Emergency Welfare Line',phone:'+41 800 100 200',email:'urgent@archery-services.example',qualified:'Staffed 24/7',area:'Worldwide',icon:'📞'},
+];
+
+const RESOURCES = [
+  {title:'Safeguarding in Sport — National Sport Office Guide',type:'PDF Guide',desc:'National sport office safeguarding framework for affiliated sporting organisations.',icon:'📋'},
+  {title:'Child Protection in Sport — International Standards',type:'External Resource',desc:'Evidence-based child protection standards used internationally in archery and Olympic sports.',icon:'🌐'},
+  {title:'Mental Health First Aid Training',type:'Training Resource',desc:'Accredited mental health first aid training available to club welfare officers. Subsidised for federation members.',icon:'🧠'},
+  {title:'Athlete Welfare and Anti-Doping — Federation Position',type:'PDF Document',desc:'Federation position statement on athlete welfare and the intersection with anti-doping policy.',icon:'📄'},
+  {title:'Reporting to Child Protection Authorities',type:'Guidance',desc:'Step-by-step guidance on when and how to contact your local child protection authority.',icon:'🚨'},
+  {title:'Photography Consent Form Template',type:'Download',desc:'Standard consent form template for photography and filming at archery events.',icon:'📸'},
+];
+
+const PRIORITY_CLS={critical:'p-critical',high:'p-high',medium:'p-medium'};
+const PRIORITY_LABEL={critical:'Critical',high:'High',medium:'Medium'};
+
+function renderProtocols(){
+  document.getElementById('protocols-list').innerHTML=PROTOCOLS.map((p,i)=>`
+    <div class="protocol-card" id="proto-${i}">
+      <div class="proto-head" onclick="toggleProto(${i})">
+        <div class="proto-priority ${PRIORITY_CLS[p.priority]}"></div>
+        <div style="flex:1;">
+          <div class="proto-title">${p.title}</div>
+          <div class="proto-scope">${p.scope}</div>
+        </div>
+        <span class="proto-badge">Active</span>
+        <span style="color:var(--faint);margin-left:8px;">▾</span>
+      </div>
+      <div class="proto-body">${p.summary}<div class="proto-review">Last reviewed: ${p.reviewed} · Priority: <strong>${PRIORITY_LABEL[p.priority]}</strong></div></div>
+    </div>`).join('');
+}
+
+function toggleProto(i){document.getElementById('proto-'+i).classList.toggle('open');}
+
+function renderOfficers(){
+  document.getElementById('officers-grid').innerHTML=OFFICERS.map(o=>`
+    <div class="officer-card">
+      <div class="officer-icon">${o.icon}</div>
+      <div class="officer-name">${o.name}</div>
+      <div class="officer-role">${o.role} · ${o.area}</div>
+      <div class="officer-contact">
+        <div class="oc-row"><span class="oc-icon">📞</span>${o.phone}</div>
+        <div class="oc-row"><span class="oc-icon">✉️</span>${o.email}</div>
+      </div>
+      <div class="officer-qual">${o.qualified}</div>
+    </div>`).join('');
+}
+
+function renderResources(){
+  document.getElementById('resources-list').innerHTML=RESOURCES.map(r=>`
+    <div class="res-row">
+      <div class="res-icon">${r.icon}</div>
+      <div style="flex:1;">
+        <div class="res-type">${r.type}</div>
+        <div class="res-title">${r.title}</div>
+        <div class="res-desc">${r.desc}</div>
+      </div>
+      <a href="contact.html" class="res-link">Access &rarr;</a>
+    </div>`).join('');
+}
+
+async function submitReport(){
+  const val=id=>{const el=document.getElementById(id);return el?el.value.trim():'';};
+  const desc=val('r-desc');
+  if(!desc){alert('Please describe the concern before submitting.');return;}
+  const btn=document.querySelector('.submit-btn'); const orig=btn?btn.textContent:'';
+  if(btn){btn.textContent='Submitting…';btn.disabled=true;}
+  const payload={type:val('r-type'),name:val('r-name'),email:val('r-email'),description:desc,urgency:val('r-urgency')};
+  const res=await fetch('/api/reports',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).then(r=>r.json()).catch(()=>null);
+  if(btn){btn.textContent=orig;btn.disabled=false;}
+  if(res&&res.ok){
+    alert('Your report has been submitted securely and will be reviewed by the Welfare Officer team within 24 hours. If this is an emergency, please call +41 800 100 200 immediately.');
+    document.getElementById('r-desc').value='';
+    document.getElementById('r-name').value='';
+    document.getElementById('r-email').value='';
+  } else {
+    alert((res&&res.error)||'Sorry, your report could not be submitted. If this is urgent, please call +41 800 100 200 immediately.');
+  }
+}
+
+function setTab(id,btn){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
+renderProtocols();renderOfficers();renderResources();
+</script>
+<script src="shared.js"></script>
+</body>
+</html>

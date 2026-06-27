@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Athletes — National Rankings & Profiles | Archery.Services</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Source+Serif+4:ital,wght@0,300;1,300&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+.ath-hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;padding-bottom:60px;border-bottom:1px solid rgba(245,240,232,.06);}
+.profile-card{background:var(--forest-2);border:1px solid rgba(245,240,232,.08);border-radius:var(--r-xl);padding:28px;position:relative;overflow:hidden;}
+.profile-card::after{content:'';position:absolute;top:-30px;right:-30px;width:160px;height:160px;background:radial-gradient(circle,rgba(200,96,26,.07),transparent 70%);pointer-events:none;}
+.pc-header{display:flex;align-items:flex-start;gap:16px;margin-bottom:20px;}
+.pc-photo{width:70px;height:70px;border-radius:50%;border:2px solid rgba(200,96,26,.3);background:var(--forest-3);display:flex;align-items:center;justify-content:center;font-family:'Oswald',sans-serif;font-size:22px;font-weight:700;color:var(--ember-light);flex-shrink:0;overflow:hidden;}
+.pc-photo img{width:100%;height:100%;object-fit:cover;}
+.pc-name{font-family:'Oswald',sans-serif;font-size:20px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--ivory);}
+.pc-disc{font-size:11px;color:var(--ember-light);letter-spacing:.08em;text-transform:uppercase;margin-top:3px;}
+.pc-badges{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px;}
+.pc-badge{font-size:9px;padding:2px 8px;border-radius:2px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;}
+.pc-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px;}
+.pc-stat{background:rgba(245,240,232,.03);border:1px solid rgba(245,240,232,.04);border-radius:8px;padding:12px;text-align:center;}
+.pc-stat-val{font-family:'Oswald',sans-serif;font-size:22px;font-weight:600;color:var(--ivory);}
+.pc-stat-val em{color:var(--ember);font-style:normal;}
+.pc-stat-label{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ivory-3);margin-top:2px;}
+.sb-row{display:flex;justify-content:space-between;font-size:11px;color:var(--ivory-2);margin-bottom:5px;}
+.sb-track{height:3px;background:rgba(245,240,232,.07);border-radius:2px;overflow:hidden;margin-bottom:10px;}
+.sb-fill{height:100%;border-radius:2px;transition:width 1.5s cubic-bezier(.23,1,.32,1);}
+.ath-feature-list{list-style:none;display:flex;flex-direction:column;gap:12px;margin-bottom:28px;}
+.ath-feature-list li{display:flex;align-items:flex-start;gap:11px;font-size:13px;color:var(--ivory-2);line-height:1.6;}
+.af-marker{width:6px;height:6px;background:var(--ember);border-radius:50%;margin-top:7px;flex-shrink:0;}
+.search-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;}
+.ath-search{flex:1;min-width:200px;background:var(--forest-2);border:1px solid rgba(245,240,232,.08);border-radius:var(--r-lg);padding:10px 16px;font-size:13px;color:var(--ivory);outline:none;font-family:'Inter',sans-serif;transition:border-color .2s;}
+.ath-search:focus{border-color:rgba(200,96,26,.4);}
+.ath-select{background:var(--forest-2);border:1px solid rgba(245,240,232,.08);border-radius:var(--r);padding:10px 13px;font-size:12px;color:var(--ivory-2);outline:none;cursor:none;font-family:'Inter',sans-serif;}
+.r-tabs{display:flex;gap:5px;background:var(--forest-2);border:1px solid rgba(245,240,232,.07);border-radius:var(--r);padding:4px;margin-bottom:16px;width:fit-content;}
+.r-tab{padding:6px 16px;border-radius:5px;border:none;background:transparent;color:var(--ivory-3);font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:.1em;text-transform:uppercase;cursor:none;transition:all .2s;}
+.r-tab.active{background:var(--ember);color:var(--ivory);}
+.rankings-table{background:var(--forest-2);border:1px solid rgba(245,240,232,.07);border-radius:var(--r-xl);overflow:hidden;}
+.rt-head{display:grid;grid-template-columns:56px 1fr 110px 90px 90px 80px;padding:12px 18px;border-bottom:1px solid rgba(245,240,232,.07);background:rgba(245,240,232,.02);}
+.rt-hcol{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--ivory-3);font-weight:700;}
+.rt-row{display:grid;grid-template-columns:56px 1fr 110px 90px 90px 80px;padding:13px 18px;border-bottom:1px solid rgba(245,240,232,.04);transition:background .2s;cursor:none;align-items:center;}
+.rt-row:last-child{border-bottom:none;}
+.rt-row:hover{background:rgba(245,240,232,.02);}
+.rt-row.top3{background:rgba(200,96,26,.04);}
+.rank-n{font-family:'Oswald',sans-serif;font-size:16px;font-weight:700;color:var(--ivory-3);}
+.rank-n.r1{color:var(--gold-ring);}
+.rank-n.r2{color:#C0C0C0;}
+.rank-n.r3{color:#CD7F32;}
+.ath-cell{display:flex;align-items:center;gap:11px;}
+.ath-av{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;flex-shrink:0;}
+.ath-n{font-size:13px;font-weight:500;color:var(--ivory);}
+.ath-club{font-size:10px;color:var(--ivory-3);}
+.rt-cell{font-size:13px;color:var(--ivory-2);}
+.rt-cell.score{font-family:'Oswald',sans-serif;font-size:15px;font-weight:600;color:var(--ivory);}
+.rt-cell.pb{color:var(--gold-ring);}
+.trend{font-size:11px;font-weight:700;display:flex;align-items:center;gap:3px;}
+.trend.up{color:#6ABF77;}.trend.dn{color:#FF8080;}.trend.eq{color:var(--ivory-3);}
+.view-btn{font-size:10px;padding:4px 11px;border-radius:3px;border:1px solid rgba(245,240,232,.08);background:transparent;color:var(--ivory-3);cursor:none;transition:all .2s;letter-spacing:.06em;text-transform:uppercase;font-family:'Oswald',sans-serif;}
+.view-btn:hover{border-color:rgba(200,96,26,.3);color:var(--ember-light);}
+@media(max-width:1024px){.ath-hero-grid{grid-template-columns:1fr;}.rt-head,.rt-row{grid-template-columns:48px 1fr 90px 80px;}.rt-hcol:nth-child(5),.rt-hcol:nth-child(6),.rt-row>*:nth-child(5),.rt-row>*:nth-child(6){display:none;}}
+@media(max-width:600px){.rt-head,.rt-row{grid-template-columns:40px 1fr 70px;}.rt-hcol:nth-child(4),.rt-row>*:nth-child(4){display:none;}}
+</style>
+</head>
+<body>
+<script>(function(){var s=document.createElement('script');s.src='nav.js';document.head.appendChild(s);})();</script>
+
+<div style="max-width:1440px;margin:0 auto;padding:100px var(--g) 60px;">
+  <div class="ath-hero-grid">
+    <div class="reveal">
+      <div class="sec-label">Athlete Facility</div>
+      <h1 class="sec-title">Your entire archery<br>journey, <em>tracked.</em></h1>
+      <p class="sec-desc">Build a verified athlete profile, log every score, track your national ranking, and get discovered by coaches, selectors, and federations across India and the world.</p>
+      <ul class="ath-feature-list">
+        <li><div class="af-marker"></div><div><strong style="color:var(--ivory);">Performance analytics</strong> — Score history, session logs, form video uploads, and personalised improvement reports.</div></li>
+        <li><div class="af-marker"></div><div><strong style="color:var(--ivory);">Verified credentials</strong> — AAI registration, selection history, and federation data in one tamper-proof digital profile.</div></li>
+        <li><div class="af-marker"></div><div><strong style="color:var(--ivory);">Scouting visibility</strong> — Open your profile to national coaches and selectors across India.</div></li>
+      </ul>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <button class="btn-primary">Create Athlete Profile →</button>
+        <a href="#rankings" class="btn-outline">View Rankings</a>
+      </div>
+    </div>
+    <div class="profile-card reveal">
+      <div class="pc-header">
+        <div class="pc-photo">RK</div>
+        <div>
+          <div class="pc-name">Rohit Krishnan</div>
+          <div class="pc-disc">Recurve Open · Tamil Nadu · Rank #7</div>
+          <div class="pc-badges">
+            <span class="pc-badge" style="background:rgba(200,96,26,.12);color:var(--ember-light);">AAI Registered</span>
+            <span class="pc-badge" style="background:rgba(46,94,53,.2);color:#6ABF77;">Active</span>
+            <span class="pc-badge" style="background:rgba(59,130,246,.12);color:#93B4FF;">National Aspirant</span>
+          </div>
+        </div>
+      </div>
+      <div class="pc-stats">
+        <div class="pc-stat"><div class="pc-stat-val">689</div><div class="pc-stat-label">Personal Best</div></div>
+        <div class="pc-stat"><div class="pc-stat-val">7<em>th</em></div><div class="pc-stat-label">National Rank</div></div>
+        <div class="pc-stat"><div class="pc-stat-val">14</div><div class="pc-stat-label">Events</div></div>
+      </div>
+      <div class="sb-row"><span>Accuracy</span><span>91.4%</span></div><div class="sb-track"><div class="sb-fill" id="b1" style="width:0%;background:linear-gradient(90deg,var(--ember-dark),var(--ember));"></div></div>
+      <div class="sb-row"><span>Consistency</span><span>88.7%</span></div><div class="sb-track"><div class="sb-fill" id="b2" style="width:0%;background:linear-gradient(90deg,#0E4A20,var(--moss-light));"></div></div>
+      <div class="sb-row"><span>Competition Form</span><span>94.1%</span></div><div class="sb-track"><div class="sb-fill" id="b3" style="width:0%;background:linear-gradient(90deg,var(--ember-dark),var(--gold-ring));"></div></div>
+    </div>
+  </div>
+</div>
+
+<div style="max-width:1440px;margin:0 auto;padding:0 var(--g) 80px;" id="rankings">
+  <div class="search-row reveal">
+    <input class="ath-search" placeholder="Search athletes by name, state, or club..." oninput="filterAthletes(this.value)">
+    <select class="ath-select"><option>All Disciplines</option><option>Recurve Open</option><option>Compound Open</option><option>Barebow</option><option>Para Recurve</option></select>
+    <select class="ath-select"><option>All States</option><option>Assam</option><option>Tamil Nadu</option><option>Maharashtra</option><option>Delhi</option><option>West Bengal</option><option>Jharkhand</option></select>
+  </div>
+  <div class="r-tabs reveal">
+    <button class="r-tab active">Recurve Open</button>
+    <button class="r-tab">Compound Open</button>
+    <button class="r-tab">U-21</button>
+    <button class="r-tab">Para</button>
+  </div>
+  <div class="rankings-table reveal">
+    <div class="rt-head">
+      <div class="rt-hcol">Rank</div>
+      <div class="rt-hcol">Athlete</div>
+      <div class="rt-hcol">State</div>
+      <div class="rt-hcol">Avg Score</div>
+      <div class="rt-hcol">Personal Best</div>
+      <div class="rt-hcol"></div>
+    </div>
+    <div id="rankings-body"></div>
+  </div>
+</div>
+
+<footer><div class="footer-inner"><div class="footer-top"><div><div class="footer-brand-name">Archery<span>.</span>Services</div><p class="footer-tagline">India's complete virtual archery infrastructure.</p></div><div class="footer-col"><h4>Athletes</h4><ul><li><a href="athletes.html">Rankings</a></li><li><a href="#">Create Profile</a></li><li><a href="tournaments.html">Events</a></li></ul></div><div class="footer-col"><h4>Platform</h4><ul><li><a href="index.html">Home</a></li><li><a href="shop.html">Shop</a></li><li><a href="community.html">Community</a></li></ul></div><div class="footer-col"><h4>Company</h4><ul><li><a href="#">About</a></li><li><a href="admin.html">Admin</a></li></ul></div></div><div class="footer-bottom"><p class="footer-copy">© 2025 Archery.Services</p><div class="footer-legal"><a href="#">Privacy</a><a href="#">Terms</a></div></div></div></footer>
+<script src="shared.js"></script>
+<script>
+const ATHLETES=[
+  {rank:1,init:'DS',name:'Deepika Singh',state:'Jharkhand',club:'SAI Ranchi',avg:672,pb:687,events:18,trend:'eq',color:'#C8601A',bg:'rgba(200,96,26,.15)'},
+  {rank:2,init:'AB',name:'Atanu Bora',state:'Assam',club:'SSAC Guwahati',avg:668,pb:679,events:14,trend:'up',color:'#3B82F6',bg:'rgba(59,130,246,.15)'},
+  {rank:3,init:'PD',name:'Priya Das',state:'West Bengal',club:'ATA Kolkata',avg:661,pb:674,events:16,trend:'up',color:'#A855F7',bg:'rgba(168,85,247,.15)'},
+  {rank:4,init:'RK',name:'Rohit Krishnan',state:'Tamil Nadu',club:'Archery TN',avg:658,pb:669,events:12,trend:'dn',color:'#22C55E',bg:'rgba(46,94,53,.2)'},
+  {rank:5,init:'NK',name:'Neha Kumari',state:'Bihar',club:'Bihar Arch.',avg:654,pb:665,events:20,trend:'up',color:'#F97316',bg:'rgba(249,115,22,.15)'},
+  {rank:6,init:'AK',name:'Arjun Kumar',state:'Delhi',club:'DDA Archery',avg:651,pb:662,events:15,trend:'eq',color:'#EC4899',bg:'rgba(236,72,153,.15)'},
+  {rank:7,init:'SM',name:'Sunil Mahato',state:'Jharkhand',club:'SAI Ranchi',avg:648,pb:659,events:11,trend:'up',color:'#14B8A6',bg:'rgba(20,184,166,.15)'},
+  {rank:8,init:'RV',name:'Ritu Verma',state:'Haryana',club:'Haryana Arch.',avg:645,pb:656,events:17,trend:'dn',color:'#EF4444',bg:'rgba(239,68,68,.15)'},
+  {rank:9,init:'MG',name:'Manish Gogoi',state:'Assam',club:'SSAC Guwahati',avg:642,pb:654,events:13,trend:'up',color:'#C9A227',bg:'rgba(201,162,39,.15)'},
+  {rank:10,init:'SB',name:'Sneha Bhatt',state:'Gujarat',club:'GAS Ahmedabad',avg:639,pb:651,events:9,trend:'eq',color:'#3B82F6',bg:'rgba(59,130,246,.15)'},
+];
+function renderRankings(list){
+  document.getElementById('rankings-body').innerHTML=list.map(a=>{
+    const rc=a.rank===1?'r1':a.rank===2?'r2':a.rank===3?'r3':'';
+    const tc=a.trend==='up'?'up':a.trend==='dn'?'dn':'eq';
+    const ti=a.trend==='up'?'↑':a.trend==='dn'?'↓':'—';
+    return `<div class="rt-row${a.rank<=3?' top3':''}">
+      <div class="rank-n ${rc}">${a.rank}</div>
+      <div class="ath-cell"><div class="ath-av" style="background:${a.bg};color:${a.color};">${a.init}</div><div><div class="ath-n">${a.name}</div><div class="ath-club">${a.club}</div></div></div>
+      <div class="rt-cell">${a.state}</div>
+      <div class="rt-cell score">${a.avg}</div>
+      <div class="rt-cell pb">${a.pb}</div>
+      <div><button class="view-btn">Profile</button></div>
+    </div>`;
+  }).join('');
+}
+function filterAthletes(q){renderRankings(q?ATHLETES.filter(a=>a.name.toLowerCase().includes(q.toLowerCase())||a.state.toLowerCase().includes(q.toLowerCase())||a.club.toLowerCase().includes(q.toLowerCase())):ATHLETES);}
+document.querySelectorAll('.r-tab').forEach(b=>b.addEventListener('click',function(){document.querySelectorAll('.r-tab').forEach(x=>x.classList.remove('active'));this.classList.add('active');}));
+fetch('http://localhost:3000/api/athletes')
+  .then(r=>r.json())
+  .then(data=>{if(data&&data.length){
+    // merge API data with display data
+    data.forEach(a=>{const local=ATHLETES.find(x=>x.name===a.name);if(!local)ATHLETES.push({rank:a.rank,init:a.name.split(' ').map(w=>w[0]).join('').slice(0,2),name:a.name,state:a.state,club:a.discipline||'',avg:a.pb-10,pb:a.pb,events:12,trend:'eq',color:'#C9A227',bg:'rgba(201,162,39,.15)'});});
+    ATHLETES.sort((a,b)=>a.rank-b.rank);
+  }renderRankings(ATHLETES);})
+  .catch(()=>renderRankings(ATHLETES));
+// Animate bars when in view
+const barObs=new IntersectionObserver(e=>e.forEach(x=>{if(x.isIntersecting){setTimeout(()=>{document.getElementById('b1').style.width='91.4%';document.getElementById('b2').style.width='88.7%';document.getElementById('b3').style.width='94.1%';},200);barObs.disconnect();}}),{threshold:.3});
+const pc=document.querySelector('.profile-card');if(pc)barObs.observe(pc);
+</script>
+</body></html>

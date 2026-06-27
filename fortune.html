@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="day">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Archery Wisdom — Archery.Services</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+:root{--tw:#FFFFFF;--tb:#1A1A1A;--tbl:#1A3A8C;--tr:#CC2222;--ty:#C9A227;--bg:#F5F7FA;--bg2:#FFFFFF;--ink:#0D1B2E;--dim:#334155;--faint:#8899AA;--line:rgba(26,58,140,.1);}
+body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;margin:0;}
+[data-theme="night"]{--bg:#0D1117;--bg2:#161B22;--ink:#E6EDF3;--dim:#8B949E;--faint:#4A5568;--line:rgba(255,255,255,.08);}
+.page-hero{background:linear-gradient(135deg,#0D1840,#1A3A8C,#0D1840);padding:72px 24px 52px;text-align:center;color:#fff;position:relative;overflow:hidden;}
+.hero-rings{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:600px;height:600px;opacity:.06;}
+.hero-rings circle{fill:none;stroke:#fff;}
+.page-hero h1{font-family:'Oswald',sans-serif;font-size:clamp(32px,5vw,56px);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin:0 0 10px;position:relative;}
+.page-hero h1 em{color:#C9A227;font-style:normal;}
+.page-hero p{font-size:15px;color:rgba(255,255,255,.7);max-width:460px;margin:0 auto;line-height:1.6;position:relative;}
+
+.wrap{max-width:960px;margin:0 auto;padding:40px 24px;}
+.tab-bar{display:flex;gap:0;border-bottom:2px solid var(--line);margin-bottom:36px;}
+.tab-btn{padding:12px 24px;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;border:none;background:none;cursor:pointer;color:var(--faint);border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .2s;white-space:nowrap;}
+.tab-btn.active{color:#C9A227;border-bottom-color:#C9A227;}
+.tab-panel{display:none;}.tab-panel.active{display:block;}
+
+/* DRAW FORTUNE */
+.draw-section{text-align:center;}
+.fortune-card{background:var(--bg2);border-radius:16px;border:1px solid var(--line);padding:48px 40px;margin-bottom:28px;position:relative;overflow:hidden;}
+.fortune-card::before{content:'🎯';position:absolute;top:-10px;right:-10px;font-size:100px;opacity:.05;}
+.fortune-date{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:20px;}
+.fortune-quote{font-family:'Oswald',sans-serif;font-size:clamp(22px,4vw,34px);font-weight:600;color:var(--ink);line-height:1.3;margin-bottom:16px;letter-spacing:.02em;}
+.fortune-quote em{color:#C9A227;font-style:normal;}
+.fortune-desc{font-size:14px;color:var(--dim);line-height:1.65;max-width:560px;margin:0 auto 20px;}
+.fortune-source{font-size:11.5px;color:var(--faint);font-style:italic;}
+.fortune-cat{display:inline-block;padding:4px 12px;border-radius:4px;font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;background:rgba(201,162,39,.1);color:#C9A227;margin-bottom:16px;}
+.draw-btn{padding:14px 36px;background:#C9A227;color:#1A1A1A;border:none;border-radius:8px;font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:background .2s;margin-right:10px;}
+.draw-btn:hover{background:#DDB42A;}
+.share-btn{padding:14px 24px;background:var(--bg);color:var(--dim);border:1.5px solid var(--line);border-radius:8px;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;}
+
+/* ARCHIVE */
+.archive-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
+.arch-card{background:var(--bg2);border-radius:10px;border:1px solid var(--line);padding:20px;transition:box-shadow .2s;cursor:pointer;}
+.arch-card:hover{box-shadow:0 6px 24px rgba(26,58,140,.1);}
+.arch-date{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);margin-bottom:8px;}
+.arch-quote{font-family:'Oswald',sans-serif;font-size:15px;font-weight:600;color:var(--ink);line-height:1.35;margin-bottom:8px;}
+.arch-cat{display:inline-block;padding:3px 8px;border-radius:3px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;}
+
+/* WISDOM TYPES */
+.wisdom-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;}
+.wisdom-card{background:var(--bg2);border-radius:10px;border:1px solid var(--line);padding:20px;border-top:3px solid;}
+.wisdom-type{font-family:'Oswald',sans-serif;font-size:15px;font-weight:700;color:var(--ink);margin-bottom:6px;}
+.wisdom-desc{font-size:12.5px;color:var(--dim);line-height:1.5;}
+
+const CAT_COLORS={Accuracy:'#1A3A8C',Patience:'#22C55E',Competition:'#CC2222',Mindset:'#C9A227',Discipline:'#6B7280',Humility:'#8B5CF6',Focus:'#0891B2',Equipment:'#92400E'};
+</style>
+</head>
+<body>
+
+<nav style="position:sticky;top:0;z-index:300;background:#fff;border-bottom:1px solid rgba(26,58,140,.1);display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:68px;">
+  <a href="/" style="font-family:'Oswald',sans-serif;font-size:20px;font-weight:700;color:#1A3A8C;text-decoration:none;">Archery<span style="color:#C9A227">.</span>Services</a>
+  <div style="display:flex;gap:24px;align-items:center;">
+    <a href="discover.html" style="font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#334155;text-decoration:none;">Discover</a>
+    <a href="ai-coach.html" style="font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#334155;text-decoration:none;">AI Coach</a>
+    <a href="pricing.html" style="padding:9px 20px;background:#C9A227;color:#1A1A1A;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;border-radius:4px;">Join Free</a>
+  </div>
+</nav>
+
+<div class="page-hero">
+  <svg class="hero-rings" viewBox="0 0 600 600">
+    <circle cx="300" cy="300" r="280" stroke-width="80"/>
+    <circle cx="300" cy="300" r="200" stroke-width="60"/>
+    <circle cx="300" cy="300" r="130" stroke-width="50"/>
+    <circle cx="300" cy="300" r="70" stroke-width="40"/>
+    <circle cx="300" cy="300" r="25" stroke-width="25"/>
+  </svg>
+  <h1>Daily <em>Archery</em> Wisdom</h1>
+  <p>One truth per day. Draw your fortune and carry it into training.</p>
+</div>
+
+<div class="wrap">
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="setTab('draw',this)">Draw Fortune</button>
+    <button class="tab-btn" onclick="setTab('archive',this)">Archive</button>
+    <button class="tab-btn" onclick="setTab('wisdom',this)">Wisdom Library</button>
+  </div>
+
+  <!-- DRAW -->
+  <div class="tab-panel active" id="tab-draw">
+    <div class="draw-section">
+      <div class="fortune-card" id="fortune-display"></div>
+      <button class="draw-btn" onclick="drawFortune()">🎯 Draw New Wisdom</button>
+      <button class="share-btn">Share</button>
+    </div>
+  </div>
+
+  <!-- ARCHIVE -->
+  <div class="tab-panel" id="tab-archive">
+    <div class="archive-grid" id="archive-grid"></div>
+  </div>
+
+  <!-- WISDOM -->
+  <div class="tab-panel" id="tab-wisdom">
+    <div class="wisdom-grid" id="wisdom-grid"></div>
+  </div>
+</div>
+
+<script>
+const FORTUNES = [
+  {id:1,date:'22 Jun 2026',quote:'One arrow, one life. Every shot is total commitment.',desc:'The archer who holds back is already defeated before release. Commit fully, or do not draw.',category:'Commitment',source:'World Archery coaching manual'},
+  {id:2,date:'21 Jun 2026',quote:'The bow does not know your score. Only you do.',desc:'Equipment has no ego. Tension, blame, and anxiety all belong to the archer. Release them with the arrow.',category:'Mindset',source:'Olympic archery tradition'},
+  {id:3,date:'20 Jun 2026',quote:'Group at 9m before you aim at 90m.',desc:'Every elite archer began with blank bale. The foundation must be solid before the distance becomes meaningful.',category:'Discipline',source:'Coaching proverb'},
+  {id:4,date:'19 Jun 2026',quote:'The wind is honest. It shows you your mistakes without kindness.',desc:'Wind reveals errors in arrow flight that a calm day conceals. Train in all conditions.',category:'Accuracy',source:'Field archery tradition'},
+  {id:5,date:'18 Jun 2026',quote:'Patience between arrows is part of the shot.',desc:'The pause between arrows is not lost time. It is when you review, reset, and return with full attention.',category:'Patience',source:'Olympic training methodology'},
+  {id:6,date:'17 Jun 2026',quote:'The archer who fears the miss has already missed.',desc:'Competition anxiety tightens the grip, shortens the breath, and rushes the release. The antidote is process, not result.',category:'Competition',source:'Sports psychology tradition'},
+  {id:7,date:'16 Jun 2026',quote:'Your back does the work your arm takes credit for.',desc:'Power and consistency in archery come from the back muscles, not the draw arm. Develop back tension above everything.',category:'Accuracy',source:'Recurve technical guide'},
+  {id:8,date:'15 Jun 2026',quote:'Tune your mind before you tune your equipment.',desc:'A perfectly tuned bow in an unsteady hand still groups poorly. Mental state is the first variable to control.',category:'Mindset',source:'Elite coaching wisdom'},
+  {id:9,date:'14 Jun 2026',quote:'The target is there to show you where you already were aiming.',desc:'The grouping does not lie. Where arrows land is where your body pointed, regardless of where your eyes were looking.',category:'Accuracy',source:'Classical archery teaching'},
+  {id:10,date:'13 Jun 2026',quote:'Repetition is not mindless if you are watching.',desc:'Three thousand arrows of unconscious practice improves less than three hundred with deliberate attention. Presence is the multiplier.',category:'Discipline',source:'Deliberate practice research'},
+  {id:11,date:'12 Jun 2026',quote:'A beginner asks how. A master asks why.',desc:'Understanding the principle behind a technique allows you to apply it in new situations. Memorising form without understanding is fragile.',category:'Humility',source:'Archery philosophy tradition'},
+  {id:12,date:'11 Jun 2026',quote:'The arrow remembers the grip long after the fingers let go.',desc:'Torque applied through the bow hand survives the release and shows up at the target. A neutral, relaxed grip is always the answer.',category:'Equipment',source:'Bow tuning fundamentals'},
+];
+
+const WISDOM_TYPES = [
+  {type:'Accuracy',color:'#1A3A8C',desc:'Technical truths about grouping, alignment, arrow flight, and the physical mechanics of the shot.'},
+  {type:'Mindset',color:'#C9A227',desc:'Mental coaching: releasing results, managing pressure, and the inner game of archery.'},
+  {type:'Discipline',color:'#6B7280',desc:'Wisdom about practice quality, repetition, and the long road of skill development.'},
+  {type:'Competition',color:'#CC2222',desc:'Match play, pressure situations, pre-competition routines, and winning under scrutiny.'},
+  {type:'Patience',color:'#22C55E',desc:'The virtue between shots — managing time, resetting, and trusting the process.'},
+  {type:'Humility',color:'#8B5CF6',desc:'The beginner\'s mind. Always ready to learn, regardless of experience or rank.'},
+  {type:'Commitment',color:'#0891B2',desc:'Total engagement — the moment of full investment in each shot, free from hesitation.'},
+  {type:'Equipment',color:'#92400E',desc:'Technical understanding of the bow, arrows, and accessories — what they can and cannot do for you.'},
+];
+
+let drawSeed = 0;
+const CAT_COL={Accuracy:'#1A3A8C',Mindset:'#C9A227',Discipline:'#6B7280',Competition:'#CC2222',Patience:'#22C55E',Humility:'#8B5CF6',Commitment:'#0891B2',Equipment:'#92400E'};
+
+function drawFortune(){
+  drawSeed=(drawSeed+7)%FORTUNES.length;
+  renderFortune(FORTUNES[drawSeed]);
+}
+
+function renderFortune(f){
+  document.getElementById('fortune-display').innerHTML=`
+    <div class="fortune-cat" style="background:${CAT_COL[f.category]}22;color:${CAT_COL[f.category]};">${f.category}</div>
+    <div class="fortune-date">${f.date}</div>
+    <div class="fortune-quote">"${f.quote.replace(/archery/i,'<em>archery</em>')}"</div>
+    <div class="fortune-desc">${f.desc}</div>
+    <div class="fortune-source">— ${f.source}</div>`;
+}
+
+function renderArchive(){
+  document.getElementById('archive-grid').innerHTML=FORTUNES.map(f=>`
+    <div class="arch-card" onclick="setTab('draw',document.querySelectorAll('.tab-btn')[0]);renderFortune(FORTUNES[${f.id-1}])">
+      <div class="arch-date">${f.date}</div>
+      <div class="arch-quote">"${f.quote}"</div>
+      <span class="arch-cat" style="background:${CAT_COL[f.category]}22;color:${CAT_COL[f.category]};">${f.category}</span>
+    </div>`).join('');
+}
+
+function renderWisdom(){
+  document.getElementById('wisdom-grid').innerHTML=WISDOM_TYPES.map(w=>`
+    <div class="wisdom-card" style="border-top-color:${w.color};">
+      <div class="wisdom-type" style="color:${w.color};">${w.type}</div>
+      <div class="wisdom-desc">${w.desc}</div>
+      <div style="margin-top:10px;font-size:12px;color:var(--faint);">${FORTUNES.filter(f=>f.category===w.type).length} quotes</div>
+    </div>`).join('');
+}
+
+function setTab(id,btn){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
+renderFortune(FORTUNES[0]);renderArchive();renderWisdom();
+</script>
+<script src="shared.js"></script>
+</body>
+</html>

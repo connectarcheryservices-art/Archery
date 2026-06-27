@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="day">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Anti-Doping — Archery.Services</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+:root{--tw:#FFFFFF;--tb:#1A1A1A;--tbl:#1A3A8C;--tr:#CC2222;--ty:#C9A227;--bg:#F5F7FA;--bg2:#FFFFFF;--ink:#0D1B2E;--dim:#334155;--faint:#8899AA;--line:rgba(26,58,140,.1);}
+body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;margin:0;}
+[data-theme="night"]{--bg:#0D1117;--bg2:#161B22;--ink:#E6EDF3;--dim:#8B949E;--faint:#4A5568;--line:rgba(255,255,255,.08);}
+.page-hero{background:linear-gradient(135deg,#1A1A1A,#1A3A8C);padding:52px 24px 40px;text-align:center;color:#fff;}
+.page-hero h1{font-family:'Oswald',sans-serif;font-size:clamp(28px,5vw,48px);font-weight:700;text-transform:uppercase;margin:0 0 10px;}
+.page-hero h1 em{color:#C9A227;font-style:normal;}
+.page-hero p{font-size:15px;color:rgba(255,255,255,.7);max-width:520px;margin:0 auto;line-height:1.6;}
+.stat-bar{background:#1A3A8C;display:flex;justify-content:center;gap:0;flex-wrap:wrap;}
+.stat-item{padding:18px 36px;text-align:center;border-right:1px solid rgba(255,255,255,.1);}
+.stat-item:last-child{border-right:none;}
+.stat-num{font-family:'Oswald',sans-serif;font-size:28px;font-weight:700;color:#C9A227;line-height:1;}
+.stat-label{font-size:10.5px;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.6);margin-top:2px;}
+.wrap{max-width:1100px;margin:0 auto;padding:36px 24px;}
+.tab-bar{display:flex;gap:0;border-bottom:2px solid var(--line);margin-bottom:32px;overflow-x:auto;}
+.tab-btn{padding:12px 24px;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;border:none;background:none;cursor:pointer;color:var(--faint);border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .2s;white-space:nowrap;}
+.tab-btn.active{color:#C9A227;border-bottom-color:#C9A227;}
+.tab-panel{display:none;}.tab-panel.active{display:block;}
+
+.test-table{width:100%;border-collapse:collapse;background:var(--bg2);border-radius:10px;overflow:hidden;border:1px solid var(--line);}
+.test-table th{background:#1A3A8C;color:#fff;padding:12px 16px;font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;text-align:left;}
+.test-table td{padding:12px 16px;border-bottom:1px solid var(--line);font-size:13px;color:var(--dim);}
+.test-table tr:last-child td{border-bottom:none;}
+.test-table tr:hover td{background:rgba(26,58,140,.03);}
+.result-badge{padding:3px 10px;border-radius:4px;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;}
+.r-negative{background:rgba(34,197,94,.1);color:#16A34A;}
+.r-positive{background:rgba(204,34,34,.1);color:#CC2222;}
+.r-pending{background:rgba(201,162,39,.1);color:#92691A;}
+.r-inconclusive{background:rgba(107,114,128,.1);color:#6B7280;}
+.type-badge{padding:3px 9px;border-radius:3px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;background:rgba(26,58,140,.07);color:#1A3A8C;}
+
+.tue-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;}
+.tue-card{background:var(--bg2);border-radius:10px;border:1px solid var(--line);padding:20px;}
+.tue-status{display:inline-block;padding:4px 10px;border-radius:4px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;}
+.s-approved{background:rgba(34,197,94,.1);color:#16A34A;}
+.s-pending{background:rgba(201,162,39,.1);color:#92691A;}
+.s-rejected{background:rgba(204,34,34,.1);color:#CC2222;}
+.s-review{background:rgba(26,58,140,.1);color:#1A3A8C;}
+.tue-athlete{font-family:'Oswald',sans-serif;font-size:16px;font-weight:700;color:var(--ink);margin-bottom:4px;}
+.tue-sub{font-size:12px;color:var(--faint);}
+.tue-details{margin-top:12px;padding-top:12px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:5px;font-size:12.5px;color:var(--dim);}
+
+.edu-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
+.edu-card{background:var(--bg2);border-radius:10px;border:1px solid var(--line);padding:20px;transition:box-shadow .2s;}
+.edu-card:hover{box-shadow:0 6px 20px rgba(26,58,140,.1);}
+.edu-badge{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+.edu-title{font-family:'Oswald',sans-serif;font-size:16px;font-weight:700;color:var(--ink);margin-bottom:6px;}
+.edu-desc{font-size:12.5px;color:var(--dim);line-height:1.5;margin-bottom:12px;}
+.edu-meta{display:flex;align-items:center;justify-content:space-between;}
+.edu-dur{font-size:11.5px;color:var(--faint);}
+.edu-btn{padding:7px 16px;background:#1A3A8C;color:#fff;border:none;border-radius:5px;font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;}
+.mandatory-tag{padding:2px 7px;border-radius:3px;background:rgba(204,34,34,.1);color:#CC2222;font-size:10px;font-weight:700;text-transform:uppercase;}
+.level-tag{padding:2px 7px;border-radius:3px;font-size:10px;font-weight:700;text-transform:uppercase;}
+.l-beg{background:rgba(34,197,94,.1);color:#16A34A;}
+.l-int{background:rgba(201,162,39,.1);color:#92691A;}
+.l-adv{background:rgba(26,58,140,.1);color:#1A3A8C;}
+.progress-row{display:flex;align-items:center;gap:6px;margin-top:8px;}
+.prog-bar{flex:1;height:4px;background:var(--line);border-radius:2px;overflow:hidden;}
+.prog-fill{height:100%;background:#22C55E;border-radius:2px;}
+.prog-label{font-size:10.5px;color:var(--faint);}
+</style>
+</head>
+<body>
+
+<nav style="position:sticky;top:0;z-index:300;background:#fff;border-bottom:1px solid rgba(26,58,140,.1);display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:68px;">
+  <a href="/" style="font-family:'Oswald',sans-serif;font-size:20px;font-weight:700;color:#1A3A8C;text-decoration:none;">Archery<span style="color:#C9A227">.</span>Services</a>
+  <div style="display:flex;gap:24px;align-items:center;">
+    <a href="federation.html" style="font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#334155;text-decoration:none;">Federation</a>
+    <a href="guard-rail.html" style="font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#334155;text-decoration:none;">Safeguarding</a>
+    <a href="pricing.html" style="padding:9px 20px;background:#C9A227;color:#1A1A1A;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;border-radius:4px;">Join Free</a>
+  </div>
+</nav>
+
+<div class="page-hero">
+  <h1>Anti-<em>Doping</em> Programme</h1>
+  <p>WADA-compliant testing management, TUE applications, and mandatory education for all registered athletes.</p>
+</div>
+
+<div class="stat-bar">
+  <div class="stat-item"><div class="stat-num">1,248</div><div class="stat-label">Tests 2026</div></div>
+  <div class="stat-item"><div class="stat-num">98.7%</div><div class="stat-label">Negative Rate</div></div>
+  <div class="stat-item"><div class="stat-num">24</div><div class="stat-label">TUEs Approved</div></div>
+  <div class="stat-item"><div class="stat-num">94%</div><div class="stat-label">Education Complete</div></div>
+</div>
+
+<div class="wrap">
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="setTab('tests',this)">Test Register</button>
+    <button class="tab-btn" onclick="setTab('tue',this)">TUE Applications</button>
+    <button class="tab-btn" onclick="setTab('education',this)">Education</button>
+    <button class="tab-btn" onclick="setTab('substances',this)">Prohibited List</button>
+  </div>
+
+  <!-- TESTS -->
+  <div class="tab-panel active" id="tab-tests">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+      <div>
+        <div style="font-family:'Oswald',sans-serif;font-size:20px;font-weight:700;color:var(--ink);">Test Register 2026</div>
+        <div style="font-size:12px;color:var(--faint);">All tests conducted under WADA-accredited laboratory protocols</div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <select style="padding:8px 12px;border:1.5px solid var(--line);border-radius:6px;font-size:12px;background:var(--bg);color:var(--ink);" onchange="filterTests(this.value)">
+          <option value="all">All Results</option>
+          <option value="Negative">Negative</option>
+          <option value="Pending">Pending</option>
+          <option value="Positive">Positive</option>
+        </select>
+      </div>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="test-table">
+        <thead><tr>
+          <th>Date</th><th>Athlete</th><th>Country</th><th>Event</th><th>Type</th><th>Lab</th><th>Result</th>
+        </tr></thead>
+        <tbody id="test-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TUE -->
+  <div class="tab-panel" id="tab-tue">
+    <div style="margin-bottom:20px;">
+      <div style="font-family:'Oswald',sans-serif;font-size:20px;font-weight:700;color:var(--ink);">Therapeutic Use Exemptions</div>
+      <div style="font-size:12px;color:var(--faint);margin-top:3px;">Athletes with legitimate medical needs may apply for a TUE to use a prohibited substance under strict medical supervision.</div>
+    </div>
+    <div class="tue-grid" id="tue-grid"></div>
+  </div>
+
+  <!-- EDUCATION -->
+  <div class="tab-panel" id="tab-education">
+    <div style="background:#1A3A8C;border-radius:10px;padding:20px 24px;color:#fff;margin-bottom:24px;display:flex;align-items:center;gap:14px;">
+      <div style="font-size:32px;">📚</div>
+      <div>
+        <div style="font-family:'Oswald',sans-serif;font-size:17px;font-weight:700;">Mandatory Anti-Doping Education</div>
+        <div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:3px;">All registered athletes and coaches must complete anti-doping education annually. Non-compliance results in competition ineligibility.</div>
+      </div>
+    </div>
+    <div class="edu-grid" id="edu-grid"></div>
+  </div>
+
+  <!-- SUBSTANCES -->
+  <div class="tab-panel" id="tab-substances">
+    <div style="background:rgba(204,34,34,.07);border:1px solid rgba(204,34,34,.2);border-radius:10px;padding:20px 24px;margin-bottom:24px;">
+      <div style="font-family:'Oswald',sans-serif;font-size:16px;font-weight:700;color:#CC2222;margin-bottom:6px;">⚠️ WADA Prohibited List applies to all Archery.Services registered athletes</div>
+      <div style="font-size:13px;color:var(--dim);">Archery falls under the WADA Code. Beta-blockers (e.g. propranolol, atenolol) are prohibited in-competition. Athletes are strictly liable — "I didn't know" is not a defence. Always check with your physician and the Global Drug Reference Online (GDRO) before taking any medication.</div>
+    </div>
+    <div id="substances-list"></div>
+  </div>
+</div>
+
+<script>
+const TESTS = [
+  {id:'T001',date:'2026-06-18',athlete:'Deepika Kumari',country:'India',event:'India Open 2026',type:'In-Competition',result:'Negative',lab:'WADA-Accredited Lab Delhi'},
+  {id:'T002',date:'2026-06-15',athlete:'Brady Ellison',country:'USA',event:'Out-of-Competition',type:'Out-of-Competition',result:'Negative',lab:'UCLA Anti-Doping Lab'},
+  {id:'T003',date:'2026-06-10',athlete:'Nils Winther',country:'Denmark',event:'European Cup',type:'In-Competition',result:'Pending',lab:'Cologne WADA Lab'},
+  {id:'T004',date:'2026-06-08',athlete:'An San',country:'South Korea',event:'Asian Grand Prix',type:'In-Competition',result:'Negative',lab:'Seoul Anti-Doping Lab'},
+  {id:'T005',date:'2026-05-28',athlete:'Lisa Barbelin',country:'France',event:'World Cup Stage 1',type:'Targeted',result:'Negative',lab:'AFLD Paris'},
+  {id:'T006',date:'2026-05-20',athlete:'Unknown',country:'—',event:'Out-of-Competition',type:'Out-of-Competition',result:'Positive',lab:'Cologne WADA Lab'},
+  {id:'T007',date:'2026-05-14',athlete:'Mackenzie Brown',country:'USA',event:'World Cup Stage 1',type:'In-Competition',result:'Negative',lab:'UCLA Anti-Doping Lab'},
+  {id:'T008',date:'2026-05-10',athlete:'Aleksander Mišan',country:'Serbia',event:'Balkan Championship',type:'In-Competition',result:'Negative',lab:'Belgrade ADC'},
+];
+
+const TUES = [
+  {athlete:'Riau Ega Agatha',substance:'Salbutamol',condition:'Exercise-induced asthma',applied:'2026-03-15',status:'Approved',expiry:'2026-12-31',physician:'Dr. Yanti Rahayu'},
+  {athlete:'Marcus D\'Almeida',substance:'Prednisolone',condition:'Severe allergic rhinitis',applied:'2026-04-10',status:'Approved',expiry:'2026-09-30',physician:'Dr. Carlos Mendes'},
+  {athlete:'James Lutz',substance:'Methylphenidate',condition:'ADHD — diagnosed 2019',applied:'2026-05-01',status:'Pending',expiry:null,physician:'Dr. Sarah Kim'},
+  {athlete:'Cristina Iuga',substance:'Propranolol (beta-blocker)',condition:'Performance-unrelated tremor disorder',applied:'2026-04-25',status:'Rejected',expiry:null,physician:'Dr. Ion Popescu'},
+  {athlete:'Linda Ochoa-Anderson',substance:'Corticosteroid injection',condition:'Rotator cuff tendinitis',applied:'2026-05-20',status:'Under Review',expiry:null,physician:'Dr. Miguel Torres'},
+];
+
+const MODULES = [
+  {id:'m1',title:'What is Doping in Archery?',duration:'25 min',level:'beginner',mandatory:true,completedBy:94,desc:'WADA Code fundamentals, strict liability, and what doping means for your career and the sport.'},
+  {id:'m2',title:'Beta-Blockers: Why Archery is Different',duration:'20 min',level:'beginner',mandatory:true,completedBy:91,desc:'Why beta-blockers are specifically prohibited in archery, their performance effects, and common medical alternatives.'},
+  {id:'m3',title:'Therapeutic Use Exemptions (TUE)',duration:'30 min',level:'intermediate',mandatory:false,completedBy:62,desc:'How to apply for a TUE, the evidence required, timelines, and what happens if your medication is needed urgently.'},
+  {id:'m4',title:'Supplements and Contamination Risk',duration:'35 min',level:'intermediate',mandatory:true,completedBy:78,desc:'Unregulated supplements, cross-contamination risks, and how to check substances using GDRO before use.'},
+  {id:'m5',title:'Whereabouts Requirements',duration:'20 min',level:'intermediate',mandatory:false,completedBy:55,desc:'ADAMS whereabouts filing for registered testing pool athletes. Missed test rules, thresholds, and consequences.'},
+  {id:'m6',title:'Coach and Federation Responsibilities',duration:'40 min',level:'advanced',mandatory:true,completedBy:88,desc:'What coaches, club officials, and federation officers must know about anti-doping obligations and reporting duties.'},
+];
+
+const SUBSTANCES_CATS = [
+  {name:'Beta-Blockers',status:'Prohibited In-Competition Only',color:'#CC2222',examples:'Propranolol, Atenolol, Metoprolol, Carvedilol, Bisoprolol',note:'Specifically prohibited in archery because they reduce heart rate and tremor, directly enhancing aim stability.'},
+  {name:'Stimulants',status:'Prohibited In-Competition',color:'#CC2222',examples:'Amphetamines, Cocaine, Ephedrine, Methylhexaneamine',note:'Prohibited across all WADA sports in-competition. Some (ephedrine, pseudoephedrine) have threshold levels.'},
+  {name:'Glucocorticoids',status:'Prohibited In-Competition (systemic)',color:'#C9A227',examples:'Prednisolone, Methylprednisolone, Cortisone',note:'Prohibited systemically in-competition. Topical, inhaled, and intra-articular routes have TUE pathways.'},
+  {name:'Diuretics',status:'Prohibited At All Times',color:'#CC2222',examples:'Furosemide, Hydrochlorothiazide, Spironolactone',note:'Prohibited as masking agents. No threshold — any detectable amount constitutes a violation.'},
+  {name:'Permitted Substances',status:'No restriction',color:'#22C55E',examples:'Standard analgesics (paracetamol, ibuprofen), Antihistamines, Antibiotics, Vitamins, Caffeine',note:'Caffeine is not prohibited — it was removed from the list in 2004. Always verify using GDRO.'},
+];
+
+const RESULT_CLS={Negative:'r-negative',Positive:'r-positive',Pending:'r-pending',Inconclusive:'r-inconclusive'};
+const STATUS_CLS={Approved:'s-approved',Pending:'s-pending',Rejected:'s-rejected','Under Review':'s-review'};
+const LEVEL_CLS={beginner:'l-beg',intermediate:'l-int',advanced:'l-adv'};
+
+let testFilter='all';
+function filterTests(f){
+  testFilter=f;
+  renderTests();
+}
+
+function renderTests(){
+  const data=testFilter==='all'?TESTS:TESTS.filter(t=>t.result===testFilter);
+  document.getElementById('test-tbody').innerHTML=data.map(t=>`
+    <tr>
+      <td>${t.date}</td>
+      <td style="font-weight:600;color:var(--ink);">${t.athlete}</td>
+      <td>${t.country}</td>
+      <td style="font-size:12px;">${t.event}</td>
+      <td><span class="type-badge">${t.type.split('-')[0]}</span></td>
+      <td style="font-size:12px;color:var(--faint);">${t.lab}</td>
+      <td><span class="result-badge ${RESULT_CLS[t.result]}">${t.result}</span></td>
+    </tr>`).join('');
+}
+
+function renderTUE(){
+  document.getElementById('tue-grid').innerHTML=TUES.map(t=>`
+    <div class="tue-card">
+      <div class="tue-status ${STATUS_CLS[t.status]}">${t.status}</div>
+      <div class="tue-athlete">${t.athlete}</div>
+      <div class="tue-sub">${t.substance}</div>
+      <div class="tue-details">
+        <div>Condition: <strong>${t.condition}</strong></div>
+        <div>Physician: ${t.physician}</div>
+        <div>Applied: ${t.applied}</div>
+        ${t.expiry?`<div>Expires: <strong>${t.expiry}</strong></div>`:''}
+      </div>
+    </div>`).join('');
+}
+
+function renderEducation(){
+  document.getElementById('edu-grid').innerHTML=MODULES.map(m=>`
+    <div class="edu-card">
+      <div class="edu-badge">
+        ${m.mandatory?'<span class="mandatory-tag">Mandatory</span>':''}
+        <span class="level-tag ${LEVEL_CLS[m.level]}">${m.level}</span>
+      </div>
+      <div class="edu-title">${m.title}</div>
+      <div class="edu-desc">${m.desc}</div>
+      <div class="progress-row">
+        <div class="prog-bar"><div class="prog-fill" style="width:${m.completedBy}%"></div></div>
+        <div class="prog-label">${m.completedBy}% complete</div>
+      </div>
+      <div class="edu-meta" style="margin-top:12px;">
+        <div class="edu-dur">⏱ ${m.duration}</div>
+        <button class="edu-btn">Start Module</button>
+      </div>
+    </div>`).join('');
+}
+
+function renderSubstances(){
+  document.getElementById('substances-list').innerHTML=SUBSTANCES_CATS.map(s=>`
+    <div style="background:var(--bg2);border-radius:10px;border:1px solid var(--line);padding:20px;margin-bottom:12px;border-left:4px solid ${s.color};">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+        <div style="font-family:'Oswald',sans-serif;font-size:17px;font-weight:700;color:var(--ink);">${s.name}</div>
+        <span style="padding:3px 9px;border-radius:4px;font-size:10px;font-weight:700;text-transform:uppercase;background:${s.color}22;color:${s.color};">${s.status}</span>
+      </div>
+      <div style="font-size:13px;color:var(--dim);margin-bottom:8px;"><strong>Examples:</strong> ${s.examples}</div>
+      <div style="font-size:12.5px;color:var(--faint);font-style:italic;">${s.note}</div>
+    </div>`).join('');
+}
+
+function setTab(id,btn){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
+renderTests();renderTUE();renderEducation();renderSubstances();
+</script>
+<script src="shared.js"></script>
+</body>
+</html>

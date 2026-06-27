@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="day">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Distance Drills — Archery.Services</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+:root{--tw:#FFFFFF;--tb:#1A1A1A;--tbl:#1A3A8C;--tr:#CC2222;--ty:#C9A227;--bg:#F5F7FA;--bg2:#FFFFFF;--ink:#0D1B2E;--dim:#334155;--faint:#8899AA;--line:rgba(26,58,140,.1);}
+body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;margin:0;}
+[data-theme="night"]{--bg:#0D1117;--bg2:#161B22;--ink:#E6EDF3;--dim:#8B949E;--faint:#4A5568;--line:rgba(255,255,255,.08);}
+.page-hero{background:linear-gradient(135deg,#0D1840,#1A3A8C);padding:52px 24px 40px;text-align:center;color:#fff;}
+.page-hero h1{font-family:'Oswald',sans-serif;font-size:clamp(28px,5vw,48px);font-weight:700;text-transform:uppercase;margin:0 0 10px;}
+.page-hero h1 em{color:#C9A227;font-style:normal;}
+.page-hero p{font-size:15px;color:rgba(255,255,255,.75);max-width:520px;margin:0 auto;line-height:1.6;}
+.wrap{max-width:1100px;margin:0 auto;padding:36px 24px;}
+.tab-bar{display:flex;gap:0;border-bottom:2px solid var(--line);margin-bottom:32px;overflow-x:auto;}
+.tab-btn{padding:12px 24px;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;border:none;background:none;cursor:pointer;color:var(--faint);border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .2s;white-space:nowrap;}
+.tab-btn.active{color:#C9A227;border-bottom-color:#C9A227;}
+.tab-panel{display:none;}.tab-panel.active{display:block;}
+.filter-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px;}
+.f-pill{padding:6px 14px;border-radius:20px;border:1px solid var(--line);background:var(--bg2);color:var(--dim);font-size:11.5px;cursor:pointer;transition:all .2s;}
+.f-pill.active,.f-pill:hover{background:#1A3A8C;color:#fff;border-color:#1A3A8C;}
+
+.drill-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:18px;}
+.drill-card{background:var(--bg2);border-radius:10px;border:1px solid var(--line);padding:22px;transition:box-shadow .2s,transform .2s;cursor:pointer;}
+.drill-card:hover,.drill-card.open{box-shadow:0 8px 30px rgba(26,58,140,.12);transform:translateY(-2px);}
+.drill-card.open{border-color:#1A3A8C;}
+.drill-head{display:flex;align-items:center;gap:14px;margin-bottom:12px;}
+.drill-icon{width:44px;height:44px;border-radius:10px;background:#1A3A8C;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.drill-name{font-family:'Oswald',sans-serif;font-size:16px;font-weight:700;color:var(--ink);}
+.drill-sub{font-size:11px;color:var(--faint);margin-top:2px;}
+.drill-badges{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
+.badge{padding:3px 10px;border-radius:3px;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;}
+.badge-beg{background:rgba(34,197,94,.1);color:#16A34A;}
+.badge-int{background:rgba(201,162,39,.1);color:#92691A;}
+.badge-adv{background:rgba(204,34,34,.1);color:#CC2222;}
+.badge-dist{background:rgba(26,58,140,.1);color:#1A3A8C;}
+.badge-pair{background:rgba(107,114,128,.1);color:#6B7280;}
+.drill-setup{font-size:13px;color:var(--dim);line-height:1.55;margin-bottom:10px;}
+.drill-purpose{font-size:12.5px;color:var(--faint);line-height:1.5;font-style:italic;border-left:3px solid #C9A227;padding-left:10px;margin-bottom:10px;}
+.drill-extra{display:none;border-top:1px solid var(--line);padding-top:12px;margin-top:4px;}
+.drill-card.open .drill-extra{display:block;}
+.drill-note{font-size:12px;color:var(--faint);background:rgba(201,162,39,.07);border-radius:6px;padding:8px 12px;}
+
+/* INTERVAL TIMER */
+.timer-panel{background:var(--bg2);border-radius:12px;border:1px solid var(--line);overflow:hidden;}
+.timer-head{background:#1A3A8C;color:#fff;padding:20px 24px;display:flex;align-items:center;gap:14px;}
+.timer-head h2{font-family:'Oswald',sans-serif;font-size:20px;font-weight:700;margin:0;}
+.preset-row{display:flex;gap:8px;flex-wrap:wrap;padding:20px 24px 0;}
+.preset-btn{padding:9px 18px;border-radius:6px;border:1.5px solid var(--line);background:var(--bg);color:var(--dim);font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:all .2s;}
+.preset-btn.active{background:#1A3A8C;color:#fff;border-color:#1A3A8C;}
+.timer-body{padding:24px;display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start;}
+@media(max-width:600px){.timer-body{grid-template-columns:1fr;}}
+.timer-clock{text-align:center;}
+.clock-ring{width:200px;height:200px;margin:0 auto 16px;position:relative;}
+.clock-svg{width:100%;height:100%;transform:rotate(-90deg);}
+.clock-bg{fill:none;stroke:var(--line);stroke-width:12;}
+.clock-arc{fill:none;stroke-width:12;stroke-linecap:round;transition:stroke-dashoffset .5s linear,stroke .3s;}
+.clock-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;}
+.clock-time{font-family:'Oswald',sans-serif;font-size:40px;font-weight:700;color:var(--ink);line-height:1;}
+.clock-phase{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);}
+.timer-controls{display:flex;gap:10px;justify-content:center;margin-top:16px;}
+.tc-btn{padding:10px 22px;border-radius:8px;border:none;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;}
+.tc-start{background:#C9A227;color:#1A1A1A;}
+.tc-stop{background:#CC2222;color:#fff;}
+.tc-reset{background:var(--bg);color:var(--dim);border:1.5px solid var(--line);}
+.timer-info{display:flex;flex-direction:column;gap:14px;}
+.ti-block{background:var(--bg);border-radius:8px;padding:14px 16px;}
+.ti-label{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin-bottom:6px;}
+.ti-val{font-family:'Oswald',sans-serif;font-size:24px;font-weight:700;color:var(--ink);}
+.ti-cue{font-size:13px;color:var(--dim);line-height:1.5;margin-top:6px;}
+.round-dots{display:flex;gap:5px;flex-wrap:wrap;}
+.round-dot{width:12px;height:12px;border-radius:50%;background:var(--line);}
+.round-dot.done{background:#C9A227;}
+.round-dot.active{background:#CC2222;animation:pulse 1s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.5;}}
+</style>
+</head>
+<body>
+
+<nav style="position:sticky;top:0;z-index:300;background:#fff;border-bottom:1px solid rgba(26,58,140,.1);display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:68px;">
+  <a href="/" style="font-family:'Oswald',sans-serif;font-size:20px;font-weight:700;color:#1A3A8C;text-decoration:none;">Archery<span style="color:#C9A227">.</span>Services</a>
+  <div style="display:flex;gap:24px;align-items:center;">
+    <a href="discover.html" style="font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#334155;text-decoration:none;">Discover</a>
+    <a href="ai-coach.html" style="font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#334155;text-decoration:none;">AI Coach</a>
+    <a href="pricing.html" style="padding:9px 20px;background:#C9A227;color:#1A1A1A;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;border-radius:4px;">Join Free</a>
+  </div>
+</nav>
+
+<div class="page-hero">
+  <h1>Archery <em>Distance Drills</em></h1>
+  <p>Structured drill library for every distance — 9m to 90m — plus an interval training timer to keep your sessions sharp.</p>
+</div>
+
+<div class="wrap">
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="setTab('drills',this)">Drill Library</button>
+    <button class="tab-btn" onclick="setTab('timer',this)">Interval Timer</button>
+    <button class="tab-btn" onclick="setTab('distances',this)">Distance Guide</button>
+  </div>
+
+  <!-- DRILLS -->
+  <div class="tab-panel active" id="tab-drills">
+    <div class="filter-row">
+      <span class="f-pill active" onclick="filterDrills('all',this)">All</span>
+      <span class="f-pill" onclick="filterDrills('beginner',this)">Beginner</span>
+      <span class="f-pill" onclick="filterDrills('intermediate',this)">Intermediate</span>
+      <span class="f-pill" onclick="filterDrills('advanced',this)">Advanced</span>
+      <span class="f-pill" onclick="filterDrills('solo',this)">Solo</span>
+      <span class="f-pill" onclick="filterDrills('partner',this)">Partner</span>
+    </div>
+    <div class="drill-grid" id="drill-grid"></div>
+  </div>
+
+  <!-- TIMER -->
+  <div class="tab-panel" id="tab-timer">
+    <div class="timer-panel">
+      <div class="timer-head">
+        <div style="width:44px;height:44px;border-radius:50%;background:#C9A227;display:flex;align-items:center;justify-content:center;font-size:20px;">⏱</div>
+        <div>
+          <h2>Interval Training Timer</h2>
+          <div style="font-size:12px;color:rgba(255,255,255,.65);">Select a preset or configure manually</div>
+        </div>
+      </div>
+      <div class="preset-row" id="preset-row"></div>
+      <div class="timer-body">
+        <div class="timer-clock">
+          <div class="clock-ring">
+            <svg class="clock-svg" viewBox="0 0 200 200">
+              <circle class="clock-bg" cx="100" cy="100" r="88"/>
+              <circle class="clock-arc" id="clock-arc" cx="100" cy="100" r="88" stroke="#C9A227" stroke-dasharray="553" stroke-dashoffset="0"/>
+            </svg>
+            <div class="clock-center">
+              <div class="clock-time" id="clock-time">00:00</div>
+              <div class="clock-phase" id="clock-phase">READY</div>
+            </div>
+          </div>
+          <div class="timer-controls">
+            <button class="tc-btn tc-start" id="btn-start" onclick="startTimer()">Start</button>
+            <button class="tc-btn tc-stop" id="btn-stop" onclick="stopTimer()" style="display:none">Stop</button>
+            <button class="tc-btn tc-reset" onclick="resetTimer()">Reset</button>
+          </div>
+        </div>
+        <div class="timer-info">
+          <div class="ti-block">
+            <div class="ti-label">Round</div>
+            <div class="ti-val" id="ti-round">0 / 0</div>
+            <div class="round-dots" id="round-dots"></div>
+          </div>
+          <div class="ti-block">
+            <div class="ti-label">Phase</div>
+            <div class="ti-val" id="ti-phase">—</div>
+          </div>
+          <div class="ti-block">
+            <div class="ti-label">Coach Cue</div>
+            <div class="ti-cue" id="ti-cue">Select a preset to begin.</div>
+          </div>
+        </div>
+      </div>
+      <div style="padding:16px 24px;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:8px;">
+        <div><label style="font-size:11px;font-weight:700;color:var(--faint);display:block;margin-bottom:4px;">WORK (sec)</label><input type="number" id="custom-work" value="30" min="3" max="300" style="width:100%;padding:8px;border:1.5px solid var(--line);border-radius:6px;font-size:14px;font-family:'Oswald',sans-serif;background:var(--bg);color:var(--ink);"></div>
+        <div><label style="font-size:11px;font-weight:700;color:var(--faint);display:block;margin-bottom:4px;">REST (sec)</label><input type="number" id="custom-rest" value="20" min="3" max="300" style="width:100%;padding:8px;border:1.5px solid var(--line);border-radius:6px;font-size:14px;font-family:'Oswald',sans-serif;background:var(--bg);color:var(--ink);"></div>
+        <div><label style="font-size:11px;font-weight:700;color:var(--faint);display:block;margin-bottom:4px;">ROUNDS</label><input type="number" id="custom-rounds" value="5" min="1" max="20" style="width:100%;padding:8px;border:1.5px solid var(--line);border-radius:6px;font-size:14px;font-family:'Oswald',sans-serif;background:var(--bg);color:var(--ink);"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DISTANCES -->
+  <div class="tab-panel" id="tab-distances">
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;" id="dist-grid"></div>
+  </div>
+</div>
+
+<script>
+const DRILLS = [
+  {id:'blank-bale',name:'Blank Bale',icon:'🎯',level:'beginner',pairs:false,duration:'3 × 20 arrows',setup:'Stand 2-3m from a plain bale — no target face. Close your eyes if comfortable. Focus entirely on the shot sequence: grip, anchor, draw, release.',purpose:'Eliminates aiming as a variable so you can feel the mechanics with zero visual distraction.',note:'Most coaches assign blank bale for the first 4-6 weeks of any technique correction programme.'},
+  {id:'walk-back',name:'Walk-Back Tune',icon:'👣',level:'intermediate',pairs:false,duration:'1 session',setup:'Start at 9m hitting target centre, then walk back 3m and shoot without changing sight. Observe drift direction at each distance.',purpose:'Reveals centre-shot alignment: left drift = arrow too far right; right drift = too far left.',note:'Most useful for recurve bare-shaft or paper tuning validation.'},
+  {id:'blind-anchor',name:'Blind Anchor',icon:'🙈',level:'advanced',pairs:false,duration:'20 arrows',setup:'Draw to anchor with eyes closed. Feel the string-to-face contact and hand position. Freeze, open eyes and check aim without adjusting.',purpose:'Tests proprioceptive anchor consistency — you cannot feel a 1mm difference but can see it.',note:'Groups tight but off-centre = consistent but mis-set. Groups scattered = inconsistent.'},
+  {id:'three-distances',name:'Three-Distance Set',icon:'📏',level:'intermediate',pairs:false,duration:'3 × 6 arrows',setup:'Shoot 6 arrows each at 18m, 30m, 50m without changing sight settings. Record the vertical shift at each distance.',purpose:'Diagnoses arrow flight and whether your form is consistent across loading levels.',note:'Vertical shift should only come from wind or elevation. Side drift reveals form issues that grow with distance.'},
+  {id:'partner-call',name:'Partner Call Drill',icon:'🤝',level:'advanced',pairs:true,duration:'6 × 5 arrows each',setup:'Partner stands beside the target. Before each arrow, partner calls either "fire" or "hold". Archer must respond in under 2 seconds.',purpose:'Trains shot commitment and abort ability — both critical for competition shooting.',note:'Pressure from time constraint reveals shot-sequence weaknesses not visible in self-paced practice.'},
+  {id:'clicker-isolation',name:'Clicker Isolation',icon:'🎣',level:'intermediate',pairs:false,duration:'4 × 10 arrows',setup:'Draw to just before the clicker and hold for 3 seconds. Only then complete the draw through. Do not pull explosively.',purpose:'Builds back tension habit and removes the tendency to punch through the clicker.',note:'Once the hold-and-draw is reliable, gradually reduce the hold to 1 second then zero.'},
+  {id:'group-tighten',name:'Group-and-Tighten',icon:'🎪',level:'beginner',pairs:false,duration:'3 × 12 arrows',setup:'Shoot 12 arrows, record group size. Shoot another 12 with deliberate focus on one specific element. Compare group size.',purpose:'Quantifies the effect of a technique change in real time.',note:'Measure group diameter with tape measure. Log it. Improvement must be measurable to be real.'},
+  {id:'pressure-set',name:'Pressure Set',icon:'🔥',level:'advanced',pairs:true,duration:'1 end of 6',setup:'Set a score target before the end. Both archers agree: if either misses the score, both repeat the end. Repeat until both hit target in the same end.',purpose:'Creates consequence-based pressure similar to team events and match play.',note:'Start with a score target you hit 80% of the time. Progress to 95% target.'},
+];
+
+const PRESETS = [
+  {id:'short',name:'Short Draw',work:20,rest:15,rounds:10,cue:'Full shot cycle from raise to follow-through. One arrow per work period.'},
+  {id:'clicker',name:'Clicker Timing',work:30,rest:20,rounds:8,cue:'Draw to just before clicker. Hold. Complete draw on whistle. Release only on clicker.'},
+  {id:'fatigue',name:'Fatigue Set',work:45,rest:20,rounds:6,cue:'Continuous shot cycle. Maintain form. Coach calls any form break.'},
+  {id:'pressure',name:'Pressure End',work:6,rest:54,rounds:6,cue:'Maximum effort — best shot possible in 6 seconds from anchor.'},
+];
+
+const DISTANCES = [
+  {dist:'9m',name:'Blank Bale Distance',icon:'🎯',desc:'Used exclusively for technique drilling without a target face. Zero aiming distraction.',drills:['Blank bale','Grip isolation','Blind anchor']},
+  {dist:'18m',name:'Indoor Standard',icon:'🏛',desc:'Indoor World Archery standard. 40cm target face, single or 3-spot. Most international indoor events.',drills:['Group-and-tighten','Clicker isolation','Scoring practice']},
+  {dist:'30m',name:'Transition Distance',icon:'↗️',desc:'Bridge between indoor and outdoor. Tests vertical arrow flight. Not used in major competitions but excellent in training.',drills:['Three-distance set','Walk-back tune','Form check']},
+  {dist:'50m',name:'Outdoor Short',icon:'🌤',desc:'Recurve outdoor short distance. Used in FITA rounds. Wind reading becomes meaningful.',drills:['Wind compensation','Group comparison','Partner call drill']},
+  {dist:'70m',name:'Olympic Distance',icon:'🥇',desc:'Olympic Games and World Championships standard for recurve. 122cm target face. The defining recurve distance.',drills:['Pressure sets','Distance simulation','Full Olympic round practice']},
+  {dist:'50m',name:'Compound Standard',icon:'🎪',desc:'Compound World Archery standard outdoor distance. 80cm target, 6-ring X-zone scoring.',drills:['X-zone focus','Score simulation','Perfect end drill']},
+  {dist:'60m / 90m',name:'Long Distance',icon:'🔭',desc:'Used in 1440 rounds and classic FITA. Tests arrow flight stability and archer strength under load.',drills:['Form durability','Equipment verification','Wind strategy']},
+  {dist:'Any',name:'3D / Field',icon:'🌲',desc:'Unmarked distances from 5m to 60m. Requires distance estimation and trajectory knowledge.',drills:['Distance estimation drills','Angle compensation','Instinctive aiming']},
+];
+
+let drillFilter='all';
+
+function renderDrills(){
+  const LEVEL_CLS={beginner:'badge-beg',intermediate:'badge-int',advanced:'badge-adv'};
+  const data=DRILLS.filter(d=>{
+    if(drillFilter==='all')return true;
+    if(drillFilter==='solo')return !d.pairs;
+    if(drillFilter==='partner')return d.pairs;
+    return d.level===drillFilter;
+  });
+  document.getElementById('drill-grid').innerHTML=data.map(d=>`
+    <div class="drill-card" id="dc-${d.id}" onclick="toggleDrill('${d.id}')">
+      <div class="drill-head">
+        <div class="drill-icon">${d.icon}</div>
+        <div>
+          <div class="drill-name">${d.name}</div>
+          <div class="drill-sub">${d.duration}</div>
+        </div>
+      </div>
+      <div class="drill-badges">
+        <span class="badge ${LEVEL_CLS[d.level]}">${d.level}</span>
+        <span class="badge badge-pair">${d.pairs?'Partner':'Solo'}</span>
+      </div>
+      <div class="drill-setup">${d.setup}</div>
+      <div class="drill-extra">
+        <div class="drill-purpose">${d.purpose}</div>
+        <div class="drill-note">💡 ${d.note}</div>
+      </div>
+    </div>`).join('');
+}
+
+function toggleDrill(id){
+  const el=document.getElementById('dc-'+id);
+  el.classList.toggle('open');
+}
+
+function filterDrills(f,btn){
+  drillFilter=f;
+  document.querySelectorAll('#tab-drills .f-pill').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderDrills();
+}
+
+function renderDistances(){
+  document.getElementById('dist-grid').innerHTML=DISTANCES.map(d=>`
+    <div style="background:var(--bg2);border-radius:10px;border:1px solid var(--line);padding:20px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+        <div style="width:52px;height:52px;border-radius:10px;background:#1A3A8C;display:flex;align-items:center;justify-content:center;font-size:22px;">${d.icon}</div>
+        <div>
+          <div style="font-family:'Oswald',sans-serif;font-size:22px;font-weight:700;color:#C9A227;line-height:1;">${d.dist}</div>
+          <div style="font-size:12px;color:var(--faint);">${d.name}</div>
+        </div>
+      </div>
+      <div style="font-size:13px;color:var(--dim);line-height:1.5;margin-bottom:10px;">${d.desc}</div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;">${d.drills.map(dr=>`<span style="padding:3px 9px;background:rgba(26,58,140,.07);border-radius:3px;font-size:11px;color:#1A3A8C;font-weight:600;">${dr}</span>`).join('')}</div>
+    </div>`).join('');
+}
+
+// ── TIMER ──
+let timerState={running:false,phase:'work',remaining:0,round:0,interval:null,preset:null};
+function loadPresets(){
+  const row=document.getElementById('preset-row');
+  row.innerHTML=PRESETS.map(p=>`<button class="preset-btn" onclick="selectPreset('${p.id}',this)">${p.name}</button>`).join('');
+}
+function selectPreset(id,btn){
+  if(timerState.running)return;
+  timerState.preset=PRESETS.find(p=>p.id===id);
+  document.querySelectorAll('.preset-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('custom-work').value=timerState.preset.work;
+  document.getElementById('custom-rest').value=timerState.preset.rest;
+  document.getElementById('custom-rounds').value=timerState.preset.rounds;
+  document.getElementById('ti-cue').textContent=timerState.preset.cue;
+  resetTimer();
+}
+function startTimer(){
+  const work=parseInt(document.getElementById('custom-work').value)||30;
+  const rest=parseInt(document.getElementById('custom-rest').value)||20;
+  const rounds=parseInt(document.getElementById('custom-rounds').value)||5;
+  timerState={running:true,phase:'work',remaining:work,round:1,work,rest,rounds};
+  document.getElementById('btn-start').style.display='none';
+  document.getElementById('btn-stop').style.display='';
+  updateRoundDots(rounds,0);
+  tick();
+  timerState.interval=setInterval(tick,1000);
+}
+function tick(){
+  const{remaining,phase,round,rounds,work,rest}=timerState;
+  const total=phase==='work'?work:rest;
+  const pct=(remaining/total)*553;
+  document.getElementById('clock-arc').style.strokeDashoffset=553-pct;
+  document.getElementById('clock-arc').style.stroke=phase==='work'?'#C9A227':'#1A3A8C';
+  document.getElementById('clock-time').textContent=`${String(Math.floor(remaining/60)).padStart(2,'0')}:${String(remaining%60).padStart(2,'0')}`;
+  document.getElementById('clock-phase').textContent=phase.toUpperCase();
+  document.getElementById('ti-phase').textContent=phase==='work'?'🏹 SHOOT':'💨 REST';
+  document.getElementById('ti-round').textContent=`${round} / ${rounds}`;
+  if(remaining<=0){
+    if(phase==='work'){timerState.phase='rest';timerState.remaining=rest;}
+    else{
+      if(round>=rounds){stopTimer();return;}
+      timerState.phase='work';timerState.remaining=work;timerState.round=round+1;
+      updateRoundDots(rounds,timerState.round-1);
+    }
+  } else {timerState.remaining--;}
+}
+function stopTimer(){clearInterval(timerState.interval);timerState.running=false;document.getElementById('btn-start').style.display='';document.getElementById('btn-stop').style.display='none';}
+function resetTimer(){if(timerState.interval)clearInterval(timerState.interval);timerState.running=false;document.getElementById('btn-start').style.display='';document.getElementById('btn-stop').style.display='none';document.getElementById('clock-time').textContent='00:00';document.getElementById('clock-phase').textContent='READY';document.getElementById('clock-arc').style.strokeDashoffset='0';document.getElementById('ti-phase').textContent='—';document.getElementById('ti-round').textContent='0 / 0';document.getElementById('round-dots').innerHTML='';}
+function updateRoundDots(total,done){document.getElementById('round-dots').innerHTML=Array.from({length:total},(_,i)=>`<div class="round-dot ${i<done?'done':i===done?'active':''}"></div>`).join('');}
+
+function setTab(id,btn){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
+renderDrills();renderDistances();loadPresets();
+</script>
+<script src="shared.js"></script>
+</body>
+</html>

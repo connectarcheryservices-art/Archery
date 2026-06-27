@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Contact &amp; Support — Archery.Services</title>
+<meta name="description" content="Get in touch with the Archery.Services team — support, partnerships, orders, media and federation enquiries.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Source+Serif+4:ital,wght@0,300;0,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+.contact-layout{max-width:1100px;margin:0 auto;padding:10px var(--g) 70px;display:grid;grid-template-columns:1fr 1.1fr;gap:36px;align-items:start;}
+.channels{display:flex;flex-direction:column;gap:14px;}
+.channel{background:var(--forest-2);border:1px solid var(--line);border-radius:var(--r-lg);padding:20px;display:flex;gap:16px;align-items:flex-start;}
+.channel .ch-icon{width:42px;height:42px;border-radius:10px;background:rgba(200,16,46,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.channel .ch-icon svg{width:20px;height:20px;stroke:var(--ember);}
+.channel h4{font-family:'Oswald',sans-serif;font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--ivory);margin-bottom:4px;}
+.channel p{font-size:13px;color:var(--ivory-2);line-height:1.6;}
+.channel a{color:var(--ember-light);text-decoration:none;}
+.channel a:hover{text-decoration:underline;}
+.contact-form{background:var(--forest-2);border:1px solid var(--line);border-radius:var(--r-xl);padding:30px;}
+.contact-form h2{font-family:'Oswald',sans-serif;font-size:20px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--ivory);margin-bottom:6px;}
+.contact-form .sub{font-size:13px;color:var(--ivory-2);margin-bottom:22px;}
+.cf-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.cf-grid .full{grid-column:1/-1;}
+.contact-form label{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ivory-3);margin-bottom:6px;display:block;}
+.contact-form input,.contact-form select,.contact-form textarea{width:100%;background:var(--forest);border:1px solid var(--line);border-radius:6px;padding:11px 13px;font-size:14px;color:var(--ivory);outline:none;font-family:'Inter',sans-serif;transition:border-color .2s;}
+.contact-form input:focus,.contact-form select:focus,.contact-form textarea:focus{border-color:rgba(200,16,46,.45);}
+.contact-form textarea{resize:vertical;min-height:120px;line-height:1.6;}
+.cf-msg{margin-top:14px;font-size:13px;padding:11px 14px;border-radius:8px;display:none;}
+.cf-msg.ok{display:block;background:rgba(61,170,90,.14);color:#6ABF77;border:1px solid rgba(61,170,90,.3);}
+.cf-msg.err{display:block;background:rgba(239,68,68,.12);color:#FF8080;border:1px solid rgba(239,68,68,.3);}
+@media(max-width:860px){.contact-layout{grid-template-columns:1fr;}.cf-grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<script>(function(){var s=document.createElement('script');s.src='nav.js';document.head.appendChild(s);})();</script>
+
+<div class="page-hero">
+  <div class="sec-label reveal">Contact &amp; Support</div>
+  <h1 class="sec-title reveal">We're Here to <em>Help.</em></h1>
+  <p class="sec-desc reveal">Questions about an order, a tournament, a partnership, or the platform? Reach the right team below, or send us a message — we typically reply within one business day.</p>
+</div>
+
+<div class="contact-layout">
+  <div class="channels">
+    <div class="channel reveal">
+      <div class="ch-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M22 6l-10 7L2 6"/></svg></div>
+      <div><h4>General &amp; Support</h4><p><a href="mailto:support@archery.services">support@archery.services</a><br>For accounts, the platform, and how-to questions.</p></div>
+    </div>
+    <div class="channel reveal">
+      <div class="ch-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg></div>
+      <div><h4>Orders, Shipping &amp; Returns</h4><p><a href="mailto:shop@archery.services">shop@archery.services</a><br>Track an order, arrange a return, or ask about delivery.</p></div>
+    </div>
+    <div class="channel reveal">
+      <div class="ch-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg></div>
+      <div><h4>Federations &amp; Partnerships</h4><p><a href="mailto:partners@archery.services">partners@archery.services</a><br>Onboarding for national bodies, clubs and event hosts.</p></div>
+    </div>
+    <div class="channel reveal">
+      <div class="ch-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
+      <div><h4>Global Office</h4><p>Archery.Services International<br>Operating worldwide · Remote-first team<br>Support hours: 24/5 (Mon–Fri, all time zones)</p></div>
+    </div>
+  </div>
+
+  <form class="contact-form reveal" id="contact-form" onsubmit="return sendContact(event)">
+    <h2>Send a Message</h2>
+    <p class="sub">Fill in the form and our team will be in touch. Marked fields are required.</p>
+    <div class="cf-grid">
+      <div><label for="c-name">Full Name *</label><input id="c-name" required maxlength="80" autocomplete="name"></div>
+      <div><label for="c-email">Email *</label><input id="c-email" type="email" required maxlength="120" autocomplete="email"></div>
+      <div class="full"><label for="c-topic">Topic</label>
+        <select id="c-topic">
+          <option>General Enquiry</option>
+          <option>Account &amp; Platform Support</option>
+          <option>Order / Shipping / Returns</option>
+          <option>Tournament &amp; Events</option>
+          <option>Federation / Partnership</option>
+          <option>Media &amp; Press</option>
+        </select>
+      </div>
+      <div class="full"><label for="c-msg">Message *</label><textarea id="c-msg" required maxlength="2000" placeholder="How can we help?"></textarea></div>
+    </div>
+    <button class="btn-primary" type="submit" style="margin-top:18px;width:100%;justify-content:center;" id="c-submit">Send Message</button>
+    <div class="cf-msg" id="c-result"></div>
+  </form>
+</div>
+
+<footer><div class="footer-inner">
+  <div class="footer-top">
+    <div><div class="footer-brand-name">Archery<span>.</span>Services</div><p class="footer-tagline">The world's complete digital archery infrastructure — from local club to international podium.</p></div>
+    <div class="footer-col"><h4>Platform</h4><ul><li><a href="index.html">Home</a></li><li><a href="shop.html">Shop</a></li><li><a href="tournaments.html">Tournaments</a></li><li><a href="athletes.html">Athletes</a></li><li><a href="pricing.html">Pricing</a></li></ul></div>
+    <div class="footer-col"><h4>Resources</h4><ul><li><a href="knowledge.html">Knowledge Hub</a></li><li><a href="community.html">Community</a></li><li><a href="jobs.html">Jobs Board</a></li><li><a href="federation.html">Federations</a></li></ul></div>
+    <div class="footer-col"><h4>Company</h4><ul><li><a href="about.html">About</a></li><li><a href="contact.html">Contact</a></li><li><a href="admin.html">Admin</a></li></ul></div>
+  </div>
+  <div class="footer-bottom"><p class="footer-copy">© 2026 Archery.Services — All rights reserved.</p><div class="footer-legal"><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="privacy.html#cookies">Cookies</a></div></div>
+</div></footer>
+
+<script src="shared.js"></script>
+<script>
+async function sendContact(e){
+  e.preventDefault();
+  const name=document.getElementById('c-name').value.trim();
+  const email=document.getElementById('c-email').value.trim();
+  const topic=document.getElementById('c-topic').value;
+  const msg=document.getElementById('c-msg').value.trim();
+  const result=document.getElementById('c-result');
+  const btn=document.getElementById('c-submit');
+  if(!name||!email||!msg){result.className='cf-msg err';result.textContent='Please complete all required fields.';return false;}
+  btn.disabled=true;btn.textContent='Sending…';
+  const text=`[${topic}] ${msg}`;
+  try{
+    const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,email,text})}).then(r=>r.json());
+    if(res&&(res.ok||res.id)){
+      result.className='cf-msg ok';
+      result.textContent='Thank you — your message has been received. Our team will reply to '+email+' shortly. You can also continue the conversation via the chat button.';
+      document.getElementById('contact-form').reset();
+    }else{throw new Error('failed');}
+  }catch(err){
+    result.className='cf-msg err';
+    result.textContent='Something went wrong sending your message. Please email support@archery.services directly.';
+  }
+  btn.disabled=false;btn.textContent='Send Message';
+  return false;
+}
+</script>
+</body></html>

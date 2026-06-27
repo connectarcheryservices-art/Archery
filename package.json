@@ -1,0 +1,15 @@
+{
+  "name": "archery-services",
+  "version": "1.0.0",
+  "description": "Archery.Services — archery e-commerce on Vercel + Supabase",
+  "type": "commonjs",
+  "scripts": {
+    "dev": "vercel dev",
+    "start": "node server.js",
+    "test": "node api/_lib/pricing.test.js"
+  },
+  "dependencies": {
+    "pg": "^8.13.1",
+    "razorpay": "^2.9.5"
+  }
+}

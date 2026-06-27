@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Archery Profile — Archery.Services</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Source+Serif+4:ital,wght@0,300;1,300&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+.pf-wrap{max-width:1100px;margin:0 auto;padding:100px var(--g) 80px;}
+.pf-cover{height:180px;border-radius:var(--r-xl) var(--r-xl) 0 0;background:linear-gradient(120deg,var(--ember-dark),var(--ember) 60%,var(--gold-ring));position:relative;overflow:hidden;}
+.pf-cover svg{position:absolute;right:-30px;top:-40px;width:280px;height:280px;opacity:.18;}
+.pf-head{background:var(--forest-2);border:1px solid var(--line);border-top:none;border-radius:0 0 var(--r-xl) var(--r-xl);padding:0 28px 26px;display:flex;gap:22px;align-items:flex-end;flex-wrap:wrap;position:relative;}
+.pf-av{width:128px;height:128px;border-radius:24px;margin-top:-64px;background:var(--forest-3);border:4px solid var(--forest-2);display:flex;align-items:center;justify-content:center;font-family:'Oswald',sans-serif;font-size:46px;font-weight:600;color:var(--ember-light);flex-shrink:0;overflow:hidden;}
+.pf-av img{width:100%;height:100%;object-fit:cover;}
+.pf-id{flex:1;min-width:240px;padding-top:16px;}
+.pf-name{font-family:'Oswald',sans-serif;font-size:30px;font-weight:600;text-transform:uppercase;letter-spacing:.02em;color:var(--ivory);display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.pf-verify{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:#6ABF77;background:rgba(46,94,53,.18);border:1px solid rgba(46,94,53,.3);padding:3px 9px;border-radius:20px;text-transform:none;letter-spacing:.02em;}
+.pf-verify svg{width:13px;height:13px;}
+.pf-headline{font-family:'Source Serif 4',serif;font-style:italic;font-size:16px;color:var(--ivory-2);margin-top:6px;}
+.pf-meta{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;}
+.pf-meta span{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ivory-3);}
+.pf-meta svg{width:13px;height:13px;}
+.pf-actions{display:flex;gap:10px;padding-top:16px;flex-wrap:wrap;}
+.pf-grid{display:grid;grid-template-columns:1.7fr 1fr;gap:18px;margin-top:18px;}
+.pf-section{background:var(--forest-2);border:1px solid var(--line);border-radius:var(--r-lg);padding:24px;margin-bottom:18px;}
+.pf-section h3{font-family:'Oswald',sans-serif;font-size:14px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ember);margin-bottom:16px;display:flex;align-items:center;gap:9px;}
+.pf-section h3 svg{width:16px;height:16px;}
+.pf-bio{font-family:'Source Serif 4',serif;font-size:15px;line-height:1.8;color:var(--ivory-2);}
+.pf-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+.pf-stat{background:var(--forest);border:1px solid var(--line);border-radius:10px;padding:16px;text-align:center;}
+.pf-stat-v{font-family:'Oswald',sans-serif;font-size:26px;font-weight:600;color:var(--ivory);}
+.pf-stat-l{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--ivory-3);margin-top:4px;}
+.pf-links{display:flex;flex-direction:column;gap:10px;}
+.pf-link{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--forest);border:1px solid var(--line);border-radius:10px;padding:14px 16px;text-decoration:none;color:var(--ivory);font-weight:500;font-size:14px;transition:border-color .2s,transform .2s;}
+.pf-link:hover{border-color:rgba(200,96,26,.4);transform:translateY(-2px);}
+.pf-link svg{width:16px;height:16px;color:var(--ember-light);}
+.pf-timeline{display:flex;flex-direction:column;gap:0;}
+.pf-tl{display:flex;gap:14px;padding-bottom:18px;position:relative;}
+.pf-tl:last-child{padding-bottom:0;}
+.pf-tl-dot{width:11px;height:11px;border-radius:50%;background:var(--ember);margin-top:4px;flex-shrink:0;position:relative;}
+.pf-tl:not(:last-child)::after{content:'';position:absolute;left:5px;top:16px;bottom:0;width:1px;background:var(--line);}
+.pf-tl-y{font-family:'Oswald',sans-serif;font-size:13px;color:var(--ember-light);font-weight:600;min-width:48px;}
+.pf-tl-t{font-size:13.5px;color:var(--ivory-2);line-height:1.5;}
+.pf-tl-t strong{color:var(--ivory);display:block;}
+.pf-chips{display:flex;flex-wrap:wrap;gap:8px;}
+.pf-chip{font-size:12px;padding:7px 13px;border-radius:20px;background:var(--forest);border:1px solid var(--line);color:var(--ivory-2);}
+.pf-empty{max-width:560px;margin:140px auto;text-align:center;}
+.pf-empty h1{font-family:'Oswald',sans-serif;font-size:30px;text-transform:uppercase;color:var(--ivory);margin-bottom:12px;}
+.pf-empty p{color:var(--ivory-2);margin-bottom:24px;line-height:1.7;}
+@media(max-width:820px){.pf-grid{grid-template-columns:1fr;}.pf-av{margin-top:-54px;width:104px;height:104px;}}
+</style>
+</head>
+<body>
+<script>(function(){var s=document.createElement('script');s.src='nav.js';document.head.appendChild(s);})();</script>
+
+<div id="pf-root" class="pf-wrap"></div>
+
+<footer><div class="footer-inner"><div class="footer-top"><div><div class="footer-brand-name">Archery<span>.</span>Services</div><p class="footer-tagline">The world's complete digital infrastructure for archery.</p></div><div class="footer-col"><h4>Athletes</h4><ul><li><a href="profile.html">Archery Profiles</a></li><li><a href="athletes.html">World Rankings</a></li><li><a href="tournaments.html">Events</a></li></ul></div><div class="footer-col"><h4>Platform</h4><ul><li><a href="index.html">Home</a></li><li><a href="shop.html">Shop</a></li><li><a href="community.html">Community</a></li></ul></div><div class="footer-col"><h4>Company</h4><ul><li><a href="about.html">About</a></li><li><a href="admin.html">Admin</a></li></ul></div></div><div class="footer-bottom"><p class="footer-copy">© 2025 Archery.Services</p><div class="footer-legal"><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a></div></div></div></footer>
+
+<script src="shared.js"></script>
+<script>
+const API='/api';
+const root=document.getElementById('pf-root');
+const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const initials=n=>(n||'A').split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+const linkIcon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7"/><path d="M8 7h9v9"/></svg>';
+
+function emptyState(){
+  root.innerHTML=`<div class="pf-empty">
+    <div style="font-size:0;margin-bottom:18px;"><svg width="60" height="60" viewBox="0 0 44 44" fill="none"><circle cx="22" cy="22" r="21" stroke="#C8601A" stroke-width="1.4"/><circle cx="22" cy="22" r="13" stroke="#C8601A" stroke-width=".7"/><circle cx="22" cy="22" r="5" fill="#CC2222"/></svg></div>
+    <h1>Your Archery Profile</h1>
+    <p>One shareable link with your bio, results, achievements, certifications, and every link that matters — built for athletes, coaches, and officials worldwide.</p>
+    <a href="athletes.html" class="btn-primary">Browse the rankings →</a>
+  </div>`;
+}
+
+function render(p){
+  const links=(p.links||[]).map(l=>`<a class="pf-link" href="${esc(l.url||'#')}" target="_blank" rel="noopener"><span>${esc(l.label||'Link')}</span>${linkIcon}</a>`).join('') || '<p style="color:var(--ivory-3);font-size:13px;">No links added yet.</p>';
+  const ach=(p.achievements||[]).map(a=>`<div class="pf-tl"><div class="pf-tl-dot"></div><div class="pf-tl-y">${esc(a.year||'')}</div><div class="pf-tl-t">${esc(a.text||'')}</div></div>`).join('') || '<p style="color:var(--ivory-3);font-size:13px;">No achievements listed.</p>';
+  const exp=(p.experience||[]).map(e=>`<div class="pf-tl"><div class="pf-tl-dot"></div><div class="pf-tl-t"><strong>${esc(e.role||'')}</strong>${esc(e.org||'')} · ${esc(e.period||'')}</div></div>`).join('') || '';
+  const certs=(p.certifications||[]).map(c=>`<span class="pf-chip">${esc(c)}</span>`).join('') || '';
+  root.innerHTML=`
+  <div class="pf-cover"><svg viewBox="0 0 160 160" fill="none"><circle cx="80" cy="80" r="75" stroke="#fff" stroke-width="2"/><circle cx="80" cy="80" r="52" stroke="#fff" stroke-width="1.4"/><circle cx="80" cy="80" r="30" stroke="#fff" stroke-width="2"/><circle cx="80" cy="80" r="11" fill="#fff"/></svg></div>
+  <div class="pf-head">
+    <div class="pf-av">${p.photo?`<img src="${esc(p.photo)}">`:initials(p.name)}</div>
+    <div class="pf-id">
+      <div class="pf-name">${esc(p.name)} ${p.verified?'<span class="pf-verify"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>Verified</span>':''}</div>
+      <div class="pf-headline">${esc(p.headline||'')}</div>
+      <div class="pf-meta">
+        ${p.location?`<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>${esc(p.location)}</span>`:''}
+        ${p.discipline?`<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg>${esc(p.discipline)}</span>`:''}
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007 0l3-3a5 5 0 00-7-7l-1 1"/><path d="M14 11a5 5 0 00-7 0l-3 3a5 5 0 007 7l1-1"/></svg>archery.services/${esc(p.handle||'')}</span>
+      </div>
+    </div>
+    <div class="pf-actions">
+      <button class="btn-primary" onclick="navigator.clipboard&&navigator.clipboard.writeText(location.href);this.textContent='Link copied ✓';">Share profile</button>
+      <a class="btn-outline" href="athletes.html">Rankings</a>
+    </div>
+  </div>
+  <div class="pf-grid">
+    <div>
+      <div class="pf-section"><h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 016-6h4a6 6 0 016 6v1"/></svg>About</h3><div class="pf-bio">${esc(p.bio||'No bio yet.')}</div></div>
+      <div class="pf-section"><h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="5"/><path d="M15.5 12.5L17 22l-5-3-5 3 1.5-9.5"/></svg>Achievements</h3><div class="pf-timeline">${ach}</div></div>
+      ${exp?`<div class="pf-section"><h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>Experience</h3><div class="pf-timeline">${exp}</div></div>`:''}
+    </div>
+    <div>
+      <div class="pf-section"><h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Career Stats</h3>
+        <div class="pf-stats">
+          <div class="pf-stat"><div class="pf-stat-v">${p.pb||'—'}</div><div class="pf-stat-l">Personal Best</div></div>
+          <div class="pf-stat"><div class="pf-stat-v">${p.rank?('#'+p.rank):'—'}</div><div class="pf-stat-l">World Rank</div></div>
+          <div class="pf-stat"><div class="pf-stat-v">${p.events||'—'}</div><div class="pf-stat-l">Events</div></div>
+          <div class="pf-stat"><div class="pf-stat-v">${p.years||'—'}</div><div class="pf-stat-l">Years Active</div></div>
+        </div>
+      </div>
+      <div class="pf-section"><h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7"/><path d="M8 7h9v9"/></svg>Links</h3><div class="pf-links">${links}</div></div>
+      ${certs?`<div class="pf-section"><h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>Certifications</h3><div class="pf-chips">${certs}</div></div>`:''}
+    </div>
+  </div>`;
+}
+
+(async function(){
+  const handle=new URLSearchParams(location.search).get('h');
+  let list=[];
+  try { list = await fetch(API+'/profiles').then(r=>r.json()); } catch(e){}
+  if(!Array.isArray(list)||!list.length){ emptyState(); return; }
+  let p = handle ? list.find(x=>x.handle===handle && x.active!==false) : list.find(x=>x.active!==false);
+  if(!p){ emptyState(); return; }
+  render(p);
+  if(window.ArcheryObserveReveals) window.ArcheryObserveReveals();
+})();
+</script>
+</body></html>

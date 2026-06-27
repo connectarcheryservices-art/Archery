@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel — Archery.Services</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --gold:#C9A227;--gold-light:#F0D060;--gold-dark:#8B6F1A;
+  --ink:#0A0A0F;--ink-2:#13131C;--ink-3:#1E1E2E;
+  --surface:#16161F;--muted:#4A4A60;--muted-2:#6A6A80;
+  --text:#E8E8F0;--text-2:#A8A8C0;
+  --green:#22C55E;--red:#EF4444;--blue:#3B82F6;
+  --purple:#A855F7;--orange:#F97316;
+  --sidebar:240px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;font-family:'Inter',sans-serif;background:var(--ink);color:var(--text);overflow-x:hidden;}
+a{text-decoration:none;color:inherit;}
+button,input,select,textarea{font-family:'Inter',sans-serif;}
+
+/* LAYOUT */
+.admin-layout{display:grid;grid-template-columns:var(--sidebar) 1fr;grid-template-rows:56px 1fr;min-height:100vh;}
+
+/* TOP BAR */
+.admin-topbar{grid-column:1/-1;background:var(--ink-2);border-bottom:.5px solid rgba(255,255,255,.07);display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:100;}
+.topbar-left{display:flex;align-items:center;gap:16px;}
+.admin-logo{font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:700;color:var(--text);}
+.admin-logo span{color:var(--gold);}
+.admin-badge{font-size:10px;padding:3px 8px;background:rgba(239,68,68,.12);color:var(--red);border:1px solid rgba(239,68,68,.2);border-radius:5px;letter-spacing:.08em;font-weight:600;}
+.topbar-right{display:flex;align-items:center;gap:12px;}
+.topbar-site-link{font-size:12px;color:var(--muted-2);display:flex;align-items:center;gap:6px;padding:6px 12px;background:rgba(255,255,255,.04);border:.5px solid rgba(255,255,255,.08);border-radius:7px;transition:all .2s;}
+.topbar-site-link:hover{color:var(--gold);border-color:rgba(201,162,39,.2);}
+.topbar-site-link svg{width:13px;height:13px;}
+.topbar-avatar{width:32px;height:32px;background:linear-gradient(135deg,var(--gold-dark),var(--gold));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--ink);}
+.status-indicator{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--green);}
+.status-dot{width:7px;height:7px;background:var(--green);border-radius:50%;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+
+/* SIDEBAR */
+.admin-sidebar{background:var(--ink-2);border-right:.5px solid rgba(255,255,255,.07);padding:20px 12px;display:flex;flex-direction:column;gap:2px;overflow-y:auto;position:sticky;top:56px;height:calc(100vh - 56px);}
+.sidebar-section-label{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600;padding:12px 12px 6px;margin-top:8px;}
+.sidebar-section-label:first-child{margin-top:0;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;font-size:13px;color:var(--text-2);cursor:pointer;transition:all .2s;border:none;background:transparent;width:100%;text-align:left;}
+.nav-item svg{width:16px;height:16px;flex-shrink:0;}
+.nav-item:hover{background:rgba(255,255,255,.05);color:var(--text);}
+.nav-item.active{background:rgba(201,162,39,.1);color:var(--gold);font-weight:500;}
+.nav-item.active svg{color:var(--gold);}
+.nav-item .badge-count{margin-left:auto;font-size:10px;background:var(--gold);color:var(--ink);padding:2px 7px;border-radius:10px;font-weight:700;}
+.nav-item .badge-red{background:var(--red);color:#fff;}
+
+/* MAIN */
+.admin-main{padding:28px;overflow-y:auto;background:var(--ink);}
+
+/* PANELS */
+.panel{display:none;}
+.panel.active{display:block;}
+
+/* CARDS */
+.card{background:var(--ink-2);border:.5px solid rgba(255,255,255,.07);border-radius:16px;padding:24px;}
+.card-title{font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;color:var(--text);margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;}
+.card-title .card-action{font-size:12px;color:var(--gold);cursor:pointer;font-weight:400;}
+
+/* STATS GRID */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:24px;}
+.stat-card{background:var(--ink-2);border:.5px solid rgba(255,255,255,.07);border-radius:14px;padding:20px;position:relative;overflow:hidden;}
+.stat-card::before{content:'';position:absolute;top:0;right:0;width:80px;height:80px;background:radial-gradient(circle,var(--c,.1),transparent 70%);opacity:.6;}
+.stat-label{font-size:11px;color:var(--muted-2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;}
+.stat-value{font-family:'Space Grotesk',sans-serif;font-size:28px;font-weight:700;color:var(--text);line-height:1;}
+.stat-value span{color:var(--gold);}
+.stat-change{font-size:11px;margin-top:6px;display:flex;align-items:center;gap:4px;}
+.stat-change.up{color:var(--green);}
+.stat-change.down{color:var(--red);}
+
+/* TABLES */
+.data-table{width:100%;border-collapse:collapse;}
+.data-table th{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted-2);padding:10px 14px;text-align:left;border-bottom:.5px solid rgba(255,255,255,.07);font-weight:600;}
+.data-table td{font-size:13px;color:var(--text-2);padding:12px 14px;border-bottom:.5px solid rgba(255,255,255,.04);}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table tr:hover td{background:rgba(255,255,255,.02);}
+.td-name{color:var(--text);font-weight:500;}
+.td-badge{font-size:10px;padding:3px 9px;border-radius:5px;font-weight:600;letter-spacing:.05em;white-space:nowrap;}
+.badge-active{background:rgba(34,197,94,.1);color:var(--green);border:1px solid rgba(34,197,94,.15);}
+.badge-inactive{background:rgba(255,255,255,.05);color:var(--muted-2);border:.5px solid rgba(255,255,255,.08);}
+.badge-open{background:rgba(34,197,94,.1);color:var(--green);}
+.badge-soon{background:rgba(201,162,39,.1);color:var(--gold);}
+.badge-done{background:rgba(255,255,255,.05);color:var(--muted-2);}
+.td-actions{display:flex;gap:6px;}
+.btn-edit{font-size:11px;padding:5px 12px;border-radius:6px;border:1px solid rgba(255,255,255,.1);background:transparent;color:var(--text-2);cursor:pointer;transition:all .2s;}
+.btn-edit:hover{border-color:rgba(201,162,39,.3);color:var(--gold);}
+.btn-delete{font-size:11px;padding:5px 12px;border-radius:6px;border:1px solid rgba(239,68,68,.15);background:rgba(239,68,68,.06);color:var(--red);cursor:pointer;transition:all .2s;}
+.btn-delete:hover{background:rgba(239,68,68,.15);}
+.btn-toggle{font-size:11px;padding:5px 12px;border-radius:6px;border:1px solid rgba(34,197,94,.15);background:rgba(34,197,94,.06);color:var(--green);cursor:pointer;transition:all .2s;}
+.btn-toggle.off{border-color:rgba(255,255,255,.1);background:transparent;color:var(--muted-2);}
+
+/* FORMS */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.form-group{display:flex;flex-direction:column;gap:6px;}
+.form-group.full{grid-column:1/-1;}
+.form-label{font-size:11px;font-weight:600;color:var(--text-2);letter-spacing:.04em;}
+.form-input,.form-select,.form-textarea{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:9px 12px;font-size:13px;color:var(--text);outline:none;transition:border-color .2s;width:100%;}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:rgba(201,162,39,.4);}
+.form-textarea{resize:vertical;min-height:80px;}
+.form-select{cursor:pointer;}
+.form-actions{display:flex;gap:10px;margin-top:20px;}
+.btn-save{padding:9px 22px;background:var(--gold);border:none;color:var(--ink);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;}
+.btn-save:hover{background:var(--gold-light);}
+.btn-cancel{padding:9px 22px;background:transparent;border:1px solid rgba(255,255,255,.1);color:var(--text-2);border-radius:8px;font-size:13px;cursor:pointer;transition:all .2s;}
+.btn-cancel:hover{border-color:rgba(255,255,255,.2);}
+.btn-add-new{display:inline-flex;align-items:center;gap:7px;padding:8px 18px;background:rgba(201,162,39,.1);border:1px solid rgba(201,162,39,.2);color:var(--gold);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;margin-bottom:20px;}
+.btn-add-new:hover{background:rgba(201,162,39,.2);}
+.btn-add-new svg{width:14px;height:14px;}
+
+/* TOGGLE SWITCH */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:.5px solid rgba(255,255,255,.05);}
+.toggle-row:last-child{border-bottom:none;}
+.toggle-info{}
+.toggle-title{font-size:13px;font-weight:500;color:var(--text);margin-bottom:2px;}
+.toggle-desc{font-size:11px;color:var(--muted-2);}
+.toggle-switch{position:relative;width:44px;height:24px;flex-shrink:0;}
+.toggle-switch input{opacity:0;width:0;height:0;position:absolute;}
+.toggle-slider{position:absolute;inset:0;background:rgba(255,255,255,.1);border-radius:12px;cursor:pointer;transition:background .3s;}
+.toggle-slider::before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:transform .3s;}
+.toggle-switch input:checked + .toggle-slider{background:var(--gold);}
+.toggle-switch input:checked + .toggle-slider::before{transform:translateX(20px);}
+
+/* ANNOUNCEMENT EDITOR */
+.announcement-box{background:rgba(201,162,39,.06);border:1px solid rgba(201,162,39,.15);border-radius:10px;padding:16px;margin-bottom:16px;}
+.announcement-preview{background:var(--gold);color:var(--ink);text-align:center;padding:8px;border-radius:6px;font-size:13px;font-weight:600;margin-top:10px;}
+
+/* CHARTS (pure CSS) */
+.mini-chart{display:flex;align-items:flex-end;gap:4px;height:48px;margin-top:12px;}
+.bar{flex:1;background:rgba(201,162,39,.2);border-radius:3px 3px 0 0;transition:height .6s cubic-bezier(.23,1,.32,1),background .2s;}
+.bar:hover{background:rgba(201,162,39,.5);}
+
+/* PAGE VIEWS CHART */
+.chart-wrap{margin-top:16px;}
+.chart-bars{display:flex;align-items:flex-end;gap:3px;height:80px;}
+.chart-bar{flex:1;background:rgba(59,130,246,.2);border-radius:3px 3px 0 0;transition:background .2s;}
+.chart-bar:hover{background:rgba(59,130,246,.5);}
+.chart-labels{display:flex;gap:3px;margin-top:4px;}
+.chart-label{flex:1;font-size:9px;color:var(--muted-2);text-align:center;}
+
+/* ACTIVITY FEED */
+.activity-list{display:flex;flex-direction:column;gap:0;}
+.activity-item{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:.5px solid rgba(255,255,255,.04);}
+.activity-item:last-child{border-bottom:none;}
+.activity-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px;}
+.activity-text{font-size:12px;color:var(--text-2);line-height:1.6;}
+.activity-text strong{color:var(--text);}
+.activity-time{font-size:10px;color:var(--muted);margin-left:auto;flex-shrink:0;padding-top:2px;}
+
+/* INLINE EDIT */
+.inline-form{background:rgba(255,255,255,.02);border:.5px solid rgba(201,162,39,.2);border-radius:12px;padding:20px;margin-bottom:16px;display:none;}
+.inline-form.open{display:block;}
+
+/* BREADCRUMB */
+.breadcrumb{font-size:12px;color:var(--muted-2);margin-bottom:20px;display:flex;align-items:center;gap:6px;}
+.breadcrumb span{color:var(--text-2);}
+.breadcrumb svg{width:12px;height:12px;}
+
+/* QUICK STATS ROW */
+.quick-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+
+/* PROGRESS BARS */
+.progress-item{margin-bottom:12px;}
+.progress-label-row{display:flex;justify-content:space-between;font-size:12px;color:var(--text-2);margin-bottom:5px;}
+.progress-track{height:5px;background:rgba(255,255,255,.07);border-radius:3px;overflow:hidden;}
+.progress-fill{height:100%;border-radius:3px;transition:width 1s cubic-bezier(.23,1,.32,1);}
+
+/* NOTIFICATION */
+.toast-admin{position:fixed;bottom:24px;right:24px;background:var(--ink-2);border:.5px solid rgba(34,197,94,.3);border-radius:10px;padding:14px 18px;display:flex;align-items:center;gap:12px;z-index:999;transform:translateY(60px);opacity:0;transition:all .35s cubic-bezier(.23,1,.32,1);max-width:300px;}
+.toast-admin.show{transform:translateY(0);opacity:1;}
+.toast-admin-icon{width:28px;height:28px;background:rgba(34,197,94,.1);border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.toast-admin-icon svg{width:14px;height:14px;color:var(--green);}
+.toast-admin-text{font-size:13px;color:var(--text);font-weight:500;}
+
+@media(max-width:900px){.admin-layout{grid-template-columns:1fr;}.admin-sidebar{display:none;}.form-grid{grid-template-columns:1fr;}.stats-grid{grid-template-columns:1fr 1fr;}}
+</style>
+</head>
+<body>
+
+<!-- TOAST -->
+<div class="toast-admin" id="admin-toast">
+  <div class="toast-admin-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+  <div class="toast-admin-text" id="admin-toast-text">Saved successfully</div>
+</div>
+
+<div class="admin-layout">
+
+  <!-- TOP BAR -->
+  <header class="admin-topbar">
+    <div class="topbar-left">
+      <div class="admin-logo">Archery<span>.</span>Services</div>
+      <div class="admin-badge">ADMIN</div>
+    </div>
+    <div class="topbar-right">
+      <div class="status-indicator"><div class="status-dot"></div>Server running on localhost:3000</div>
+      <a href="/" target="_blank" class="topbar-site-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        View Site
+      </a>
+      <div class="topbar-avatar">A</div>
+    </div>
+  </header>
+
+  <!-- SIDEBAR -->
+  <nav class="admin-sidebar">
+    <div class="sidebar-section-label">Overview</div>
+    <button class="nav-item active" onclick="showPanel('dashboard',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Dashboard
+    </button>
+    <button class="nav-item" onclick="showPanel('analytics',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Analytics
+    </button>
+
+    <div class="sidebar-section-label">Content</div>
+    <button class="nav-item" onclick="showPanel('products',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+      Shop Products
+      <span class="badge-count">6</span>
+    </button>
+    <button class="nav-item" onclick="showPanel('tournaments',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 21V7a2 2 0 012-2h4a2 2 0 012 2v14"/><path d="M5 21h14"/></svg>
+      Tournaments
+      <span class="badge-count">3</span>
+    </button>
+    <button class="nav-item" onclick="showPanel('athletes',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      Athletes
+    </button>
+    <button class="nav-item" onclick="showPanel('jobs',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>
+      Jobs Board
+      <span class="badge-count">3</span>
+    </button>
+    <button class="nav-item" onclick="showPanel('knowledge',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+      Knowledge Hub
+    </button>
+
+    <div class="sidebar-section-label">Platform</div>
+    <button class="nav-item" onclick="showPanel('registrations',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Registrations
+      <span class="badge-count badge-red">12</span>
+    </button>
+    <button class="nav-item" onclick="showPanel('announcements',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 17H2a3 3 0 000 6h20v-6zM22 1H2a3 3 0 000 6h20V1zM22 9H2a3 3 0 000 6h20V9z"/></svg>
+      Announcements
+    </button>
+
+    <div class="sidebar-section-label">System</div>
+    <button class="nav-item" onclick="showPanel('settings',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      Site Settings
+    </button>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <main class="admin-main">
+
+    <!-- ── DASHBOARD ── -->
+    <div class="panel active" id="panel-dashboard">
+      <div class="breadcrumb">Admin <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg> <span>Dashboard</span></div>
+      <div class="stats-grid" id="stats-grid">
+        <div class="stat-card" style="--c:rgba(201,162,39,.15);">
+          <div class="stat-label">Registered Athletes</div>
+          <div class="stat-value" id="s-athletes">—</div>
+          <div class="stat-change up">↑ +842 this month</div>
+          <div class="mini-chart"><div class="bar" style="height:30%"></div><div class="bar" style="height:45%"></div><div class="bar" style="height:38%"></div><div class="bar" style="height:60%"></div><div class="bar" style="height:52%"></div><div class="bar" style="height:75%"></div><div class="bar" style="height:100%"></div></div>
+        </div>
+        <div class="stat-card" style="--c:rgba(59,130,246,.15);">
+          <div class="stat-label">Active Clubs</div>
+          <div class="stat-value" id="s-clubs">—</div>
+          <div class="stat-change up">↑ +38 this month</div>
+          <div class="mini-chart"><div class="bar" style="height:40%;background:rgba(59,130,246,.25);"></div><div class="bar" style="height:55%;background:rgba(59,130,246,.25);"></div><div class="bar" style="height:48%;background:rgba(59,130,246,.25);"></div><div class="bar" style="height:70%;background:rgba(59,130,246,.25);"></div><div class="bar" style="height:62%;background:rgba(59,130,246,.25);"></div><div class="bar" style="height:85%;background:rgba(59,130,246,.25);"></div><div class="bar" style="height:100%;background:rgba(59,130,246,.4);"></div></div>
+        </div>
+        <div class="stat-card" style="--c:rgba(34,197,94,.15);">
+          <div class="stat-label">Tournaments This Year</div>
+          <div class="stat-value" id="s-tournaments">—</div>
+          <div class="stat-change up">↑ 12 upcoming</div>
+        </div>
+        <div class="stat-card" style="--c:rgba(239,68,68,.15);">
+          <div class="stat-label">Total Revenue</div>
+          <div class="stat-value" id="s-revenue">—</div>
+          <div class="stat-change up">↑ +18% vs last month</div>
+        </div>
+        <div class="stat-card" style="--c:rgba(168,85,247,.15);">
+          <div class="stat-label">Page Views (30d)</div>
+          <div class="stat-value" id="s-views">—</div>
+          <div class="stat-change up">↑ +24% growth</div>
+        </div>
+        <div class="stat-card" style="--c:rgba(249,115,22,.15);">
+          <div class="stat-label">New Sign-ups (30d)</div>
+          <div class="stat-value" id="s-signups">—</div>
+          <div class="stat-change up">↑ Best month yet</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+        <div class="card">
+          <div class="card-title">Recent Activity <span class="card-action">View all</span></div>
+          <div class="activity-list">
+            <div class="activity-item"><div class="activity-dot" style="background:var(--green);"></div><div class="activity-text"><strong>Rohit Krishnan</strong> registered for Assam Open 2025</div><div class="activity-time">2m ago</div></div>
+            <div class="activity-item"><div class="activity-dot" style="background:var(--gold);"></div><div class="activity-text"><strong>Yuggenite Archery</strong> added 3 new products to shop</div><div class="activity-time">18m ago</div></div>
+            <div class="activity-item"><div class="activity-dot" style="background:var(--blue);"></div><div class="activity-text"><strong>Karnataka Archery Assoc.</strong> applied for federation access</div><div class="activity-time">1h ago</div></div>
+            <div class="activity-item"><div class="activity-dot" style="background:var(--purple);"></div><div class="activity-text"><strong>42 new athletes</strong> signed up today</div><div class="activity-time">2h ago</div></div>
+            <div class="activity-item"><div class="activity-dot" style="background:var(--red);"></div><div class="activity-text"><strong>NRT Round 3</strong> registration is 82% full — 88 slots left</div><div class="activity-time">3h ago</div></div>
+            <div class="activity-item"><div class="activity-dot" style="background:var(--green);"></div><div class="activity-text"><strong>₹2,40,000</strong> shop order processed — Ten Ring Archery</div><div class="activity-time">4h ago</div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Tournament Fill Rates</div>
+          <div class="progress-item"><div class="progress-label-row"><span>Assam Open 2025</span><span>78%</span></div><div class="progress-track"><div class="progress-fill" style="width:78%;background:linear-gradient(90deg,var(--gold-dark),var(--gold));"></div></div></div>
+          <div class="progress-item"><div class="progress-label-row"><span>National Ranking Round 3</span><span>82%</span></div><div class="progress-track"><div class="progress-fill" style="width:82%;background:linear-gradient(90deg,var(--gold-dark),var(--gold));"></div></div></div>
+          <div class="progress-item"><div class="progress-label-row"><span>India International Grand Prix</span><span>12%</span></div><div class="progress-track"><div class="progress-fill" style="width:12%;background:linear-gradient(90deg,#185FA5,var(--blue));"></div></div></div>
+          <div style="margin-top:20px;" class="card-title">Quick Actions</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;">
+            <button class="btn-add-new" style="margin-bottom:0;" onclick="showPanel('products',document.querySelector('[onclick*=products]'))"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Product</button>
+            <button class="btn-add-new" style="margin-bottom:0;background:rgba(59,130,246,.08);border-color:rgba(59,130,246,.2);color:var(--blue);" onclick="showPanel('tournaments',document.querySelector('[onclick*=tournaments]'))"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Tournament</button>
+            <button class="btn-add-new" style="margin-bottom:0;background:rgba(168,85,247,.08);border-color:rgba(168,85,247,.2);color:var(--purple);" onclick="showPanel('announcements',document.querySelector('[onclick*=announcements]'))"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New Announcement</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PRODUCTS ── -->
+    <div class="panel" id="panel-products">
+      <div class="breadcrumb">Admin <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg> <span>Shop Products</span></div>
+      <button class="btn-add-new" onclick="toggleInlineForm('product-form')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add New Product</button>
+
+      <div class="inline-form" id="product-form">
+        <div class="card-title" style="margin-bottom:16px;">New Product</div>
+        <div class="form-grid">
+          <div class="form-group"><label class="form-label">Product Name</label><input class="form-input" id="p-name" placeholder="e.g. Pro Recurve Bow 68&quot;"></div>
+          <div class="form-group"><label class="form-label">Brand</label><select class="form-select" id="p-brand"><option>Yuggenite</option><option>Superspeed</option><option>Ten Ring</option><option>Gosports</option><option>Archery Card</option><option>Mychoice</option><option>Indiamart</option><option>Sells Zone</option></select></div>
+          <div class="form-group"><label class="form-label">Category</label><select class="form-select" id="p-cat"><option>Recurve Bows</option><option>Compound Bows</option><option>Arrows</option><option>Targets</option><option>Accessories</option><option>Protective Gear</option></select></div>
+          <div class="form-group"><label class="form-label">Price (₹)</label><input class="form-input" id="p-price" type="number" placeholder="24500"></div>
+          <div class="form-group"><label class="form-label">Was Price (₹) — leave blank if no discount</label><input class="form-input" id="p-was" type="number" placeholder="29900"></div>
+          <div class="form-group"><label class="form-label">Stock Quantity</label><input class="form-input" id="p-stock" type="number" placeholder="10"></div>
+        </div>
+        <div class="form-actions">
+          <button class="btn-save" onclick="saveProduct()">Save Product</button>
+          <button class="btn-cancel" onclick="toggleInlineForm('product-form')">Cancel</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">All Products</div>
+        <table class="data-table" id="products-table">
+          <thead><tr><th>Product</th><th>Brand</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="products-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── TOURNAMENTS ── -->
+    <div class="panel" id="panel-tournaments">
+      <div class="breadcrumb">Admin <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg> <span>Tournaments</span></div>
+      <button class="btn-add-new" onclick="toggleInlineForm('tournament-form')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add New Tournament</button>
+
+      <div class="inline-form" id="tournament-form">
+        <div class="card-title" style="margin-bottom:16px;">New Tournament</div>
+        <div class="form-grid">
+          <div class="form-group full"><label class="form-label">Tournament Name</label><input class="form-input" id="t-name" placeholder="e.g. Assam Open Archery Championship 2025"></div>
+          <div class="form-group"><label class="form-label">Date</label><input class="form-input" id="t-date" type="date"></div>
+          <div class="form-group"><label class="form-label">Location</label><input class="form-input" id="t-location" placeholder="City, State"></div>
+          <div class="form-group"><label class="form-label">Prize Money (₹)</label><input class="form-input" id="t-prize" type="number" placeholder="240000"></div>
+          <div class="form-group"><label class="form-label">Total Slots</label><input class="form-input" id="t-slots" type="number" placeholder="320"></div>
+          <div class="form-group"><label class="form-label">Status</label><select class="form-select" id="t-status"><option value="open">Registration Open</option><option value="soon">Coming Soon</option><option value="live">Live Now</option><option value="done">Completed</option></select></div>
+        </div>
+        <div class="form-actions">
+          <button class="btn-save" onclick="saveTournament()">Save Tournament</button>
+          <button class="btn-cancel" onclick="toggleInlineForm('tournament-form')">Cancel</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">All Tournaments</div>
+        <table class="data-table">
+          <thead><tr><th>Tournament</th><th>Date</th><th>Location</th><th>Prize</th><th>Slots</th><th>Registered</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="tournaments-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── ATHLETES ── -->
+    <div class="panel" id="panel-athletes">
+      <div class="breadcrumb">Admin <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg> <span>Athletes</span></div>
+      <button class="btn-add-new" onclick="toggleInlineForm('athlete-form')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Athlete</button>
+      <div class="inline-form" id="athlete-form">
+        <div class="form-grid">
+          <div class="form-group"><label class="form-label">Full Name</label><input class="form-input" id="a-name" placeholder="Full Name"></div>
+          <div class="form-group"><label class="form-label">State</label><input class="form-input" id="a-state" placeholder="State"></div>
+          <div class="form-group"><label class="form-label">Discipline</label><select class="form-select" id="a-disc"><option>Recurve Open</option><option>Compound Open</option><option>Barebow</option><option>Para Recurve</option></select></div>
+          <div class="form-group"><label class="form-label">National Rank</label><input class="form-input" id="a-rank" type="number" placeholder="1"></div>
+          <div class="form-group"><label class="form-label">Personal Best Score</label><input class="form-input" id="a-pb" type="number" placeholder="687"></div>
+        </div>
+        <div class="form-actions">
+          <button class="btn-save" onclick="saveAthlete()">Save Athlete</button>
+          <button class="btn-cancel" onclick="toggleInlineForm('athlete-form')">Cancel</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Registered Athletes</div>
+        <table class="data-table">
+          <thead><tr><th>Rank</th><th>Name</th><th>State</th><th>Discipline</th><th>PB Score</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="athletes-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── JOBS ── -->
+    <div class="panel" id="panel-jobs">
+      <div class="breadcrumb">Admin <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg> <span>Jobs Board</span></div>
+      <button class="btn-add-new" onclick="toggleInlineForm('job-form')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Post New Job</button>
+      <div class="inline-form" id="job-form">
+        <div class="form-grid">
+          <div class="form-group"><label class="form-label">Job Title</label><input class="form-input" id="j-title" placeholder="e.g. Head Recurve Coach"></div>
+          <div class="form-group"><label class="form-label">Organisation</label><input class="form-input" id="j-org" placeholder="e.g. SAI Guwahati"></div>
+          <div class="form-group"><label class="form-label">Location</label><input class="form-input" id="j-loc" placeholder="City, State"></div>
+          <div class="form-group"><label class="form-label">Type</label><select class="form-select" id="j-type"><option>Full Time</option><option>Part Time</option><option>Contract</option><option>Volunteer</option></select></div>
+          <div class="form-group"><label class="form-label">Salary</label><input class="form-input" id="j-salary" placeholder="₹60,000/month"></div>
+        </div>
+        <div class="form-actions">
+          <button class="btn-save" onclick="saveJob()">Post Job</button>
+          <button class="btn-cancel" onclick="toggleInlineForm('job-form')">Cancel</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Active Job Listings</div>
+        <table class="data-table">
+          <thead><tr><th>Title</th><th>Organisation</th><th>Location</th><th>Type</th><th>Salary</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="jobs-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── KNOWLEDGE ── -->
+    <div class="panel" id="panel-knowledge">
+      <div class="breadcrumb">Admin <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg> <span>Knowledge Hub</span></div>
+      <div class="card">
+        <div class="card-title">Article Management</div>
+        <p style="color:var(--text-2);font-size:13px;margin-bottom:16px;">Manage guides, tutorials, and articles published in the Knowledge Hub.</p>
+        <button class="btn-add-new"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Write New Article</button>
+        <table class="data-table">
+          <thead><tr><th>Title</th><th>Category</th><th>Level</th><th>Read Time</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody>
+            <tr><td class="td-name">The Complete 8-Step Shot Cycle</td><td>Technique</td><td>Beginner–Intermediate</td><td>8 min</td><td><span class="td-badge badge-active">Published</span></td><td class="td-actions"><button class="btn-edit">Edit</button><button class="btn-delete">Unpublish</button></td></tr>
+            <tr><td class="td-name">How to Choose Your First Recurve Bow</td><td>Equipment</td><td>Beginner</td><td>12 min</td><td><span class="td-badge badge-active">Published</span></td><td class="td-actions"><button class="btn-edit">Edit</button><button class="btn-delete">Unpublish</button></td></tr>
+            <tr><td class="td-name">WA 70m Outdoor Scoring System</td><td>Rules</td><td>All Levels</td><td>6 min</td><td><span class="td-badge badge-active">Published</span></td><td class="td-actions"><button class="btn-edit">Edit</button><button class="btn-delete">Unpublish</button></td></tr>
+            <tr><td class="td-name">8-Week Training Block for Championships</td><td>Training</td><td>Advanced</td><td>14 min</td><td><span class="td-badge badge-active">Published</span></td><td class="td-actions"><button class="btn-edit">Edit</button><button class="btn-delete">Unpublish</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── REGISTRATIONS ── -->
+    <div class="panel" id="panel-registrations">
+      <div class="breadcrumb">Admin <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg> <span>Pending Registrations</span></div>
+      <div class="card">
+        <div class="card-title">Pending Tournament Registrations <span class="td-badge badge-active" style="font-size:11px;">12 Pending</span></div>
+        <table class="data-table">
+          <thead><tr><th>Athlete</th><th>Tournament</th><th>Category</th><th>State</th><th>Applied</th><th>Actions</th></tr></thead>
+          <tbody>
+            <tr><td class="td-name">Ananya Roy</td><td>Assam Open 2025</td><td>Recurve W Open</td><td>West Bengal</td><td>Today, 9:14 AM</td><td class="td-actions"><button class="btn-toggle" onclick="toast('Registration approved')">Approve</button><button class="btn-delete">Reject</button></td></tr>
+            <tr><td class="td-name">Siddharth Nair</td><td>Assam Open 2025</td><td>Recurve M Open</td><td>Kerala</td><td>Today, 8:52 AM</td><td class="td-actions"><button class="btn-toggle" onclick="toast('Registration approved')">Approve</button><button class="btn-delete">Reject</button></td></tr>
+            <tr><td class="td-name">Meena Sharma</td><td>NRT Round 3</td><td>Recurve W U-21</td><td>Rajasthan</td><td>Yesterday</td><td class="td-actions"><button class="btn-toggle" onclick="toast('Registration approved')">Approve</button><button class="btn-delete">Reject</button></td></tr>
+            <tr><td class="td-name">Rahul Dev</td><td>NRT Round 3</td><td>Compound M Open</td><td>Punjab</td><td>Yesterday</td><td class="td-actions"><button class="btn-toggle" onclick="toast('Registration approved')">Approve</button><button class="btn-delete">Reject</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── ANNOUNCEMENTS ── -->
+    <div class="panel" id="panel-announcements">
+      <div class="breadcrumb">Admin <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg> <span>Announcements</span></div>
+      <div class="card">
+        <div class="card-title">Site-wide Announcement Banner</div>
+        <p style="font-size:13px;color:var(--text-2);margin-bottom:20px;">This banner appears at the top of every page on the site in gold. Keep it short and clear.</p>
+        <div class="announcement-box">
+          <div class="form-group" style="margin-bottom:12px;"><label class="form-label">Announcement Text</label><input class="form-input" id="ann-text" placeholder="e.g. National Ranking Round 3 registrations now open — Closes Jul 25"></div>
+          <label class="toggle-row" style="border:none;padding:0;margin-bottom:12px;">
+            <div class="toggle-info"><div class="toggle-title">Show announcement banner</div></div>
+            <label class="toggle-switch"><input type="checkbox" id="ann-active" onchange="saveAnnouncement()"><div class="toggle-slider"></div></label>
+          </label>
+          <div class="announcement-preview" id="ann-preview">Preview will appear here</div>
+        </div>
+        <div class="form-actions">
+          <button class="btn-save" onclick="saveAnnouncement()">Save & Publish Banner</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SETTINGS ── -->
+    <div class="panel" id="panel-settings">
+      <div class="breadcrumb">Admin <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg> <span>Site Settings</span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+        <div class="card">
+          <div class="card-title">General Settings</div>
+          <div class="form-group" style="margin-bottom:14px;"><label class="form-label">Site Name</label><input class="form-input" id="set-name" value="Archery.Services"></div>
+          <div class="form-group" style="margin-bottom:14px;"><label class="form-label">Tagline</label><input class="form-input" id="set-tagline" value="Global Virtual Archery Infrastructure"></div>
+          <div class="form-group" style="margin-bottom:14px;"><label class="form-label">Hero Title</label><input class="form-input" id="set-hero" value="The World's Complete Archery Platform"></div>
+          <div class="form-group" style="margin-bottom:20px;"><label class="form-label">Hero Subtitle</label><input class="form-input" id="set-sub" value="From local club to international federation"></div>
+          <button class="btn-save" onclick="saveSettings()">Save Settings</button>
+        </div>
+        <div class="card">
+          <div class="card-title">Feature Toggles</div>
+          <label class="toggle-row">
+            <div class="toggle-info"><div class="toggle-title">Maintenance Mode</div><div class="toggle-desc">Replaces site with maintenance page</div></div>
+            <label class="toggle-switch"><input type="checkbox" id="tog-maintenance"><div class="toggle-slider"></div></label>
+          </label>
+          <label class="toggle-row">
+            <div class="toggle-info"><div class="toggle-title">Shop Module</div><div class="toggle-desc">Enable/disable the equipment store</div></div>
+            <label class="toggle-switch"><input type="checkbox" id="tog-shop" checked><div class="toggle-slider"></div></label>
+          </label>
+          <label class="toggle-row">
+            <div class="toggle-info"><div class="toggle-title">Tournament Registration</div><div class="toggle-desc">Allow new tournament registrations</div></div>
+            <label class="toggle-switch"><input type="checkbox" id="tog-reg" checked><div class="toggle-slider"></div></label>
+          </label>
+          <label class="toggle-row">
+            <div class="toggle-info"><div class="toggle-title">Community Forum</div><div class="toggle-desc">Enable the community discussion section</div></div>
+            <label class="toggle-switch"><input type="checkbox" id="tog-community" checked><div class="toggle-slider"></div></label>
+          </label>
+          <label class="toggle-row">
+            <div class="toggle-info"><div class="toggle-title">Tournaments Module</div><div class="toggle-desc">Show tournament listings and live scores</div></div>
+            <label class="toggle-switch"><input type="checkbox" id="tog-tournaments" checked><div class="toggle-slider"></div></label>
+          </label>
+          <div class="form-actions" style="margin-top:16px;">
+            <button class="btn-save" onclick="saveToggles()">Save Toggles</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ANALYTICS ── -->
+    <div class="panel" id="panel-analytics">
+      <div class="breadcrumb">Admin <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg> <span>Analytics</span></div>
+      <div class="stats-grid">
+        <div class="stat-card" style="--c:rgba(59,130,246,.15);"><div class="stat-label">Page Views (30d)</div><div class="stat-value">284<span>K</span></div><div class="stat-change up">↑ +24% vs last month</div></div>
+        <div class="stat-card" style="--c:rgba(34,197,94,.15);"><div class="stat-label">Unique Visitors</div><div class="stat-value">92<span>K</span></div><div class="stat-change up">↑ +18%</div></div>
+        <div class="stat-card" style="--c:rgba(201,162,39,.15);"><div class="stat-label">Avg Session (min)</div><div class="stat-value">4<span>.2</span></div><div class="stat-change up">↑ Good engagement</div></div>
+        <div class="stat-card" style="--c:rgba(239,68,68,.15);"><div class="stat-label">Bounce Rate</div><div class="stat-value">28<span>%</span></div><div class="stat-change up">↓ Improving</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Daily Page Views — Last 14 Days</div>
+        <div class="chart-wrap">
+          <div class="chart-bars" id="analytics-chart"></div>
+          <div class="chart-labels" id="analytics-labels"></div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;">
+        <div class="card"><div class="card-title">Top Pages</div>
+          <div class="progress-item"><div class="progress-label-row"><span>Homepage (index.html)</span><span>34%</span></div><div class="progress-track"><div class="progress-fill" style="width:34%;background:var(--gold);"></div></div></div>
+          <div class="progress-item"><div class="progress-label-row"><span>Shop (shop.html)</span><span>28%</span></div><div class="progress-track"><div class="progress-fill" style="width:28%;background:var(--blue);"></div></div></div>
+          <div class="progress-item"><div class="progress-label-row"><span>Tournaments</span><span>18%</span></div><div class="progress-track"><div class="progress-fill" style="width:18%;background:var(--purple);"></div></div></div>
+          <div class="progress-item"><div class="progress-label-row"><span>Athletes</span><span>12%</span></div><div class="progress-track"><div class="progress-fill" style="width:12%;background:var(--green);"></div></div></div>
+          <div class="progress-item"><div class="progress-label-row"><span>Knowledge</span><span>8%</span></div><div class="progress-track"><div class="progress-fill" style="width:8%;background:var(--orange);"></div></div></div>
+        </div>
+        <div class="card"><div class="card-title">Traffic Sources</div>
+          <div class="progress-item"><div class="progress-label-row"><span>Direct</span><span>42%</span></div><div class="progress-track"><div class="progress-fill" style="width:42%;background:var(--gold);"></div></div></div>
+          <div class="progress-item"><div class="progress-label-row"><span>Google Search</span><span>31%</span></div><div class="progress-track"><div class="progress-fill" style="width:31%;background:var(--blue);"></div></div></div>
+          <div class="progress-item"><div class="progress-label-row"><span>Social Media</span><span>18%</span></div><div class="progress-track"><div class="progress-fill" style="width:18%;background:var(--purple);"></div></div></div>
+          <div class="progress-item"><div class="progress-label-row"><span>Referral</span><span>9%</span></div><div class="progress-track"><div class="progress-fill" style="width:9%;background:var(--green);"></div></div></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+const API = 'http://localhost:3000/api';
+const get  = r => fetch(`${API}/${r}`).then(x=>x.json()).catch(()=>null);
+const post = (r,d) => fetch(`${API}/${r}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}).then(x=>x.json()).catch(()=>null);
+const put  = (r,id,d) => fetch(`${API}/${r}/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}).then(x=>x.json()).catch(()=>null);
+const del  = (r,id) => fetch(`${API}/${r}/${id}`,{method:'DELETE'}).then(x=>x.json()).catch(()=>null);
+
+function toast(msg='Saved'){
+  const t=document.getElementById('admin-toast');
+  document.getElementById('admin-toast-text').textContent=msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+function showPanel(name, btn) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  if(btn) btn.classList.add('active');
+  loadPanel(name);
+}
+
+function toggleInlineForm(id){
+  const f=document.getElementById(id);
+  f.classList.toggle('open');
+}
+
+// ── LOAD STATS ──
+async function loadStats(){
+  const s = await get('stats');
+  if(!s) return;
+  document.getElementById('s-athletes').textContent   = s.totalAthletes?.toLocaleString('en-IN') || '–';
+  document.getElementById('s-clubs').textContent      = s.totalClubs?.toLocaleString('en-IN') || '–';
+  document.getElementById('s-tournaments').textContent= s.totalTournaments || '–';
+  document.getElementById('s-revenue').innerHTML      = '₹' + (s.totalRevenue/10000000).toFixed(1) + '<span>Cr</span>';
+  document.getElementById('s-views').innerHTML        = (s.pageViews/1000).toFixed(0) + '<span>K</span>';
+  document.getElementById('s-signups').textContent    = s.newSignups?.toLocaleString('en-IN') || '–';
+}
+
+// ── PRODUCTS ──
+async function loadProducts(){
+  const data = await get('products');
+  if(!data) return;
+  document.getElementById('products-tbody').innerHTML = data.map(p=>`
+    <tr>
+      <td class="td-name">${p.name}</td>
+      <td>${p.brand}</td>
+      <td>${p.category}</td>
+      <td>₹${Number(p.price).toLocaleString('en-IN')}</td>
+      <td>${p.stock}</td>
+      <td><span class="td-badge ${p.active?'badge-active':'badge-inactive'}">${p.active?'Active':'Hidden'}</span></td>
+      <td class="td-actions">
+        <button class="btn-toggle ${p.active?'':'off'}" onclick="toggleItem('products',${p.id},${p.active})">${p.active?'Hide':'Show'}</button>
+        <button class="btn-delete" onclick="deleteItem('products',${p.id})">Delete</button>
+      </td>
+    </tr>`).join('');
+}
+
+async function saveProduct(){
+  const d={name:document.getElementById('p-name').value,brand:document.getElementById('p-brand').value,category:document.getElementById('p-cat').value,price:+document.getElementById('p-price').value,was:+document.getElementById('p-was').value||null,stock:+document.getElementById('p-stock').value,active:true};
+  if(!d.name||!d.price){toast('Fill in name and price');return;}
+  await post('products',d); loadProducts(); toggleInlineForm('product-form'); toast('Product saved');
+}
+
+// ── TOURNAMENTS ──
+async function loadTournaments(){
+  const data = await get('tournaments');
+  if(!data) return;
+  document.getElementById('tournaments-tbody').innerHTML = data.map(t=>`
+    <tr>
+      <td class="td-name">${t.name}</td>
+      <td>${t.date}</td>
+      <td>${t.location}</td>
+      <td>₹${Number(t.prize).toLocaleString('en-IN')}</td>
+      <td>${t.slots}</td>
+      <td>${t.registered}</td>
+      <td><span class="td-badge badge-${t.status}">${t.status}</span></td>
+      <td class="td-actions">
+        <button class="btn-edit" onclick="toggleItem('tournaments',${t.id},false)">Edit Status</button>
+        <button class="btn-delete" onclick="deleteItem('tournaments',${t.id})">Delete</button>
+      </td>
+    </tr>`).join('');
+}
+
+async function saveTournament(){
+  const d={name:document.getElementById('t-name').value,date:document.getElementById('t-date').value,location:document.getElementById('t-location').value,prize:+document.getElementById('t-prize').value,slots:+document.getElementById('t-slots').value,registered:0,status:document.getElementById('t-status').value,active:true};
+  if(!d.name){toast('Enter tournament name');return;}
+  await post('tournaments',d); loadTournaments(); toggleInlineForm('tournament-form'); toast('Tournament added');
+}
+
+// ── ATHLETES ──
+async function loadAthletes(){
+  const data = await get('athletes');
+  if(!data) return;
+  document.getElementById('athletes-tbody').innerHTML = data.map(a=>`
+    <tr>
+      <td>#${a.rank}</td>
+      <td class="td-name">${a.name}</td>
+      <td>${a.state}</td>
+      <td>${a.discipline}</td>
+      <td>${a.pb}</td>
+      <td><span class="td-badge ${a.active?'badge-active':'badge-inactive'}">${a.active?'Active':'Inactive'}</span></td>
+      <td class="td-actions">
+        <button class="btn-toggle ${a.active?'':'off'}" onclick="toggleItem('athletes',${a.id},${a.active})">${a.active?'Deactivate':'Activate'}</button>
+        <button class="btn-delete" onclick="deleteItem('athletes',${a.id})">Remove</button>
+      </td>
+    </tr>`).join('');
+}
+
+async function saveAthlete(){
+  const d={name:document.getElementById('a-name').value,state:document.getElementById('a-state').value,discipline:document.getElementById('a-disc').value,rank:+document.getElementById('a-rank').value,pb:+document.getElementById('a-pb').value,active:true};
+  if(!d.name){return;}
+  await post('athletes',d); loadAthletes(); toggleInlineForm('athlete-form'); toast('Athlete added');
+}
+
+// ── JOBS ──
+async function loadJobs(){
+  const data = await get('jobs');
+  if(!data) return;
+  document.getElementById('jobs-tbody').innerHTML = data.map(j=>`
+    <tr>
+      <td class="td-name">${j.title}</td>
+      <td>${j.org}</td>
+      <td>${j.location}</td>
+      <td>${j.type}</td>
+      <td>${j.salary}</td>
+      <td><span class="td-badge ${j.active?'badge-active':'badge-inactive'}">${j.active?'Active':'Closed'}</span></td>
+      <td class="td-actions">
+        <button class="btn-toggle ${j.active?'':'off'}" onclick="toggleItem('jobs',${j.id},${j.active})">${j.active?'Close':'Reopen'}</button>
+        <button class="btn-delete" onclick="deleteItem('jobs',${j.id})">Delete</button>
+      </td>
+    </tr>`).join('');
+}
+
+async function saveJob(){
+  const d={title:document.getElementById('j-title').value,org:document.getElementById('j-org').value,location:document.getElementById('j-loc').value,type:document.getElementById('j-type').value,salary:document.getElementById('j-salary').value,active:true};
+  if(!d.title){return;}
+  await post('jobs',d); loadJobs(); toggleInlineForm('job-form'); toast('Job posted');
+}
+
+// ── SHARED ACTIONS ──
+async function toggleItem(resource, id, current){
+  await put(resource, id, {active: !current});
+  const loaders={products:loadProducts,tournaments:loadTournaments,athletes:loadAthletes,jobs:loadJobs};
+  if(loaders[resource]) loaders[resource]();
+  toast('Status updated');
+}
+
+async function deleteItem(resource, id){
+  if(!confirm('Delete this item?')) return;
+  await del(resource, id);
+  const loaders={products:loadProducts,tournaments:loadTournaments,athletes:loadAthletes,jobs:loadJobs};
+  if(loaders[resource]) loaders[resource]();
+  toast('Deleted');
+}
+
+// ── SETTINGS ──
+async function loadSettings(){
+  const s = await get('settings');
+  if(!s) return;
+  document.getElementById('set-name').value    = s.siteName||'';
+  document.getElementById('set-tagline').value = s.tagline||'';
+  document.getElementById('set-hero').value    = s.heroTitle||'';
+  document.getElementById('set-sub').value     = s.heroSubtitle||'';
+  document.getElementById('tog-maintenance').checked  = s.maintenanceMode||false;
+  document.getElementById('tog-shop').checked         = s.shopEnabled!==false;
+  document.getElementById('tog-reg').checked          = s.registrationOpen!==false;
+  document.getElementById('tog-community').checked    = s.communityEnabled!==false;
+  document.getElementById('tog-tournaments').checked  = s.tournamentsEnabled!==false;
+  document.getElementById('ann-text').value           = s.announcementText||'';
+  document.getElementById('ann-active').checked       = s.announcementActive||false;
+  document.getElementById('ann-preview').textContent  = s.announcementText||'Preview will appear here';
+}
+
+async function saveSettings(){
+  const d={siteName:document.getElementById('set-name').value,tagline:document.getElementById('set-tagline').value,heroTitle:document.getElementById('set-hero').value,heroSubtitle:document.getElementById('set-sub').value};
+  await post('settings',d); toast('Settings saved');
+}
+
+async function saveToggles(){
+  const d={maintenanceMode:document.getElementById('tog-maintenance').checked,shopEnabled:document.getElementById('tog-shop').checked,registrationOpen:document.getElementById('tog-reg').checked,communityEnabled:document.getElementById('tog-community').checked,tournamentsEnabled:document.getElementById('tog-tournaments').checked};
+  await post('settings',d); toast('Toggles saved');
+}
+
+async function saveAnnouncement(){
+  const text=document.getElementById('ann-text').value;
+  const active=document.getElementById('ann-active').checked;
+  document.getElementById('ann-preview').textContent=text||'Preview will appear here';
+  await post('settings',{announcementText:text,announcementActive:active});
+  toast(active?'Announcement published':'Announcement hidden');
+}
+
+document.getElementById('ann-text').addEventListener('input',function(){
+  document.getElementById('ann-preview').textContent=this.value||'Preview will appear here';
+});
+
+// ── ANALYTICS CHART ──
+function loadAnalyticsChart(){
+  const vals=[180,220,195,240,210,280,260,310,290,340,320,380,360,420];
+  const days=['Jun 7','8','9','10','11','12','13','14','15','16','17','18','19','20'];
+  const max=Math.max(...vals);
+  document.getElementById('analytics-chart').innerHTML=vals.map(v=>`<div class="chart-bar" style="height:${(v/max*100).toFixed(0)}%;"></div>`).join('');
+  document.getElementById('analytics-labels').innerHTML=days.map(d=>`<div class="chart-label">${d}</div>`).join('');
+}
+
+// ── PANEL LOADER ──
+function loadPanel(name){
+  if(name==='dashboard'){loadStats();}
+  else if(name==='products'){loadProducts();}
+  else if(name==='tournaments'){loadTournaments();}
+  else if(name==='athletes'){loadAthletes();}
+  else if(name==='jobs'){loadJobs();}
+  else if(name==='settings'){loadSettings();}
+  else if(name==='announcements'){loadSettings();}
+  else if(name==='analytics'){loadAnalyticsChart();}
+}
+
+// INIT
+loadStats();
+</script>
+</body>
+</html>

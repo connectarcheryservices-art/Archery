@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Tournaments — Register & Compete | Archery.Services</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Source+Serif+4:ital,wght@0,300;1,300&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+.t-main{max-width:1440px;margin:0 auto;padding:0 var(--g) 80px;display:grid;grid-template-columns:1fr 320px;gap:24px;}
+.t-tabs{display:flex;gap:5px;background:var(--forest-2);border:1px solid rgba(245,240,232,.07);border-radius:var(--r);padding:4px;width:fit-content;margin-bottom:20px;}
+.t-tab{padding:7px 20px;border-radius:6px;border:none;background:transparent;color:var(--ivory-3);font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;cursor:none;transition:all .2s;font-family:'Oswald',sans-serif;}
+.t-tab.active{background:var(--ember);color:var(--ivory);}
+.live-banner{background:linear-gradient(135deg,rgba(204,34,34,.08),rgba(204,34,34,.02));border:1px solid rgba(204,34,34,.2);border-radius:var(--r-xl);padding:20px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px;}
+.live-dot{width:9px;height:9px;background:#FF4444;border-radius:50%;animation:blink 1.2s infinite;flex-shrink:0;}
+@keyframes blink{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(255,68,68,.4);}50%{opacity:.7;box-shadow:0 0 0 6px rgba(255,68,68,0);}}
+.live-label{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#FF8080;font-weight:700;}
+.live-name{font-family:'Oswald',sans-serif;font-size:17px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--ivory);margin-top:2px;}
+.live-meta{font-size:11px;color:var(--ivory-3);margin-top:2px;}
+.live-scores{display:flex;gap:20px;}
+.ls{text-align:center;}
+.ls-name{font-size:10px;color:var(--ivory-3);letter-spacing:.06em;text-transform:uppercase;}
+.ls-score{font-family:'Oswald',sans-serif;font-size:26px;font-weight:700;color:var(--ivory);line-height:1.1;}
+.ls-score.lead{color:var(--gold-ring);}
+.ls-pos{font-size:9px;color:var(--ivory-3);}
+.btn-live{background:var(--red-ring);border:none;color:var(--ivory);padding:9px 18px;border-radius:4px;font-family:'Oswald',sans-serif;font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;cursor:none;white-space:nowrap;}
+.t-card{background:var(--forest-2);border:1px solid rgba(245,240,232,.07);border-radius:var(--r-xl);overflow:hidden;margin-bottom:12px;cursor:none;transition:border-color .3s,transform .2s;}
+.t-card:hover{border-color:rgba(200,96,26,.25);transform:translateX(4px);}
+.t-card-head{padding:20px 24px;display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;}
+.t-date-box{min-width:54px;text-align:center;background:rgba(245,240,232,.04);border:1px solid rgba(245,240,232,.07);border-radius:8px;padding:8px 10px;}
+.t-day{font-family:'Oswald',sans-serif;font-size:26px;font-weight:700;color:var(--ivory);line-height:1;}
+.t-mon{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--ember-light);}
+.t-name{font-family:'Oswald',sans-serif;font-size:17px;font-weight:600;text-transform:uppercase;letter-spacing:.03em;color:var(--ivory);margin-bottom:6px;line-height:1.2;}
+.t-meta{display:flex;gap:12px;flex-wrap:wrap;}
+.t-meta-item{font-size:11px;color:var(--ivory-3);display:flex;align-items:center;gap:4px;}
+.t-meta-item svg{width:12px;height:12px;flex-shrink:0;}
+.t-right{display:flex;flex-direction:column;align-items:flex-end;gap:7px;}
+.t-status{font-size:9px;padding:4px 10px;border-radius:2px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;}
+.s-open{background:rgba(46,94,53,.2);color:#6ABF77;border:1px solid rgba(46,94,53,.25);}
+.s-soon{background:rgba(212,168,71,.1);color:var(--gold-ring);border:1px solid rgba(212,168,71,.2);}
+.s-done{background:rgba(245,240,232,.05);color:var(--ivory-3);border:1px solid rgba(245,240,232,.07);}
+.s-live{background:rgba(204,34,34,.12);color:#FF8080;border:1px solid rgba(204,34,34,.2);}
+.t-prize{font-family:'Oswald',sans-serif;font-size:19px;font-weight:600;color:var(--gold-ring);}
+.t-body{padding:0 24px 20px;border-top:1px solid rgba(245,240,232,.04);margin-top:0;}
+.t-discs{display:flex;gap:6px;flex-wrap:wrap;padding-top:14px;margin-bottom:12px;}
+.disc{font-size:10px;padding:3px 9px;background:rgba(245,240,232,.04);border:1px solid rgba(245,240,232,.06);border-radius:2px;color:var(--ivory-3);letter-spacing:.05em;text-transform:uppercase;}
+.t-progress-label{display:flex;justify-content:space-between;font-size:11px;color:var(--ivory-3);margin-bottom:5px;}
+.t-track{height:3px;background:rgba(245,240,232,.07);border-radius:2px;overflow:hidden;margin-bottom:14px;}
+.t-fill{height:100%;background:linear-gradient(90deg,var(--ember-dark),var(--ember));border-radius:2px;}
+.t-footer{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+.t-org{font-size:11px;color:var(--ivory-3);}
+.t-org strong{color:var(--ivory-2);}
+.t-btns{display:flex;gap:7px;}
+.btn-reg{padding:8px 18px;background:var(--ember);border:none;color:var(--ivory);border-radius:4px;font-family:'Oswald',sans-serif;font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;cursor:none;transition:all .2s;}
+.btn-reg:hover{background:var(--ember-light);}
+.btn-det{padding:8px 18px;background:transparent;border:1px solid rgba(245,240,232,.1);color:var(--ivory-3);border-radius:4px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;cursor:none;transition:all .2s;}
+.btn-det:hover{border-color:rgba(245,240,232,.25);color:var(--ivory-2);}
+.sidebar-card{background:var(--forest-2);border:1px solid rgba(245,240,232,.07);border-radius:var(--r-xl);padding:20px;margin-bottom:14px;}
+.sc-title{font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ivory-3);margin-bottom:14px;}
+.lb-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(245,240,232,.04);}
+.lb-item:last-child{border-bottom:none;}
+.lb-rank{font-family:'Oswald',sans-serif;font-size:15px;font-weight:700;color:var(--ivory-3);width:22px;text-align:center;}
+.lb-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;flex-shrink:0;}
+.lb-name{font-size:13px;font-weight:500;color:var(--ivory);flex:1;}
+.lb-state{font-size:10px;color:var(--ivory-3);}
+.lb-score{font-family:'Oswald',sans-serif;font-size:16px;font-weight:600;color:var(--gold-ring);}
+.up-item{padding:10px 0;border-bottom:1px solid rgba(245,240,232,.04);}
+.up-item:last-child{border-bottom:none;}
+.up-date{font-size:10px;color:var(--ember-light);letter-spacing:.08em;text-transform:uppercase;margin-bottom:3px;}
+.up-name{font-size:12px;font-weight:500;color:var(--ivory);margin-bottom:2px;line-height:1.4;}
+.up-loc{font-size:11px;color:var(--ivory-3);}
+/* MODAL */
+.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:300;opacity:0;pointer-events:none;transition:opacity .3s;backdrop-filter:blur(8px);}
+.modal-ov.open{opacity:1;pointer-events:all;}
+.modal{position:fixed;top:50%;left:50%;transform:translate(-50%,-48%);width:min(560px,94vw);background:var(--forest-2);border:1px solid rgba(245,240,232,.1);border-radius:var(--r-xl);z-index:301;opacity:0;transition:opacity .3s,transform .3s;max-height:90vh;overflow-y:auto;}
+.modal-ov.open .modal{opacity:1;transform:translate(-50%,-50%);}
+.modal-head{padding:26px 26px 18px;border-bottom:1px solid rgba(245,240,232,.07);display:flex;align-items:flex-start;justify-content:space-between;gap:14px;}
+.modal-title{font-family:'Oswald',sans-serif;font-size:18px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--ivory);}
+.modal-sub{font-size:12px;color:var(--ivory-3);margin-top:3px;}
+.modal-close{width:30px;height:30px;background:rgba(245,240,232,.06);border:none;border-radius:4px;display:flex;align-items:center;justify-content:center;cursor:none;color:var(--ivory-3);}
+.modal-close svg{width:13px;height:13px;}
+.modal-body{padding:22px 26px;}
+.reg-steps{display:flex;gap:0;margin-bottom:22px;}
+.rs{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;position:relative;}
+.rs::after{content:'';position:absolute;top:13px;left:50%;width:100%;height:1px;background:rgba(245,240,232,.08);}
+.rs:last-child::after{display:none;}
+.rs-num{width:26px;height:26px;border-radius:50%;border:1.5px solid rgba(245,240,232,.15);background:var(--forest-3);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--ivory-3);z-index:1;position:relative;font-family:'Oswald',sans-serif;}
+.rs-num.active{border-color:var(--ember);background:var(--ember);color:var(--ivory);}
+.rs-label{font-size:9px;color:var(--ivory-3);letter-spacing:.06em;text-transform:uppercase;}
+.form-group{margin-bottom:14px;}
+.form-label{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ivory-3);margin-bottom:6px;display:block;}
+.form-input,.form-select{width:100%;background:rgba(245,240,232,.04);border:1px solid rgba(245,240,232,.1);border-radius:4px;padding:9px 12px;font-size:13px;color:var(--ivory);outline:none;font-family:'Inter',sans-serif;transition:border-color .2s;}
+.form-input:focus,.form-select:focus{border-color:rgba(200,96,26,.4);}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.modal-foot{padding:0 26px 26px;display:flex;gap:9px;}
+.btn-modal-cancel{flex:1;padding:11px;border-radius:4px;border:1px solid rgba(245,240,232,.1);background:transparent;color:var(--ivory-3);font-size:12px;cursor:none;}
+.btn-modal-submit{flex:2;padding:11px;border-radius:4px;border:none;background:var(--ember);color:var(--ivory);font-family:'Oswald',sans-serif;font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;cursor:none;transition:all .2s;}
+.btn-modal-submit:hover{background:var(--ember-light);}
+</style>
+</head>
+<body>
+<script>(function(){var s=document.createElement('script');s.src='nav.js';document.head.appendChild(s);})();</script>
+
+<div class="modal-ov" id="reg-modal">
+  <div class="modal">
+    <div class="modal-head">
+      <div><div class="modal-title" id="modal-name">Tournament Registration</div><div class="modal-sub" id="modal-meta">Complete your registration below</div></div>
+      <button class="modal-close" onclick="closeModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="reg-steps">
+        <div class="rs"><div class="rs-num active">1</div><div class="rs-label">Personal</div></div>
+        <div class="rs"><div class="rs-num">2</div><div class="rs-label">Category</div></div>
+        <div class="rs"><div class="rs-num">3</div><div class="rs-label">Payment</div></div>
+        <div class="rs"><div class="rs-num">4</div><div class="rs-label">Confirm</div></div>
+      </div>
+      <div class="form-row"><div class="form-group"><label class="form-label">First Name</label><input class="form-input" placeholder="Rahul"></div><div class="form-group"><label class="form-label">Last Name</label><input class="form-input" placeholder="Verma"></div></div>
+      <div class="form-row"><div class="form-group"><label class="form-label">Date of Birth</label><input class="form-input" type="date"></div><div class="form-group"><label class="form-label">Gender</label><select class="form-select"><option>Male</option><option>Female</option><option>Non-binary</option></select></div></div>
+      <div class="form-group"><label class="form-label">AAI Registration Number</label><input class="form-input" placeholder="AAI-2024-XXXXX"></div>
+      <div class="form-group"><label class="form-label">State Association</label><select class="form-select"><option>Assam Archery Association</option><option>Maharashtra Archery Association</option><option>Delhi Archery Association</option><option>Karnataka Archery Association</option><option>Tamil Nadu Archery Association</option><option>West Bengal Archery Association</option><option>Jharkhand Archery Association</option><option>Bihar Archery Association</option></select></div>
+      <div class="form-row"><div class="form-group"><label class="form-label">Discipline</label><select class="form-select"><option>Recurve Open</option><option>Compound Open</option><option>Barebow</option><option>Recurve U-21</option><option>Recurve U-18</option><option>Recurve U-15</option><option>Para Recurve</option></select></div><div class="form-group"><label class="form-label">Level</label><select class="form-select"><option>Beginner</option><option>Intermediate</option><option>Advanced</option><option>National</option></select></div></div>
+      <div class="form-group"><label class="form-label">Club / Academy Name</label><input class="form-input" placeholder="Your club name"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-modal-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-modal-submit" id="modal-submit-btn" onclick="submitReg()">Continue to Category →</button>
+    </div>
+  </div>
+</div>
+
+<div class="page-hero">
+  <div class="sec-label reveal">Tournament Management</div>
+  <h1 class="sec-title reveal">Register. Compete.<br><em>Win. Get Certified.</em></h1>
+  <p class="sec-desc reveal">End-to-end tournament management for Indian archery — from local club shoots to WA-sanctioned international events.</p>
+  <div class="page-hero-grid reveal">
+    <div class="stat-card"><div class="stat-val">142<em>+</em></div><div class="stat-label">Events This Year</div></div>
+    <div class="stat-card"><div class="stat-val">28,400<em>+</em></div><div class="stat-label">Registrations</div></div>
+    <div class="stat-card"><div class="stat-val">₹2.4<em>Cr</em></div><div class="stat-label">Prize Money Distributed</div></div>
+  </div>
+</div>
+
+<div style="max-width:1440px;margin:0 auto;padding:0 var(--g) 20px;">
+  <div class="t-tabs reveal">
+    <button class="t-tab active">Upcoming</button>
+    <button class="t-tab">Live Now</button>
+    <button class="t-tab">Results</button>
+    <button class="t-tab">My Events</button>
+  </div>
+  <div class="live-banner reveal">
+    <div style="display:flex;align-items:center;gap:14px;">
+      <div class="live-dot"></div>
+      <div>
+        <div class="live-label">Live Now · Round 5 of 6</div>
+        <div class="live-name">Assam State Ranking Tournament 2025</div>
+        <div class="live-meta">SAI Complex, Guwahati · Recurve Open · 64 athletes</div>
+      </div>
+    </div>
+    <div class="live-scores">
+      <div class="ls"><div class="ls-name">R. Krishnan</div><div class="ls-score lead">687</div><div class="ls-pos">#1 Leading</div></div>
+      <div class="ls"><div class="ls-name">A. Bora</div><div class="ls-score">672</div><div class="ls-pos">#2</div></div>
+      <div class="ls"><div class="ls-name">P. Gogoi</div><div class="ls-score">668</div><div class="ls-pos">#3</div></div>
+    </div>
+    <button class="btn-live">Watch Live Scores →</button>
+  </div>
+</div>
+
+<div class="t-main">
+  <div id="t-list"></div>
+  <aside>
+    <div class="sidebar-card reveal">
+      <div class="sc-title">Live Leaderboard</div>
+      <div class="lb-item"><div class="lb-rank" style="color:var(--gold-ring);">1</div><div class="lb-av" style="background:rgba(200,96,26,.15);color:var(--ember-light);">RK</div><div><div class="lb-name">Rohit Krishnan</div><div class="lb-state">Tamil Nadu</div></div><div class="lb-score">687</div></div>
+      <div class="lb-item"><div class="lb-rank" style="color:#C0C0C0;">2</div><div class="lb-av" style="background:rgba(59,130,246,.15);color:#93B4FF;">AB</div><div><div class="lb-name">Ayan Bora</div><div class="lb-state">Assam</div></div><div class="lb-score">672</div></div>
+      <div class="lb-item"><div class="lb-rank" style="color:#CD7F32;">3</div><div class="lb-av" style="background:rgba(168,85,247,.15);color:#C084FC;">PG</div><div><div class="lb-name">Priya Gogoi</div><div class="lb-state">Assam</div></div><div class="lb-score">668</div></div>
+      <div class="lb-item"><div class="lb-rank">4</div><div class="lb-av" style="background:rgba(46,94,53,.2);color:#6ABF77;">SM</div><div><div class="lb-name">Sunil Mahato</div><div class="lb-state">Jharkhand</div></div><div class="lb-score">661</div></div>
+      <div class="lb-item"><div class="lb-rank">5</div><div class="lb-av" style="background:rgba(204,34,34,.15);color:#FF8080;">NK</div><div><div class="lb-name">Neha Kumari</div><div class="lb-state">Bihar</div></div><div class="lb-score">658</div></div>
+    </div>
+    <div class="sidebar-card reveal">
+      <div class="sc-title">Registration Deadlines</div>
+      <div class="up-item"><div class="up-date">Closes Jul 10 · 3 days left</div><div class="up-name">Assam Open 2025</div><div class="up-loc">72 slots remaining</div></div>
+      <div class="up-item"><div class="up-date">Closes Jul 25</div><div class="up-name">National Ranking Round 3</div><div class="up-loc">88 slots remaining</div></div>
+      <div class="up-item"><div class="up-date">Opens Jul 15</div><div class="up-name">India International Grand Prix</div><div class="up-loc">New Delhi · WA Stage 2</div></div>
+      <div class="up-item"><div class="up-date">Closes Aug 1</div><div class="up-name">Karnataka State Open</div><div class="up-loc">Bengaluru · 120 slots</div></div>
+    </div>
+    <div class="sidebar-card reveal" style="background:linear-gradient(135deg,rgba(212,168,71,.07),transparent);border-color:rgba(212,168,71,.15);">
+      <div style="width:48px;height:48px;background:rgba(212,168,71,.1);border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:12px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#D4A847" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg></div>
+      <div style="font-family:'Oswald',sans-serif;font-size:16px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--ivory);margin-bottom:6px;">Digital Certificates</div>
+      <p style="font-size:12px;color:var(--ivory-2);line-height:1.7;margin-bottom:14px;">Earn verifiable digital certificates for every tournament you participate in or win.</p>
+      <button class="btn-primary" style="width:100%;justify-content:center;font-size:11px;">View My Certificates</button>
+    </div>
+  </aside>
+</div>
+
+<footer><div class="footer-inner"><div class="footer-top"><div><div class="footer-brand-name">Archery<span>.</span>Services</div><p class="footer-tagline">India's complete virtual archery infrastructure.</p></div><div class="footer-col"><h4>Tournaments</h4><ul><li><a href="tournaments.html">Upcoming Events</a></li><li><a href="tournaments.html">Live Scores</a></li><li><a href="tournaments.html">Results</a></li><li><a href="#">Host an Event</a></li></ul></div><div class="footer-col"><h4>Platform</h4><ul><li><a href="index.html">Home</a></li><li><a href="shop.html">Shop</a></li><li><a href="athletes.html">Athletes</a></li></ul></div><div class="footer-col"><h4>Company</h4><ul><li><a href="#">About</a></li><li><a href="admin.html">Admin</a></li></ul></div></div><div class="footer-bottom"><p class="footer-copy">© 2025 Archery.Services</p><div class="footer-legal"><a href="#">Privacy</a><a href="#">Terms</a></div></div></div></footer>
+<script src="shared.js"></script>
+<script>
+const API='http://localhost:3000/api';
+const FALLBACK=[
+  {id:1,name:'Assam Open Archery Championship 2025',date:'2025-07-14',location:'Guwahati, Assam',prize:240000,slots:320,registered:248,status:'open',disciplines:['Recurve Open','Compound Open','Barebow','Recurve U-21','Recurve U-18'],org:'Assam Archery Association',fee:800},
+  {id:2,name:'National Ranking Tournament — Round 3',date:'2025-08-02',location:'Pune, Maharashtra',prize:800000,slots:500,registered:412,status:'open',disciplines:['Recurve Open M/W','Recurve U-21','Compound Open','Para Open'],org:'Archery Association of India',fee:1200},
+  {id:3,name:'India International Archery Grand Prix 2025',date:'2025-09-18',location:'New Delhi',prize:4500000,slots:600,registered:72,status:'soon',disciplines:['All Recurve','All Compound','Barebow','Para All','Mixed Team'],org:'AAI + Sports Authority of India',fee:2500},
+  {id:4,name:'West Bengal State Open — Junior Category',date:'2025-06-05',location:'Kolkata, West Bengal',prize:60000,slots:200,registered:200,status:'done',disciplines:['U-21','U-18','U-15'],org:'West Bengal Archery Association',fee:400},
+];
+function renderTournaments(list){
+  const statusMap={'open':'s-open','soon':'s-soon','done':'s-done','live':'s-live'};
+  const statusLabel={'open':'Registration Open','soon':'Opening Soon','done':'Completed','live':'Live Now'};
+  document.getElementById('t-list').innerHTML=list.map(t=>{
+    const d=new Date(t.date);
+    const day=d.getDate(); const mon=d.toLocaleString('en-IN',{month:'short'}).toUpperCase();
+    const pct=Math.round(t.registered/t.slots*100);
+    const isDone=t.status==='done';
+    const reg=t.status==='open'?`<button class="btn-reg" onclick="openModal('${t.name.replace(/'/g,"\\'")}','${mon} ${day} · ${t.location}')">Register Now</button>`
+              :t.status==='live'?`<button class="btn-reg">Watch Live</button>`
+              :t.status==='done'?`<button class="btn-det">View Results</button>`
+              :`<button class="btn-det">Set Reminder</button>`;
+    return `<div class="t-card reveal" style="${isDone?'opacity:.7;':''}">
+      <div class="t-card-head">
+        <div style="display:flex;align-items:flex-start;gap:14px;">
+          <div class="t-date-box" style="${isDone?'opacity:.5;':''}"><div class="t-day">${day}</div><div class="t-mon">${mon}</div></div>
+          <div><div class="t-name">${t.name}</div><div class="t-meta">
+            <span class="t-meta-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>${t.location}</span>
+            <span class="t-meta-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${t.slots} slots · ${t.registered} registered</span>
+            <span class="t-meta-item">Entry: ₹${t.fee?.toLocaleString('en-IN')||'—'}</span>
+          </div></div>
+        </div>
+        <div class="t-right">
+          <span class="t-status ${statusMap[t.status]||'s-soon'}">${statusLabel[t.status]||t.status}</span>
+          <div class="t-prize" style="${isDone?'color:var(--ivory-3);':''}">₹${Number(t.prize).toLocaleString('en-IN')}</div>
+        </div>
+      </div>
+      <div class="t-body">
+        <div class="t-discs">${(t.disciplines||[]).map(d=>`<span class="disc">${d}</span>`).join('')}</div>
+        <div class="t-progress-label"><span>${t.registered} / ${t.slots} slots filled</span><span>${pct}%</span></div>
+        <div class="t-track"><div class="t-fill" style="width:${pct}%;${isDone?'background:rgba(245,240,232,.15);':''}"></div></div>
+        <div class="t-footer"><div class="t-org">By <strong>${t.org}</strong></div><div class="t-btns"><button class="btn-det">Details</button>${reg}</div></div>
+      </div>
+    </div>`;
+  }).join('');
+  document.querySelectorAll('.reveal').forEach(r=>new IntersectionObserver(e=>e.forEach(x=>{if(x.isIntersecting)x.target.classList.add('visible');}),{threshold:.08}).observe(r));
+}
+fetch(API+'/tournaments').then(r=>r.json()).then(renderTournaments).catch(()=>renderTournaments(FALLBACK));
+function openModal(name,meta){document.getElementById('modal-name').textContent=name;document.getElementById('modal-meta').textContent=meta;document.getElementById('reg-modal').classList.add('open');}
+function closeModal(){document.getElementById('reg-modal').classList.remove('open');}
+document.getElementById('reg-modal').addEventListener('click',e=>{if(e.target===document.getElementById('reg-modal'))closeModal();});
+function submitReg(){const b=document.getElementById('modal-submit-btn');b.textContent='Processing…';b.style.opacity='.7';setTimeout(()=>{closeModal();b.textContent='Continue to Category →';b.style.opacity='1';alert('Registration submitted! Check your email for confirmation.');},1600);}
+</script>
+</body></html>

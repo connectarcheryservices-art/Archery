@@ -1,0 +1,1666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Archery.Services — Global Virtual Infrastructure for Archery</title>
+<meta name="description" content="The world's complete virtual archery ecosystem. Shop, compete, train, certify, and connect — from local clubs to international federations.">
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Bebas+Neue&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+
+<!-- Three.js for WebGL -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<style>
+  :root {
+    --gold: #FFC72C;
+    --gold-light: #FFD45E;
+    --gold-dark: #C9971A;
+    --ink: #0C0D10;
+    --ink-2: #15171C;
+    --ink-3: #1E2129;
+    --surface: #15171C;
+    --surface-2: #1E2129;
+    --muted: #7A828F;
+    --muted-2: #9AA2AE;
+    --text: #F5F7FA;
+    --text-2: #B7BECA;
+    --accent-green: #22C55E;
+    --accent-red: #E4002B;
+    --accent-blue: #009BDE;
+    --radius: 12px;
+    --radius-lg: 20px;
+    --radius-xl: 32px;
+    --gutter: clamp(16px, 4vw, 60px);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--ink);
+    color: var(--text);
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* ── CUSTOM CURSOR ── */
+  #cursor-dot {
+    width: 8px; height: 8px;
+    background: var(--gold);
+    border-radius: 50%;
+    position: fixed; pointer-events: none; z-index: 9999;
+    transform: translate(-50%,-50%);
+    transition: transform 0.1s, width 0.2s, height 0.2s, background 0.2s;
+  }
+  #cursor-ring {
+    width: 36px; height: 36px;
+    border: 1.5px solid var(--gold);
+    border-radius: 50%;
+    position: fixed; pointer-events: none; z-index: 9998;
+    transform: translate(-50%,-50%);
+    opacity: 0.6;
+    transition: transform 0.15s cubic-bezier(0.23,1,0.32,1), width 0.25s, height 0.25s, opacity 0.2s;
+  }
+  body:has(a:hover) #cursor-dot,
+  body:has(button:hover) #cursor-dot { width: 14px; height: 14px; }
+  body:has(a:hover) #cursor-ring,
+  body:has(button:hover) #cursor-ring { width: 56px; height: 56px; opacity: 1; }
+
+  /* ── SCROLL PROGRESS ── */
+  #scroll-progress {
+    position: fixed; top: 0; left: 0; right: 0;
+    height: 2px; background: transparent; z-index: 9997;
+  }
+  #scroll-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold-dark), var(--gold), var(--gold-light));
+    width: 0%;
+    transition: width 0.05s linear;
+  }
+
+  /* ── NAVIGATION ── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    padding: 0 var(--gutter);
+    transition: background 0.4s, backdrop-filter 0.4s, padding 0.4s;
+  }
+  nav.scrolled {
+    background: rgba(10,10,15,0.88);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-bottom: 0.5px solid rgba(201,162,39,0.2);
+  }
+  .nav-inner {
+    display: flex; align-items: center; justify-content: space-between;
+    height: 72px; max-width: 1400px; margin: 0 auto;
+  }
+  .nav-logo {
+    display: flex; align-items: center; gap: 12px; text-decoration: none;
+  }
+  .nav-logo-mark {
+    width: 42px; height: 42px;
+    position: relative; flex-shrink: 0;
+  }
+  .nav-logo-mark svg { width: 100%; height: 100%; }
+  .nav-logo-text { display: flex; flex-direction: column; }
+  .nav-logo-primary {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px; letter-spacing: 0.08em;
+    color: var(--text); line-height: 1;
+  }
+  .nav-logo-primary span { color: var(--gold); }
+  .nav-logo-sub {
+    font-size: 9px; letter-spacing: 0.2em;
+    color: var(--muted-2); text-transform: uppercase; margin-top: 2px;
+  }
+  .nav-links {
+    display: flex; align-items: center; gap: 4px; list-style: none;
+  }
+  .nav-links a {
+    text-decoration: none; color: var(--text-2);
+    font-size: 13px; font-weight: 400; letter-spacing: 0.02em;
+    padding: 6px 12px; border-radius: 8px;
+    transition: color 0.2s, background 0.2s;
+    position: relative;
+  }
+  .nav-links a:hover { color: var(--text); background: rgba(255,255,255,0.06); }
+  .nav-links a.active { color: var(--gold); }
+  .nav-links .has-dot::after {
+    content: '';
+    display: inline-block; width: 4px; height: 4px;
+    background: var(--gold); border-radius: 50%;
+    margin-left: 5px; vertical-align: middle;
+  }
+  .nav-cta {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid rgba(201,162,39,0.35);
+    color: var(--gold);
+    padding: 8px 20px; border-radius: 8px;
+    font-size: 13px; font-weight: 500;
+    cursor: none; transition: all 0.2s; letter-spacing: 0.02em;
+  }
+  .btn-ghost:hover { background: rgba(201,162,39,0.1); border-color: var(--gold); }
+  .btn-primary {
+    background: var(--gold);
+    border: none; color: var(--ink);
+    padding: 8px 20px; border-radius: 8px;
+    font-size: 13px; font-weight: 600;
+    cursor: none; transition: all 0.2s; letter-spacing: 0.02em;
+  }
+  .btn-primary:hover { background: var(--gold-light); transform: translateY(-1px); }
+
+  /* ── HERO ── */
+  #hero {
+    position: relative;
+    min-height: 100vh;
+    display: flex; align-items: center;
+    overflow: hidden;
+  }
+  #hero-canvas {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+  }
+  .hero-overlay {
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse 80% 60% at 50% 50%, transparent 0%, rgba(10,10,15,0.5) 60%, rgba(10,10,15,0.95) 100%);
+  }
+  .hero-content {
+    position: relative; z-index: 2;
+    max-width: 1400px; margin: 0 auto;
+    padding: 0 var(--gutter);
+    padding-top: 120px;
+    width: 100%;
+  }
+  .hero-eyebrow {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: rgba(201,162,39,0.1);
+    border: 1px solid rgba(201,162,39,0.25);
+    border-radius: 100px;
+    padding: 6px 16px 6px 6px;
+    margin-bottom: 32px;
+  }
+  .hero-eyebrow-dot {
+    width: 6px; height: 6px;
+    background: var(--gold); border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.7); }
+  }
+  .hero-eyebrow span {
+    font-size: 11px; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--gold);
+    font-weight: 500;
+  }
+  .hero-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(72px, 12vw, 180px);
+    line-height: 0.88;
+    letter-spacing: 0.02em;
+    color: var(--text);
+    margin-bottom: 8px;
+    overflow: hidden;
+  }
+  .hero-title .line { display: block; }
+  .hero-title .gold { color: var(--gold); }
+  .hero-title .outline {
+    -webkit-text-stroke: 1px rgba(232,232,240,0.3);
+    color: transparent;
+  }
+  .hero-sub {
+    font-size: clamp(15px, 2vw, 19px);
+    color: var(--text-2);
+    font-weight: 300;
+    max-width: 580px;
+    line-height: 1.7;
+    margin-bottom: 48px;
+    letter-spacing: 0.01em;
+  }
+  .hero-sub strong { color: var(--text); font-weight: 500; }
+  .hero-actions {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 16px;
+    margin-bottom: 80px;
+  }
+  .btn-hero {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: var(--gold);
+    color: var(--ink); font-weight: 600;
+    font-size: 15px; padding: 14px 28px;
+    border-radius: 10px; border: none; cursor: none;
+    transition: all 0.25s; letter-spacing: 0.02em;
+    text-decoration: none;
+  }
+  .btn-hero:hover { background: var(--gold-light); transform: translateY(-2px); }
+  .btn-hero-outline {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: transparent;
+    border: 1px solid rgba(232,232,240,0.2);
+    color: var(--text); font-size: 15px; padding: 14px 28px;
+    border-radius: 10px; cursor: none;
+    transition: all 0.25s; text-decoration: none;
+  }
+  .btn-hero-outline:hover { border-color: rgba(232,232,240,0.5); background: rgba(255,255,255,0.04); }
+
+  /* Hero stats ticker */
+  .hero-stats {
+    display: flex; gap: 48px; flex-wrap: wrap;
+  }
+  .hero-stat {}
+  .hero-stat-num {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 32px; font-weight: 600;
+    color: var(--text); line-height: 1;
+  }
+  .hero-stat-num span { color: var(--gold); }
+  .hero-stat-label {
+    font-size: 12px; color: var(--muted-2);
+    letter-spacing: 0.08em; text-transform: uppercase;
+    margin-top: 4px;
+  }
+  .hero-scroll-hint {
+    position: absolute; bottom: 40px; left: 50%;
+    transform: translateX(-50%);
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    color: var(--muted-2); font-size: 11px; letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .scroll-line {
+    width: 1px; height: 48px;
+    background: linear-gradient(to bottom, var(--gold), transparent);
+    animation: scrollAnim 2s infinite;
+  }
+  @keyframes scrollAnim {
+    0% { transform: scaleY(0); transform-origin: top; }
+    50% { transform: scaleY(1); transform-origin: top; }
+    50.01% { transform: scaleY(1); transform-origin: bottom; }
+    100% { transform: scaleY(0); transform-origin: bottom; }
+  }
+
+  /* ── MARQUEE ── */
+  .marquee-wrap {
+    overflow: hidden;
+    border-top: 0.5px solid rgba(255,255,255,0.06);
+    border-bottom: 0.5px solid rgba(255,255,255,0.06);
+    background: var(--ink-2);
+    padding: 14px 0;
+  }
+  .marquee-track {
+    display: flex; gap: 0;
+    animation: marquee 30s linear infinite;
+    white-space: nowrap;
+  }
+  .marquee-track.reverse { animation-direction: reverse; }
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+  .marquee-item {
+    display: inline-flex; align-items: center; gap: 16px;
+    padding: 0 32px;
+    font-size: 12px; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--muted-2);
+    flex-shrink: 0;
+  }
+  .marquee-item .dot {
+    width: 4px; height: 4px;
+    background: var(--gold); border-radius: 50%; flex-shrink: 0;
+  }
+
+  /* ── SECTIONS COMMON ── */
+  section {
+    padding: clamp(80px, 12vw, 140px) var(--gutter);
+    max-width: 1400px; margin: 0 auto;
+  }
+  .section-eyebrow {
+    font-size: 11px; letter-spacing: 0.16em;
+    text-transform: uppercase; color: var(--gold);
+    font-weight: 500; margin-bottom: 16px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .section-eyebrow::before {
+    content: '';
+    display: block; width: 24px; height: 1px;
+    background: var(--gold);
+  }
+  h2.section-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(32px, 5vw, 60px);
+    font-weight: 600; line-height: 1.1;
+    color: var(--text); margin-bottom: 16px;
+    letter-spacing: -0.02em;
+  }
+  h2.section-title em {
+    font-style: normal; color: var(--gold);
+  }
+  .section-desc {
+    font-size: 16px; color: var(--text-2);
+    line-height: 1.8; max-width: 600px;
+    font-weight: 300;
+  }
+  .section-divider {
+    width: 100%; height: 0.5px;
+    background: linear-gradient(90deg, transparent, rgba(201,162,39,0.3), transparent);
+    margin: 0 auto;
+  }
+
+  /* ── MODULE GRID (Bento) ── */
+  .modules-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    grid-template-rows: auto;
+    gap: 16px;
+    margin-top: 60px;
+  }
+  .module-card {
+    background: var(--ink-2);
+    border: 0.5px solid rgba(255,255,255,0.07);
+    border-radius: var(--radius-lg);
+    padding: 28px 28px 24px;
+    position: relative; overflow: hidden;
+    transition: border-color 0.3s, transform 0.3s;
+    cursor: none;
+  }
+  .module-card::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse 60% 60% at var(--mx,50%) var(--my,50%), rgba(201,162,39,0.06) 0%, transparent 70%);
+    opacity: 0; transition: opacity 0.4s;
+  }
+  .module-card:hover::before { opacity: 1; }
+  .module-card:hover { border-color: rgba(201,162,39,0.25); transform: translateY(-2px); }
+
+  /* Bento sizing */
+  .mc-1 { grid-column: span 5; grid-row: span 2; }
+  .mc-2 { grid-column: span 4; }
+  .mc-3 { grid-column: span 3; }
+  .mc-4 { grid-column: span 4; }
+  .mc-5 { grid-column: span 3; }
+  .mc-6 { grid-column: span 4; }
+  .mc-7 { grid-column: span 5; }
+  .mc-8 { grid-column: span 3; }
+  .mc-9 { grid-column: span 4; }
+
+  .module-icon-wrap {
+    width: 52px; height: 52px;
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 20px;
+    position: relative;
+  }
+  .module-icon-wrap svg { width: 28px; height: 28px; }
+  .module-tag {
+    position: absolute; top: 20px; right: 20px;
+    font-size: 10px; letter-spacing: 0.1em;
+    text-transform: uppercase; padding: 4px 10px;
+    border-radius: 6px; font-weight: 500;
+  }
+  .tag-live { background: rgba(34,197,94,0.12); color: var(--accent-green); border: 1px solid rgba(34,197,94,0.2); }
+  .tag-soon { background: rgba(201,162,39,0.1); color: var(--gold); border: 1px solid rgba(201,162,39,0.2); }
+  .tag-beta { background: rgba(59,130,246,0.12); color: var(--accent-blue); border: 1px solid rgba(59,130,246,0.2); }
+  .module-number {
+    font-size: 10px; letter-spacing: 0.1em; color: var(--muted);
+    text-transform: uppercase; margin-bottom: 6px;
+  }
+  .module-name {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 22px; font-weight: 600;
+    color: var(--text); margin-bottom: 8px;
+    line-height: 1.2;
+  }
+  .module-desc {
+    font-size: 13px; color: var(--text-2);
+    line-height: 1.7; font-weight: 300;
+  }
+  .module-features {
+    margin-top: 20px; list-style: none;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .module-features li {
+    font-size: 12px; color: var(--muted-2);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .module-features li::before {
+    content: '';
+    width: 4px; height: 4px;
+    background: var(--gold); border-radius: 50%; flex-shrink: 0;
+  }
+  .module-link {
+    display: inline-flex; align-items: center; gap: 8px;
+    margin-top: 24px; font-size: 13px;
+    color: var(--gold); text-decoration: none; font-weight: 500;
+    transition: gap 0.2s;
+  }
+  .module-link:hover { gap: 12px; }
+  .module-link svg { width: 16px; height: 16px; }
+
+  /* Large card visual */
+  .mc-1 .module-visual {
+    position: absolute; bottom: 0; right: -20px;
+    opacity: 0.08; pointer-events: none;
+  }
+  .mc-1 .module-visual svg { width: 220px; height: 220px; }
+
+  /* Stat bar in shop card */
+  .shop-brands {
+    display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px;
+  }
+  .brand-pill {
+    font-size: 11px; padding: 4px 10px;
+    background: rgba(255,255,255,0.04);
+    border: 0.5px solid rgba(255,255,255,0.08);
+    border-radius: 6px; color: var(--text-2);
+  }
+
+  /* Mini chart in shop card */
+  .mini-stats {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 12px; margin-top: 24px;
+  }
+  .mini-stat {
+    background: rgba(255,255,255,0.03);
+    border-radius: 10px; padding: 12px 14px;
+    border: 0.5px solid rgba(255,255,255,0.06);
+  }
+  .mini-stat-val {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 20px; font-weight: 600; color: var(--text);
+    line-height: 1;
+  }
+  .mini-stat-val span { color: var(--gold); }
+  .mini-stat-label { font-size: 10px; color: var(--muted-2); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.08em; }
+
+  /* ── SHOP TEASER ── */
+  .shop-section { background: var(--ink-2); }
+  .shop-section-inner { max-width: 1400px; margin: 0 auto; padding: clamp(60px,10vw,120px) var(--gutter); }
+  .shop-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 48px; flex-wrap: wrap; gap: 24px; }
+  .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+  .product-card {
+    background: var(--ink-3);
+    border: 0.5px solid rgba(255,255,255,0.07);
+    border-radius: var(--radius-lg); overflow: hidden;
+    transition: transform 0.3s, border-color 0.3s; cursor: none;
+  }
+  .product-card:hover { transform: translateY(-4px); border-color: rgba(201,162,39,0.3); }
+  .product-img {
+    width: 100%; aspect-ratio: 4/3;
+    display: flex; align-items: center; justify-content: center;
+    position: relative; overflow: hidden;
+  }
+  .product-img svg { width: 80px; height: 80px; }
+  .product-badge {
+    position: absolute; top: 10px; left: 10px;
+    font-size: 10px; padding: 3px 8px; border-radius: 5px;
+    font-weight: 600; letter-spacing: 0.06em;
+  }
+  .badge-sale { background: var(--accent-red); color: #fff; }
+  .badge-new { background: var(--gold); color: var(--ink); }
+  .product-info { padding: 16px; }
+  .product-brand { font-size: 10px; color: var(--gold); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
+  .product-name { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 8px; line-height: 1.4; }
+  .product-price { display: flex; align-items: baseline; gap: 8px; }
+  .price-current { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 600; color: var(--text); }
+  .price-old { font-size: 13px; color: var(--muted); text-decoration: line-through; }
+  .product-rating { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
+  .stars { color: var(--gold); font-size: 12px; letter-spacing: 1px; }
+  .rating-count { font-size: 11px; color: var(--muted-2); }
+  .product-add {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    background: rgba(201,162,39,0.1);
+    border: 1px solid rgba(201,162,39,0.2);
+    color: var(--gold);
+    display: flex; align-items: center; justify-content: center;
+    margin-top: 12px; cursor: none;
+    transition: background 0.2s;
+  }
+  .product-add:hover { background: var(--gold); color: var(--ink); }
+
+  /* ── COMMUNITY TEASER ── */
+  .community-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 48px; }
+  .community-post {
+    background: var(--ink-2);
+    border: 0.5px solid rgba(255,255,255,0.07);
+    border-radius: var(--radius-lg); padding: 24px;
+    transition: border-color 0.3s, transform 0.3s; cursor: none;
+  }
+  .community-post:hover { border-color: rgba(201,162,39,0.25); transform: translateY(-2px); }
+  .post-meta { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 600; flex-shrink: 0;
+  }
+  .post-author { font-size: 13px; font-weight: 500; color: var(--text); }
+  .post-time { font-size: 11px; color: var(--muted-2); }
+  .post-category {
+    margin-left: auto; font-size: 10px; padding: 3px 8px;
+    border-radius: 5px; letter-spacing: 0.06em; font-weight: 500;
+  }
+  .post-title { font-size: 16px; font-weight: 500; color: var(--text); margin-bottom: 8px; line-height: 1.4; }
+  .post-excerpt { font-size: 13px; color: var(--text-2); line-height: 1.7; margin-bottom: 14px; }
+  .post-footer { display: flex; gap: 16px; }
+  .post-action { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted-2); }
+  .post-action svg { width: 14px; height: 14px; }
+
+  /* ── ATHLETE TRACKER ── */
+  .athlete-section-inner { max-width: 1400px; margin: 0 auto; padding: clamp(60px,10vw,120px) var(--gutter); }
+  .athlete-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; margin-top: 48px; }
+  .athlete-profile-card {
+    background: var(--ink-2);
+    border: 0.5px solid rgba(255,255,255,0.08);
+    border-radius: var(--radius-xl); padding: 32px;
+    position: relative; overflow: hidden;
+  }
+  .athlete-profile-card::before {
+    content: '';
+    position: absolute; top: 0; right: 0;
+    width: 200px; height: 200px;
+    background: radial-gradient(circle, rgba(201,162,39,0.1) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .athlete-avatar-lg {
+    width: 80px; height: 80px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--gold-dark), var(--gold));
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 28px; font-weight: 700; color: var(--ink);
+    margin-bottom: 16px;
+  }
+  .athlete-name { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 600; color: var(--text); }
+  .athlete-title { font-size: 13px; color: var(--gold); margin-bottom: 20px; }
+  .athlete-stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 20px; }
+  .a-stat { background: rgba(255,255,255,0.03); border-radius: 10px; padding: 14px; text-align: center; }
+  .a-stat-val { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 600; color: var(--text); }
+  .a-stat-val span { color: var(--gold); }
+  .a-stat-label { font-size: 10px; color: var(--muted-2); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px; }
+  .score-bar { margin-top: 20px; }
+  .score-bar-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-2); margin-bottom: 6px; }
+  .score-bar-track { height: 4px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden; }
+  .score-bar-fill { height: 100%; background: linear-gradient(90deg, var(--gold-dark), var(--gold)); border-radius: 2px; transition: width 1.5s cubic-bezier(0.23,1,0.32,1); }
+  .athlete-text-side h3 { font-family: 'Space Grotesk', sans-serif; font-size: 32px; font-weight: 600; color: var(--text); margin-bottom: 16px; line-height: 1.2; }
+  .athlete-text-side p { font-size: 16px; color: var(--text-2); line-height: 1.8; margin-bottom: 24px; font-weight: 300; }
+  .athlete-features { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+  .athlete-features li { display: flex; align-items: flex-start; gap: 12px; font-size: 14px; color: var(--text-2); line-height: 1.6; }
+  .af-icon { width: 32px; height: 32px; border-radius: 8px; background: rgba(201,162,39,0.1); border: 1px solid rgba(201,162,39,0.15); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .af-icon svg { width: 16px; height: 16px; color: var(--gold); }
+
+  /* ── TOURNAMENT BANNER ── */
+  .tournament-section { background: var(--ink-2); }
+  .tournament-inner { max-width: 1400px; margin: 0 auto; padding: clamp(60px,10vw,120px) var(--gutter); }
+  .tournaments-list { display: flex; flex-direction: column; gap: 12px; margin-top: 48px; }
+  .tournament-row {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--ink-3);
+    border: 0.5px solid rgba(255,255,255,0.07);
+    border-radius: var(--radius);
+    padding: 20px 24px; gap: 16px; flex-wrap: wrap;
+    transition: border-color 0.3s, transform 0.2s; cursor: none;
+  }
+  .tournament-row:hover { border-color: rgba(201,162,39,0.3); transform: translateX(4px); }
+  .t-left { display: flex; align-items: center; gap: 16px; }
+  .t-date { text-align: center; min-width: 56px; }
+  .t-date-day { font-family: 'Space Grotesk', sans-serif; font-size: 28px; font-weight: 700; color: var(--text); line-height: 1; }
+  .t-date-mon { font-size: 11px; color: var(--gold); text-transform: uppercase; letter-spacing: 0.1em; }
+  .t-divider { width: 1px; height: 48px; background: rgba(255,255,255,0.08); }
+  .t-info {}
+  .t-name { font-size: 16px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
+  .t-meta { display: flex; gap: 12px; flex-wrap: wrap; }
+  .t-meta-item { font-size: 12px; color: var(--muted-2); display: flex; align-items: center; gap: 5px; }
+  .t-meta-item svg { width: 13px; height: 13px; }
+  .t-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .t-status { font-size: 11px; padding: 5px 12px; border-radius: 6px; font-weight: 500; letter-spacing: 0.06em; }
+  .status-open { background: rgba(34,197,94,0.12); color: var(--accent-green); border: 1px solid rgba(34,197,94,0.2); }
+  .status-soon { background: rgba(201,162,39,0.1); color: var(--gold); border: 1px solid rgba(201,162,39,0.2); }
+  .status-closed { background: rgba(255,255,255,0.05); color: var(--muted-2); border: 1px solid rgba(255,255,255,0.08); }
+  .t-prize { font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 600; color: var(--gold); }
+  .btn-sm {
+    font-size: 12px; padding: 7px 16px;
+    border-radius: 7px; border: 1px solid rgba(201,162,39,0.3);
+    background: transparent; color: var(--gold);
+    cursor: none; transition: all 0.2s;
+  }
+  .btn-sm:hover { background: rgba(201,162,39,0.1); }
+
+  /* ── TRUSTED BRANDS ── */
+  .brands-section { padding: clamp(48px,8vw,80px) var(--gutter); max-width: 1400px; margin: 0 auto; }
+  .brands-label { font-size: 11px; letter-spacing: 0.14em; color: var(--muted); text-transform: uppercase; text-align: center; margin-bottom: 32px; }
+  .brands-grid { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px; }
+  .brand-logo {
+    padding: 14px 24px;
+    background: var(--ink-2);
+    border: 0.5px solid rgba(255,255,255,0.06);
+    border-radius: 10px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 13px; font-weight: 500;
+    color: var(--muted-2); letter-spacing: 0.04em;
+    transition: color 0.2s, border-color 0.2s; cursor: none;
+  }
+  .brand-logo:hover { color: var(--text); border-color: rgba(255,255,255,0.15); }
+
+  /* ── FOOTER ── */
+  footer {
+    background: var(--ink-2);
+    border-top: 0.5px solid rgba(255,255,255,0.06);
+    padding: 60px var(--gutter) 32px;
+  }
+  .footer-inner { max-width: 1400px; margin: 0 auto; }
+  .footer-top { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; gap: 48px; margin-bottom: 48px; }
+  .footer-brand {}
+  .footer-logo-text { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 0.06em; color: var(--text); }
+  .footer-logo-text span { color: var(--gold); }
+  .footer-tagline { font-size: 13px; color: var(--text-2); line-height: 1.7; margin-top: 10px; max-width: 280px; font-weight: 300; }
+  .footer-col h4 { font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted-2); font-weight: 500; margin-bottom: 16px; }
+  .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+  .footer-col a { font-size: 13px; color: var(--text-2); text-decoration: none; transition: color 0.2s; }
+  .footer-col a:hover { color: var(--gold); }
+  .footer-bottom { display: flex; justify-content: space-between; align-items: center; padding-top: 28px; border-top: 0.5px solid rgba(255,255,255,0.06); flex-wrap: wrap; gap: 12px; }
+  .footer-copy { font-size: 12px; color: var(--muted); }
+  .footer-legal { display: flex; gap: 20px; }
+  .footer-legal a { font-size: 12px; color: var(--muted); text-decoration: none; }
+  .footer-legal a:hover { color: var(--text-2); }
+
+  /* ── REVEAL ANIMATIONS ── */
+  .reveal {
+    opacity: 0; transform: translateY(24px);
+    transition: opacity 0.7s cubic-bezier(0.23,1,0.32,1), transform 0.7s cubic-bezier(0.23,1,0.32,1);
+  }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+  .reveal-delay-1 { transition-delay: 0.1s; }
+  .reveal-delay-2 { transition-delay: 0.2s; }
+  .reveal-delay-3 { transition-delay: 0.3s; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 1100px) {
+    .mc-1 { grid-column: span 7; }
+    .mc-2 { grid-column: span 5; }
+    .mc-3 { grid-column: span 6; }
+    .mc-4 { grid-column: span 6; }
+    .mc-5 { grid-column: span 6; }
+    .mc-6 { grid-column: span 6; }
+    .mc-7 { grid-column: span 7; }
+    .mc-8 { grid-column: span 5; }
+    .mc-9 { grid-column: span 12; }
+    .footer-top { grid-template-columns: 1fr 1fr; gap: 32px; }
+    .athlete-grid { grid-template-columns: 1fr; }
+    .community-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 768px) {
+    .modules-grid { grid-template-columns: 1fr; }
+    .mc-1,.mc-2,.mc-3,.mc-4,.mc-5,.mc-6,.mc-7,.mc-8,.mc-9 { grid-column: span 1; }
+    nav .nav-links { display: none; }
+    .footer-top { grid-template-columns: 1fr; }
+    body { cursor: auto; }
+    #cursor-dot, #cursor-ring { display: none; }
+  }
+
+  /* ── GLASSMORPHIC BADGE ── */
+  .glass-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(201,162,39,0.08);
+    border: 1px solid rgba(201,162,39,0.2);
+    backdrop-filter: blur(12px);
+    border-radius: 100px; padding: 8px 16px;
+  }
+
+  /* ── COLOR ACCENTS for module icons ── */
+  .icon-shop { background: rgba(201,162,39,0.1); }
+  .icon-knowledge { background: rgba(59,130,246,0.1); }
+  .icon-community { background: rgba(168,85,247,0.1); }
+  .icon-tournament { background: rgba(239,68,68,0.1); }
+  .icon-athlete { background: rgba(34,197,94,0.1); }
+  .icon-jobs { background: rgba(14,165,233,0.1); }
+  .icon-federation { background: rgba(249,115,22,0.1); }
+  .icon-clubs { background: rgba(236,72,153,0.1); }
+  .icon-coaching { background: rgba(168,85,247,0.1); }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Custom cursor -->
+<div id="cursor-dot"></div>
+<div id="cursor-ring"></div>
+
+<!-- Scroll progress -->
+<div id="scroll-progress"><div id="scroll-bar"></div></div>
+
+<!-- ── NAVIGATION ── -->
+<nav id="main-nav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">
+      <div class="nav-logo-mark">
+        <svg viewBox="0 0 42 42" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="21" cy="21" r="20" stroke="#C9A227" stroke-width="1"/>
+          <circle cx="21" cy="21" r="14" stroke="#C9A227" stroke-width="0.5" stroke-dasharray="2 3"/>
+          <circle cx="21" cy="21" r="7" stroke="#C9A227" stroke-width="1"/>
+          <circle cx="21" cy="21" r="2.5" fill="#C9A227"/>
+          <!-- Arrow -->
+          <line x1="4" y1="21" x2="19" y2="21" stroke="#C9A227" stroke-width="1.2" stroke-linecap="round"/>
+          <polygon points="16,18.5 19,21 16,23.5" fill="#C9A227"/>
+        </svg>
+      </div>
+      <div class="nav-logo-text">
+        <span class="nav-logo-primary">Archery<span>.</span>Services</span>
+        <span class="nav-logo-sub">Global Archery Infrastructure</span>
+      </div>
+    </a>
+
+    <ul class="nav-links">
+      <li><a href="shop.html" class="has-dot active">Shop</a></li>
+      <li><a href="knowledge.html">Knowledge</a></li>
+      <li><a href="community.html">Community</a></li>
+      <li><a href="tournaments.html">Tournaments</a></li>
+      <li><a href="athletes.html">Athletes</a></li>
+      <li><a href="jobs.html">Jobs</a></li>
+      <li><a href="federation.html">Federation</a></li>
+    </ul>
+
+    <div class="nav-cta">
+      <button class="btn-ghost">Sign in</button>
+      <button class="btn-primary">Join Free</button>
+    </div>
+  </div>
+</nav>
+
+<!-- ── HERO ── -->
+<section id="hero">
+  <canvas id="hero-canvas"></canvas>
+  <div class="hero-overlay"></div>
+
+  <div class="hero-content">
+    <div class="hero-eyebrow">
+      <div class="hero-eyebrow-dot"></div>
+      <span>Now live globally — www.archery.services</span>
+    </div>
+
+    <h1 class="hero-title">
+      <span class="line">The World's</span>
+      <span class="line gold">Complete</span>
+      <span class="line outline">Archery</span>
+      <span class="line">Platform</span>
+    </h1>
+
+    <p class="hero-sub">
+      From <strong>local club to international federation</strong> — shop equipment, track performance, run tournaments, certify coaches, and build community. One platform for the entire sport.
+    </p>
+
+    <div class="hero-actions">
+      <a href="shop.html" class="btn-hero">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+        Explore Platform
+      </a>
+      <a href="shop.html" class="btn-hero-outline">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+        Shop Equipment
+      </a>
+    </div>
+
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-num">50<span>K+</span></div>
+        <div class="hero-stat-label">Registered Athletes</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num">1,200<span>+</span></div>
+        <div class="hero-stat-label">Clubs Onboarded</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num">38<span></span></div>
+        <div class="hero-stat-label">Countries Active</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num">₹4<span>Cr+</span></div>
+        <div class="hero-stat-label">Equipment Sold</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-scroll-hint">
+    <div class="scroll-line"></div>
+    <span>Scroll</span>
+  </div>
+</section>
+
+<!-- ── MARQUEE ── -->
+<div class="marquee-wrap">
+  <div class="marquee-track">
+    <span class="marquee-item"><span class="dot"></span>Recurve Archery</span>
+    <span class="marquee-item"><span class="dot"></span>Compound Bow</span>
+    <span class="marquee-item"><span class="dot"></span>Barebow</span>
+    <span class="marquee-item"><span class="dot"></span>Field Archery</span>
+    <span class="marquee-item"><span class="dot"></span>3D Archery</span>
+    <span class="marquee-item"><span class="dot"></span>Para Archery</span>
+    <span class="marquee-item"><span class="dot"></span>National Rankings</span>
+    <span class="marquee-item"><span class="dot"></span>Coach Certification</span>
+    <span class="marquee-item"><span class="dot"></span>Club Management</span>
+    <span class="marquee-item"><span class="dot"></span>Recurve Archery</span>
+    <span class="marquee-item"><span class="dot"></span>Compound Bow</span>
+    <span class="marquee-item"><span class="dot"></span>Barebow</span>
+    <span class="marquee-item"><span class="dot"></span>Field Archery</span>
+    <span class="marquee-item"><span class="dot"></span>3D Archery</span>
+    <span class="marquee-item"><span class="dot"></span>Para Archery</span>
+    <span class="marquee-item"><span class="dot"></span>National Rankings</span>
+    <span class="marquee-item"><span class="dot"></span>Coach Certification</span>
+    <span class="marquee-item"><span class="dot"></span>Club Management</span>
+  </div>
+</div>
+
+<!-- ── MODULE BENTO GRID ── -->
+<section id="modules" style="padding-top: clamp(80px, 12vw, 140px); padding-bottom: 0;">
+  <div class="section-eyebrow reveal">Platform Modules</div>
+  <h2 class="section-title reveal reveal-delay-1">Everything archery<br><em>needs, in one place.</em></h2>
+  <p class="section-desc reveal reveal-delay-2">Nine interconnected modules covering the complete lifecycle of the sport — from buying your first bow to managing a national federation.</p>
+
+  <div class="modules-grid">
+
+    <!-- Shop — large card -->
+    <div class="module-card mc-1 reveal">
+      <span class="module-tag tag-live">Live</span>
+      <div class="module-icon-wrap icon-shop">
+        <svg viewBox="0 0 28 28" fill="none" stroke="#C9A227" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 4h2l2.68 13.39A2 2 0 0010.63 19h10.74a2 2 0 001.95-1.57L25 9H7"/>
+          <circle cx="10" cy="23" r="1.5"/><circle cx="20" cy="23" r="1.5"/>
+        </svg>
+      </div>
+      <div class="module-number">Module 01</div>
+      <div class="module-name">Archery Marketplace</div>
+      <div class="module-desc">India's largest curated archery equipment store. Bows, arrows, accessories, protective gear and coaching aids from verified sellers and top brands.</div>
+
+      <div class="shop-brands">
+        <span class="brand-pill">Yuggenite</span>
+        <span class="brand-pill">Superspeed</span>
+        <span class="brand-pill">Ten Ring</span>
+        <span class="brand-pill">Gosports</span>
+        <span class="brand-pill">Archery Card</span>
+        <span class="brand-pill">Mychoice</span>
+        <span class="brand-pill">+ Sellers</span>
+      </div>
+
+      <div class="mini-stats">
+        <div class="mini-stat"><div class="mini-stat-val">2,400<span>+</span></div><div class="mini-stat-label">Products</div></div>
+        <div class="mini-stat"><div class="mini-stat-val">48h<span></span></div><div class="mini-stat-label">Avg Delivery</div></div>
+      </div>
+
+      <a href="shop.html" class="module-link">
+        Browse Shop
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="2" y1="8" x2="13" y2="8"/><polyline points="9,4 13,8 9,12"/></svg>
+      </a>
+
+      <!-- bg decorative -->
+      <div class="module-visual">
+        <svg viewBox="0 0 220 220" fill="none" stroke="#C9A227" stroke-width="0.5">
+          <circle cx="110" cy="110" r="100"/><circle cx="110" cy="110" r="70"/><circle cx="110" cy="110" r="40"/><circle cx="110" cy="110" r="15"/>
+          <line x1="10" y1="110" x2="95" y2="110"/><polygon points="88,105 95,110 88,115" fill="#C9A227"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Knowledge -->
+    <div class="module-card mc-2 reveal reveal-delay-1">
+      <span class="module-tag tag-live">Live</span>
+      <div class="module-icon-wrap icon-knowledge">
+        <svg viewBox="0 0 28 28" fill="none" stroke="#3B82F6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 19V7a2 2 0 012-2h16a2 2 0 012 2v10"/><path d="M4 15h20"/><path d="M9 22l3-3 3 3"/>
+        </svg>
+      </div>
+      <div class="module-number">Module 02</div>
+      <div class="module-name">Knowledge Hub</div>
+      <div class="module-desc">Comprehensive guides on bow types, equipment setup, rules, scoring systems, technique breakdowns, and training science.</div>
+      <ul class="module-features">
+        <li>Bow styles: Recurve, Compound, Barebow, Traditional</li>
+        <li>Rules: WA, AAI, State federation regulations</li>
+        <li>Equipment tuning & setup guides</li>
+        <li>Video technique library</li>
+      </ul>
+      <a href="#" class="module-link">Explore Knowledge <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="2" y1="8" x2="13" y2="8"/><polyline points="9,4 13,8 9,12"/></svg></a>
+    </div>
+
+    <!-- Community -->
+    <div class="module-card mc-3 reveal reveal-delay-2">
+      <span class="module-tag tag-beta">Beta</span>
+      <div class="module-icon-wrap icon-community">
+        <svg viewBox="0 0 28 28" fill="none" stroke="#A855F7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+        </svg>
+      </div>
+      <div class="module-number">Module 03</div>
+      <div class="module-name">Community</div>
+      <div class="module-desc">Forums, discussions, Q&A, news, and events bringing the global archery family together.</div>
+      <ul class="module-features">
+        <li>Discussion boards by discipline</li>
+        <li>Member profiles & follows</li>
+        <li>Event calendar</li>
+      </ul>
+      <a href="community.html" class="module-link">Join Community <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="2" y1="8" x2="13" y2="8"/><polyline points="9,4 13,8 9,12"/></svg></a>
+    </div>
+
+    <!-- Tournaments -->
+    <div class="module-card mc-4 reveal">
+      <span class="module-tag tag-live">Live</span>
+      <div class="module-icon-wrap icon-tournament">
+        <svg viewBox="0 0 28 28" fill="none" stroke="#EF4444" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 21V7a2 2 0 012-2h8a2 2 0 012 2v14"/><path d="M5 21h18"/><path d="M12 7h4"/>
+        </svg>
+      </div>
+      <div class="module-number">Module 04</div>
+      <div class="module-name">Tournaments</div>
+      <div class="module-desc">End-to-end tournament management — registration, draws, live scoring, results, and digital certificates.</div>
+      <ul class="module-features">
+        <li>Online registration & payments</li>
+        <li>Live scoring & leaderboards</li>
+        <li>Bracket generation</li>
+        <li>Certificate download</li>
+      </ul>
+      <a href="tournaments.html" class="module-link">View Events <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="2" y1="8" x2="13" y2="8"/><polyline points="9,4 13,8 9,12"/></svg></a>
+    </div>
+
+    <!-- Athletes -->
+    <div class="module-card mc-5 reveal reveal-delay-1">
+      <span class="module-tag tag-live">Live</span>
+      <div class="module-icon-wrap icon-athlete">
+        <svg viewBox="0 0 28 28" fill="none" stroke="#22C55E" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 21v-2a4 4 0 00-4-4h-8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>
+        </svg>
+      </div>
+      <div class="module-number">Module 05</div>
+      <div class="module-name">Athletes</div>
+      <div class="module-desc">Athlete profiles, national rankings, performance logs, and training journal.</div>
+      <ul class="module-features">
+        <li>Verified athlete profiles</li>
+        <li>National ranking tracker</li>
+        <li>Performance analytics</li>
+      </ul>
+      <a href="athletes.html" class="module-link">Athlete Hub <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="2" y1="8" x2="13" y2="8"/><polyline points="9,4 13,8 9,12"/></svg></a>
+    </div>
+
+    <!-- Jobs -->
+    <div class="module-card mc-6 reveal reveal-delay-2">
+      <span class="module-tag tag-soon">Coming Soon</span>
+      <div class="module-icon-wrap icon-jobs">
+        <svg viewBox="0 0 28 28" fill="none" stroke="#0EA5E9" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="7" width="24" height="18" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/>
+          <line x1="14" y1="16" x2="14.01" y2="16"/>
+        </svg>
+      </div>
+      <div class="module-number">Module 06</div>
+      <div class="module-name">Jobs Board</div>
+      <div class="module-desc">Coaching positions, club staff roles, administrative openings, and sports science opportunities across the archery sector.</div>
+      <ul class="module-features">
+        <li>Post & apply for roles</li>
+        <li>Resume builder</li>
+        <li>Direct club contact</li>
+      </ul>
+      <a href="#" class="module-link">View Jobs <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="2" y1="8" x2="13" y2="8"/><polyline points="9,4 13,8 9,12"/></svg></a>
+    </div>
+
+    <!-- Federation -->
+    <div class="module-card mc-7 reveal">
+      <span class="module-tag tag-soon">Coming Soon</span>
+      <div class="module-icon-wrap icon-federation">
+        <svg viewBox="0 0 28 28" fill="none" stroke="#F97316" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="14" y1="2" x2="14" y2="6"/><line x1="14" y1="22" x2="14" y2="26"/>
+          <circle cx="14" cy="14" r="8"/><line x1="2" y1="14" x2="6" y2="14"/><line x1="22" y1="14" x2="26" y2="14"/>
+          <path d="M6.3 6.3l2.8 2.8M18.9 18.9l2.8 2.8"/><path d="M21.7 6.3l-2.8 2.8M9.1 18.9l-2.8 2.8"/>
+        </svg>
+      </div>
+      <div class="module-number">Module 07</div>
+      <div class="module-name">Federation Portal</div>
+      <div class="module-desc">Digital infrastructure for national and state archery federations. Manage affiliated clubs, sanction events, publish policy documents, and oversee athlete registrations at a national level.</div>
+      <ul class="module-features">
+        <li>Affiliated body management</li>
+        <li>Sanctioned event approvals</li>
+        <li>Policy document repository</li>
+        <li>National team selection tools</li>
+      </ul>
+      <a href="#" class="module-link">Federation Access <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="2" y1="8" x2="13" y2="8"/><polyline points="9,4 13,8 9,12"/></svg></a>
+    </div>
+
+    <!-- Clubs -->
+    <div class="module-card mc-8 reveal reveal-delay-1">
+      <span class="module-tag tag-soon">Coming Soon</span>
+      <div class="module-icon-wrap icon-clubs">
+        <svg viewBox="0 0 28 28" fill="none" stroke="#EC4899" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/>
+        </svg>
+      </div>
+      <div class="module-number">Module 08</div>
+      <div class="module-name">Club Management</div>
+      <div class="module-desc">Complete digital toolkit for archery clubs — member management, dues, scheduling, and reporting.</div>
+      <ul class="module-features">
+        <li>Member roster & dues</li>
+        <li>Range scheduling</li>
+        <li>Club analytics</li>
+      </ul>
+      <a href="#" class="module-link">Club Dashboard <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="2" y1="8" x2="13" y2="8"/><polyline points="9,4 13,8 9,12"/></svg></a>
+    </div>
+
+    <!-- Coaching -->
+    <div class="module-card mc-9 reveal reveal-delay-2">
+      <span class="module-tag tag-soon">Coming Soon</span>
+      <div class="module-icon-wrap icon-coaching">
+        <svg viewBox="0 0 28 28" fill="none" stroke="#A855F7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="3" width="24" height="20" rx="2"/><line x1="8" y1="21" x2="8" y2="10"/><line x1="12" y1="21" x2="12" y2="14"/><line x1="16" y1="21" x2="16" y2="12"/><line x1="20" y1="21" x2="20" y2="8"/>
+        </svg>
+      </div>
+      <div class="module-number">Module 09</div>
+      <div class="module-name">Coach Certification & Training</div>
+      <div class="module-desc">Enroll in accredited coaching courses, take online assessments, earn verifiable digital certificates, and get listed in the global coach directory. Supports WA Level 1 through Elite pathways.</div>
+      <ul class="module-features">
+        <li>Online course enrollment with video modules</li>
+        <li>Proctored online examinations</li>
+        <li>Blockchain-verifiable digital certificates</li>
+        <li>Verified coach directory & rating system</li>
+      </ul>
+      <a href="#" class="module-link">Start Certification <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="2" y1="8" x2="13" y2="8"/><polyline points="9,4 13,8 9,12"/></svg></a>
+    </div>
+
+  </div>
+</section>
+
+<!-- ── DIVIDER ── -->
+<div style="padding: 60px var(--gutter); max-width: 1400px; margin: 0 auto;">
+  <div class="section-divider"></div>
+</div>
+
+<!-- ── SHOP TEASER ── -->
+<div class="shop-section" id="shop">
+  <div class="shop-section-inner">
+    <div class="shop-header reveal">
+      <div>
+        <div class="section-eyebrow">Archery Marketplace</div>
+        <h2 class="section-title">Premium gear.<br><em>Verified sellers.</em></h2>
+        <p class="section-desc">Everything from starter kits to professional competition equipment, sourced from India's most trusted archery brands and international suppliers.</p>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:10px; align-items:flex-end;">
+        <div class="glass-badge">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C9A227" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <span style="font-size:12px; color:var(--gold);">Buyer Protection Active</span>
+        </div>
+        <a href="shop.html" class="btn-primary" style="white-space:nowrap;">View All Products →</a>
+      </div>
+    </div>
+
+    <div class="products-grid">
+
+      <div class="product-card reveal">
+        <div class="product-img" style="background:#1A1A26;">
+          <span class="product-badge badge-sale">-18%</span>
+          <svg viewBox="0 0 80 80" fill="none" stroke="#C9A227" stroke-width="1.2" stroke-linecap="round">
+            <line x1="40" y1="8" x2="40" y2="72"/><path d="M40 20 Q50 40 40 60 Q30 40 40 20" fill="rgba(201,162,39,0.08)"/>
+            <line x1="32" y1="38" x2="18" y2="38"/><line x1="18" y1="36" x2="18" y2="40"/>
+          </svg>
+        </div>
+        <div class="product-info">
+          <div class="product-brand">Yuggenite</div>
+          <div class="product-name">Pro Recurve Bow — 68" 36lbs</div>
+          <div class="product-price">
+            <span class="price-current">₹24,500</span>
+            <span class="price-old">₹29,900</span>
+          </div>
+          <div class="product-rating">
+            <span class="stars">★★★★★</span>
+            <span class="rating-count">(142 reviews)</span>
+          </div>
+          <button class="product-add">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="product-card reveal reveal-delay-1">
+        <div class="product-img" style="background:#1A201A;">
+          <span class="product-badge badge-new">New</span>
+          <svg viewBox="0 0 80 80" fill="none" stroke="#22C55E" stroke-width="1.2" stroke-linecap="round">
+            <path d="M40 10 L40 70" /><path d="M40 10 Q58 40 40 70 Q22 40 40 10" fill="rgba(34,197,94,0.06)"/>
+            <circle cx="40" cy="40" r="6" fill="rgba(34,197,94,0.15)" stroke="#22C55E"/>
+            <line x1="30" y1="38" x2="16" y2="36"/><line x1="16" y1="34" x2="16" y2="38"/>
+          </svg>
+        </div>
+        <div class="product-info">
+          <div class="product-brand" style="color:#22C55E;">Gosports</div>
+          <div class="product-name">Carbon Compound Bow — 60lbs Draw</div>
+          <div class="product-price">
+            <span class="price-current">₹42,000</span>
+          </div>
+          <div class="product-rating">
+            <span class="stars">★★★★☆</span>
+            <span class="rating-count">(67 reviews)</span>
+          </div>
+          <button class="product-add" style="border-color:rgba(34,197,94,0.3); color:#22C55E; background:rgba(34,197,94,0.08);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="product-card reveal reveal-delay-2">
+        <div class="product-img" style="background:#1A1A2A;">
+          <svg viewBox="0 0 80 80" fill="none" stroke="#3B82F6" stroke-width="1.2" stroke-linecap="round">
+            <line x1="40" y1="10" x2="40" y2="70"/>
+            <line x1="28" y1="22" x2="52" y2="22"/><line x1="30" y1="30" x2="50" y2="30"/>
+            <line x1="28" y1="60" x2="52" y2="60"/>
+          </svg>
+        </div>
+        <div class="product-info">
+          <div class="product-brand" style="color:#3B82F6;">Ten Ring</div>
+          <div class="product-name">Aluminium Arrow Set — 12pcs Spine 400</div>
+          <div class="product-price">
+            <span class="price-current">₹3,200</span>
+            <span class="price-old">₹3,800</span>
+          </div>
+          <div class="product-rating">
+            <span class="stars">★★★★★</span>
+            <span class="rating-count">(218 reviews)</span>
+          </div>
+          <button class="product-add" style="border-color:rgba(59,130,246,0.3); color:#3B82F6; background:rgba(59,130,246,0.08);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="product-card reveal reveal-delay-3">
+        <div class="product-img" style="background:#211A1A;">
+          <span class="product-badge badge-sale">-12%</span>
+          <svg viewBox="0 0 80 80" fill="none" stroke="#EF4444" stroke-width="1.2" stroke-linecap="round">
+            <circle cx="40" cy="40" r="24" fill="rgba(239,68,68,0.04)"/>
+            <circle cx="40" cy="40" r="16"/><circle cx="40" cy="40" r="8"/>
+            <circle cx="40" cy="40" r="3" fill="rgba(239,68,68,0.3)"/>
+          </svg>
+        </div>
+        <div class="product-info">
+          <div class="product-brand" style="color:#EF4444;">Archery Card</div>
+          <div class="product-name">Competition Target Face Set — 80cm</div>
+          <div class="product-price">
+            <span class="price-current">₹850</span>
+            <span class="price-old">₹960</span>
+          </div>
+          <div class="product-rating">
+            <span class="stars">★★★★☆</span>
+            <span class="rating-count">(95 reviews)</span>
+          </div>
+          <button class="product-add" style="border-color:rgba(239,68,68,0.3); color:#EF4444; background:rgba(239,68,68,0.08);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ── COMMUNITY ── -->
+<section id="community">
+  <div class="section-eyebrow reveal">Community Forum</div>
+  <h2 class="section-title reveal reveal-delay-1">Built by archers,<br><em>for archers.</em></h2>
+  <p class="section-desc reveal reveal-delay-2">Discuss technique, gear, training methods, and competition strategy with athletes, coaches, and enthusiasts from across India and the world.</p>
+
+  <div class="community-grid">
+
+    <div class="community-post reveal">
+      <div class="post-meta">
+        <div class="avatar" style="background:rgba(201,162,39,0.15); color:var(--gold);">RV</div>
+        <div>
+          <div class="post-author">Rahul Verma</div>
+          <div class="post-time">2 hours ago · National Coach</div>
+        </div>
+        <div class="post-category" style="background:rgba(201,162,39,0.1); color:var(--gold);">Training</div>
+      </div>
+      <div class="post-title">Managing clicker transition from 60lbs to 64lbs — what worked for me after 3 months</div>
+      <div class="post-excerpt">The draw weight jump was causing inconsistent clicker activation. Here's the progression protocol I used with my athletes...</div>
+      <div class="post-footer">
+        <span class="post-action"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M2 7l4.5-4.5L13 7"/><path d="M2 12l4.5-4.5L13 12"/></svg> 84</span>
+        <span class="post-action"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M2 3h10a1 1 0 011 1v6a1 1 0 01-1 1H4l-3 2V4a1 1 0 011-1z"/></svg> 23 replies</span>
+        <span class="post-action"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="7" cy="7" r="5"/><path d="M7 4v3l2 1"/></svg> 5 min read</span>
+      </div>
+    </div>
+
+    <div class="community-post reveal reveal-delay-1">
+      <div class="post-meta">
+        <div class="avatar" style="background:rgba(59,130,246,0.15); color:#3B82F6;">PD</div>
+        <div>
+          <div class="post-author">Priya Das</div>
+          <div class="post-time">5 hours ago · National Archer</div>
+        </div>
+        <div class="post-category" style="background:rgba(59,130,246,0.1); color:#3B82F6;">Equipment</div>
+      </div>
+      <div class="post-title">Comparing Hoyt vs Win&Win riser at sub-₹1.5L — full review after 6 months of competition</div>
+      <div class="post-excerpt">I've shot both at district, state, and national level. The differences in feel, tuning ease, and limb compatibility are significant...</div>
+      <div class="post-footer">
+        <span class="post-action"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M2 7l4.5-4.5L13 7"/><path d="M2 12l4.5-4.5L13 12"/></svg> 127</span>
+        <span class="post-action"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M2 3h10a1 1 0 011 1v6a1 1 0 01-1 1H4l-3 2V4a1 1 0 011-1z"/></svg> 41 replies</span>
+        <span class="post-action"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="7" cy="7" r="5"/><path d="M7 4v3l2 1"/></svg> 8 min read</span>
+      </div>
+    </div>
+
+    <div class="community-post reveal">
+      <div class="post-meta">
+        <div class="avatar" style="background:rgba(168,85,247,0.15); color:#A855F7;">AK</div>
+        <div>
+          <div class="post-author">Arjun Kumar</div>
+          <div class="post-time">Yesterday · Club Coach</div>
+        </div>
+        <div class="post-category" style="background:rgba(34,197,94,0.1); color:#22C55E;">Tournament</div>
+      </div>
+      <div class="post-title">State championship prep — 8 week block periodization for recurve open category</div>
+      <div class="post-excerpt">Sharing the training block I designed for my 4 athletes preparing for the upcoming state championship. Volume, intensity, and competition simulation schedule included...</div>
+      <div class="post-footer">
+        <span class="post-action"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M2 7l4.5-4.5L13 7"/><path d="M2 12l4.5-4.5L13 12"/></svg> 56</span>
+        <span class="post-action"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M2 3h10a1 1 0 011 1v6a1 1 0 01-1 1H4l-3 2V4a1 1 0 011-1z"/></svg> 18 replies</span>
+        <span class="post-action"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="7" cy="7" r="5"/><path d="M7 4v3l2 1"/></svg> 6 min read</span>
+      </div>
+    </div>
+
+    <div class="community-post reveal reveal-delay-1">
+      <div class="post-meta">
+        <div class="avatar" style="background:rgba(239,68,68,0.15); color:#EF4444;">SM</div>
+        <div>
+          <div class="post-author">Sneha Mishra</div>
+          <div class="post-time">2 days ago · Para Archery</div>
+        </div>
+        <div class="post-category" style="background:rgba(239,68,68,0.1); color:#EF4444;">Para Archery</div>
+      </div>
+      <div class="post-title">Para archery classification update — what the new WA rules mean for Indian athletes in 2025</div>
+      <div class="post-excerpt">The WA released updated classification criteria last month. Here's a simplified breakdown of what changes for W1 and Open categories in Indian competitions...</div>
+      <div class="post-footer">
+        <span class="post-action"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M2 7l4.5-4.5L13 7"/><path d="M2 12l4.5-4.5L13 12"/></svg> 39</span>
+        <span class="post-action"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M2 3h10a1 1 0 011 1v6a1 1 0 01-1 1H4l-3 2V4a1 1 0 011-1z"/></svg> 31 replies</span>
+        <span class="post-action"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="7" cy="7" r="5"/><path d="M7 4v3l2 1"/></svg> 4 min read</span>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ── ATHLETES ── -->
+<div style="background: var(--ink-2);" id="athletes">
+  <div class="athlete-section-inner">
+    <div class="athlete-grid">
+      <div class="athlete-profile-card reveal">
+        <div class="athlete-avatar-lg">RK</div>
+        <div class="athlete-name">Rohit Krishnan</div>
+        <div class="athlete-title">Recurve Open · AAI Rank #7 · Tamil Nadu</div>
+
+        <div class="athlete-stats-grid">
+          <div class="a-stat"><div class="a-stat-val">689<span></span></div><div class="a-stat-label">PB Score</div></div>
+          <div class="a-stat"><div class="a-stat-val">7<span>th</span></div><div class="a-stat-label">National Rank</div></div>
+          <div class="a-stat"><div class="a-stat-val">14<span></span></div><div class="a-stat-label">Tournaments</div></div>
+        </div>
+
+        <div class="score-bar" style="margin-top:20px;">
+          <div class="score-bar-label"><span>Accuracy</span><span>91.4%</span></div>
+          <div class="score-bar-track"><div class="score-bar-fill" id="bar1" style="width:0%"></div></div>
+        </div>
+        <div class="score-bar" style="margin-top:12px;">
+          <div class="score-bar-label"><span>Consistency</span><span>88.7%</span></div>
+          <div class="score-bar-track"><div class="score-bar-fill" id="bar2" style="width:0%; background: linear-gradient(90deg, #185FA5, #3B82F6);"></div></div>
+        </div>
+        <div class="score-bar" style="margin-top:12px;">
+          <div class="score-bar-label"><span>Competition Form</span><span>94.1%</span></div>
+          <div class="score-bar-track"><div class="score-bar-fill" id="bar3" style="width:0%; background: linear-gradient(90deg, #15803D, #22C55E);"></div></div>
+        </div>
+      </div>
+
+      <div class="athlete-text-side reveal reveal-delay-1">
+        <div class="section-eyebrow">Athlete Facility</div>
+        <h3>Your entire athletic journey, tracked and verified.</h3>
+        <p>From first registration to international competition — build a verified profile, track every score, log training data, and get discovered by coaches, selectors, and federations.</p>
+        <ul class="athlete-features">
+          <li>
+            <div class="af-icon">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><polyline points="2 12 6 8 9 11 14 5"/></svg>
+            </div>
+            <div><strong style="color:var(--text);">Performance analytics</strong><br>Score tracking, session logs, form video uploads, and personalized improvement reports.</div>
+          </li>
+          <li>
+            <div class="af-icon">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><rect x="2" y="5" width="12" height="9" rx="1"/><path d="M5 5V4a3 3 0 016 0v1"/></svg>
+            </div>
+            <div><strong style="color:var(--text);">Verified credentials</strong><br>National ID, selection history, federation registration — all in one tamper-proof digital profile.</div>
+          </li>
+          <li>
+            <div class="af-icon">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><circle cx="8" cy="5" r="3"/><path d="M2 14s1-3 6-3 6 3 6 3"/></svg>
+            </div>
+            <div><strong style="color:var(--text);">Scouting visibility</strong><br>Open your profile to coaches and federation selectors at state and national level.</div>
+          </li>
+        </ul>
+        <a href="athletes.html" class="btn-hero" style="margin-top:32px; display:inline-flex;">Create Athlete Profile →</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── TOURNAMENTS ── -->
+<div class="tournament-section" id="tournaments">
+  <div class="tournament-inner">
+    <div class="shop-header reveal">
+      <div>
+        <div class="section-eyebrow">Tournament Management</div>
+        <h2 class="section-title">Upcoming<br><em>Competitions</em></h2>
+      </div>
+      <a href="tournaments.html" class="btn-primary" style="white-space:nowrap; align-self:flex-end;">View All Events →</a>
+    </div>
+
+    <div class="tournaments-list">
+
+      <div class="tournament-row reveal">
+        <div class="t-left">
+          <div class="t-date"><div class="t-date-day">14</div><div class="t-date-mon">Jul 2025</div></div>
+          <div class="t-divider"></div>
+          <div class="t-info">
+            <div class="t-name">Assam Open Archery Championship 2025</div>
+            <div class="t-meta">
+              <span class="t-meta-item"><svg viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M6.5 1C4 1 2 3 2 5.5c0 3.5 4.5 7.5 4.5 7.5s4.5-4 4.5-7.5C11 3 9 1 6.5 1z"/><circle cx="6.5" cy="5.5" r="1.5"/></svg> Guwahati, Assam</span>
+              <span class="t-meta-item"><svg viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M6.5 2.5a4 4 0 100 8 4 4 0 000-8z"/><path d="M6.5 4.5v2l1.5 1"/></svg> 3 Days</span>
+              <span class="t-meta-item">Recurve · Compound · Barebow</span>
+              <span class="t-meta-item">248 registered</span>
+            </div>
+          </div>
+        </div>
+        <div class="t-right">
+          <div class="t-prize">₹2,40,000</div>
+          <span class="t-status status-open">Registration Open</span>
+          <button class="btn-sm">Register Now</button>
+        </div>
+      </div>
+
+      <div class="tournament-row reveal reveal-delay-1">
+        <div class="t-left">
+          <div class="t-date"><div class="t-date-day">02</div><div class="t-date-mon">Aug 2025</div></div>
+          <div class="t-divider"></div>
+          <div class="t-info">
+            <div class="t-name">National Ranking Tournament — Round 3</div>
+            <div class="t-meta">
+              <span class="t-meta-item"><svg viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M6.5 1C4 1 2 3 2 5.5c0 3.5 4.5 7.5 4.5 7.5s4.5-4 4.5-7.5C11 3 9 1 6.5 1z"/><circle cx="6.5" cy="5.5" r="1.5"/></svg> Pune, Maharashtra</span>
+              <span class="t-meta-item">5 Days</span>
+              <span class="t-meta-item">Recurve Open & U-21</span>
+              <span class="t-meta-item">412 registered</span>
+            </div>
+          </div>
+        </div>
+        <div class="t-right">
+          <div class="t-prize">₹8,00,000</div>
+          <span class="t-status status-open">Registration Open</span>
+          <button class="btn-sm">Register Now</button>
+        </div>
+      </div>
+
+      <div class="tournament-row reveal reveal-delay-2">
+        <div class="t-left">
+          <div class="t-date"><div class="t-date-day">18</div><div class="t-date-mon">Sep 2025</div></div>
+          <div class="t-divider"></div>
+          <div class="t-info">
+            <div class="t-name">India International Archery Grand Prix 2025</div>
+            <div class="t-meta">
+              <span class="t-meta-item"><svg viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M6.5 1C4 1 2 3 2 5.5c0 3.5 4.5 7.5 4.5 7.5s4.5-4 4.5-7.5C11 3 9 1 6.5 1z"/><circle cx="6.5" cy="5.5" r="1.5"/></svg> New Delhi</span>
+              <span class="t-meta-item">7 Days · International</span>
+              <span class="t-meta-item">All Disciplines</span>
+              <span class="t-meta-item">WA Sanctioned</span>
+            </div>
+          </div>
+        </div>
+        <div class="t-right">
+          <div class="t-prize">₹45,00,000</div>
+          <span class="t-status status-soon">Opens Jul 15</span>
+          <button class="btn-sm">Set Reminder</button>
+        </div>
+      </div>
+
+      <div class="tournament-row reveal">
+        <div class="t-left">
+          <div class="t-date"><div class="t-date-day">05</div><div class="t-date-mon">Jun 2025</div></div>
+          <div class="t-divider"></div>
+          <div class="t-info">
+            <div class="t-name">West Bengal State Open — Junior Category</div>
+            <div class="t-meta">
+              <span class="t-meta-item"><svg viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M6.5 1C4 1 2 3 2 5.5c0 3.5 4.5 7.5 4.5 7.5s4.5-4 4.5-7.5C11 3 9 1 6.5 1z"/><circle cx="6.5" cy="5.5" r="1.5"/></svg> Kolkata, WB</span>
+              <span class="t-meta-item">2 Days</span>
+              <span class="t-meta-item">U-21 · U-18 · U-15</span>
+              <span class="t-meta-item">Results Published</span>
+            </div>
+          </div>
+        </div>
+        <div class="t-right">
+          <div class="t-prize">₹60,000</div>
+          <span class="t-status status-closed">Completed</span>
+          <button class="btn-sm">View Results</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ── BRAND PARTNERS ── -->
+<div class="brands-section">
+  <p class="brands-label reveal">Trusted equipment brands on our platform</p>
+  <div class="brands-grid reveal">
+    <div class="brand-logo">Yuggenite Archery</div>
+    <div class="brand-logo">Superspeed Archery</div>
+    <div class="brand-logo">Ten Ring Archery</div>
+    <div class="brand-logo">Gosports Foundation</div>
+    <div class="brand-logo">Archery Card</div>
+    <div class="brand-logo">Mychoice Archery</div>
+    <div class="brand-logo">Archery Sells Zone</div>
+    <div class="brand-logo">IndiaMART Verified</div>
+  </div>
+</div>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <div class="footer-logo-text">Archery<span>.</span>Services</div>
+        <p class="footer-tagline">The world's complete virtual infrastructure for archery — from local beginners to international champions.</p>
+        <div style="display:flex; gap:10px; margin-top:20px;">
+          <a href="#" style="width:36px; height:36px; background:rgba(255,255,255,0.06); border:0.5px solid rgba(255,255,255,0.08); border-radius:8px; display:flex; align-items:center; justify-content:center; text-decoration:none; color:var(--muted-2); font-size:13px; transition:all 0.2s;">in</a>
+          <a href="#" style="width:36px; height:36px; background:rgba(255,255,255,0.06); border:0.5px solid rgba(255,255,255,0.08); border-radius:8px; display:flex; align-items:center; justify-content:center; text-decoration:none; color:var(--muted-2); font-size:13px; transition:all 0.2s;">tw</a>
+          <a href="#" style="width:36px; height:36px; background:rgba(255,255,255,0.06); border:0.5px solid rgba(255,255,255,0.08); border-radius:8px; display:flex; align-items:center; justify-content:center; text-decoration:none; color:var(--muted-2); font-size:13px; transition:all 0.2s;">yt</a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4>Platform</h4>
+        <ul>
+          <li><a href="shop.html">Archery Shop</a></li>
+          <li><a href="knowledge.html">Knowledge Hub</a></li>
+          <li><a href="community.html">Community</a></li>
+          <li><a href="tournaments.html">Tournaments</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>For Athletes</h4>
+        <ul>
+          <li><a href="#">Athlete Profile</a></li>
+          <li><a href="#">National Rankings</a></li>
+          <li><a href="#">Training Log</a></li>
+          <li><a href="#">Performance Data</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Organizations</h4>
+        <ul>
+          <li><a href="#">Club Registration</a></li>
+          <li><a href="#">Federation Portal</a></li>
+          <li><a href="#">Coach Certification</a></li>
+          <li><a href="#">Host a Tournament</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="#">About Us</a></li>
+          <li><a href="#">Contact</a></li>
+          <li><a href="#">Careers</a></li>
+          <li><a href="#">Press</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <p class="footer-copy">© 2025 Archery.Services. All rights reserved. Registered in India.</p>
+      <div class="footer-legal">
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms of Service</a>
+        <a href="#">Cookie Settings</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ── CURSOR ──
+const dot = document.getElementById('cursor-dot');
+const ring = document.getElementById('cursor-ring');
+let mouseX = 0, mouseY = 0;
+let ringX = 0, ringY = 0;
+
+document.addEventListener('mousemove', e => {
+  mouseX = e.clientX; mouseY = e.clientY;
+  dot.style.left = mouseX + 'px';
+  dot.style.top = mouseY + 'px';
+});
+function animateCursor() {
+  ringX += (mouseX - ringX) * 0.12;
+  ringY += (mouseY - ringY) * 0.12;
+  ring.style.left = ringX + 'px';
+  ring.style.top = ringY + 'px';
+  requestAnimationFrame(animateCursor);
+}
+animateCursor();
+
+// ── SCROLL PROGRESS ──
+window.addEventListener('scroll', () => {
+  const scrollPct = window.scrollY / (document.documentElement.scrollHeight - window.innerHeight) * 100;
+  document.getElementById('scroll-bar').style.width = scrollPct + '%';
+  const nav = document.getElementById('main-nav');
+  nav.classList.toggle('scrolled', window.scrollY > 60);
+});
+
+// ── REVEAL ON SCROLL ──
+const reveals = document.querySelectorAll('.reveal');
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); } });
+}, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+reveals.forEach(r => observer.observe(r));
+
+// ── ANIMATE SCORE BARS ──
+const barObserver = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      document.getElementById('bar1').style.width = '91.4%';
+      document.getElementById('bar2').style.width = '88.7%';
+      document.getElementById('bar3').style.width = '94.1%';
+      barObserver.disconnect();
+    }
+  });
+}, { threshold: 0.3 });
+const bar1El = document.getElementById('bar1');
+if (bar1El) barObserver.observe(bar1El.closest('.athlete-profile-card'));
+
+// ── BENTO CARD MOUSE GLOW ──
+document.querySelectorAll('.module-card').forEach(card => {
+  card.addEventListener('mousemove', e => {
+    const rect = card.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width * 100).toFixed(1);
+    const y = ((e.clientY - rect.top) / rect.height * 100).toFixed(1);
+    card.style.setProperty('--mx', x + '%');
+    card.style.setProperty('--my', y + '%');
+  });
+});
+
+// ── WEBGL HERO CANVAS ──
+(function() {
+  const canvas = document.getElementById('hero-canvas');
+  if (!canvas || !window.THREE) return;
+
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+  camera.position.z = 30;
+
+  // Target ring system — concentric archery target in 3D space
+  const rings = [];
+  // World Archery target face — gold (centre) · red · blue · black · white (outer)
+  const ringColors = [0xFFC72C, 0xFFC72C, 0xE4002B, 0xE4002B, 0x009BDE, 0x009BDE, 0x141414, 0x141414, 0xF5F7FA];
+  for (let i = 9; i >= 1; i--) {
+    const geo = new THREE.TorusGeometry(i * 2.2, 0.18, 8, 64);
+    const mat = new THREE.MeshBasicMaterial({ color: ringColors[9-i], transparent: true, opacity: i > 7 ? 0.6 : (i > 4 ? 0.3 : 0.15) });
+    const ring = new THREE.Mesh(geo, mat);
+    ring.rotation.x = -0.3;
+    scene.add(ring);
+    rings.push(ring);
+  }
+
+  // Arrow — line pointing at center
+  const arrowGeo = new THREE.BufferGeometry();
+  const arrowPts = new Float32Array([-40, 2, 0, -1.8, 2, 0]);
+  arrowGeo.setAttribute('position', new THREE.BufferAttribute(arrowPts, 3));
+  const arrowMat = new THREE.LineBasicMaterial({ color: 0xFFC72C, linewidth: 2 });
+  const arrowLine = new THREE.Line(arrowGeo, arrowMat);
+  scene.add(arrowLine);
+
+  // Particles
+  const particleCount = 120;
+  const positions = new Float32Array(particleCount * 3);
+  for (let i = 0; i < particleCount; i++) {
+    positions[i * 3] = (Math.random() - 0.5) * 80;
+    positions[i * 3 + 1] = (Math.random() - 0.5) * 50;
+    positions[i * 3 + 2] = (Math.random() - 0.5) * 40;
+  }
+  const pgeo = new THREE.BufferGeometry();
+  pgeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  const pmat = new THREE.PointsMaterial({ color: 0xFFC72C, size: 0.25, transparent: true, opacity: 0.4 });
+  scene.add(new THREE.Points(pgeo, pmat));
+
+  let targetX = 0, targetY = 0;
+  document.addEventListener('mousemove', e => {
+    targetX = (e.clientX / window.innerWidth - 0.5) * 8;
+    targetY = -(e.clientY / window.innerHeight - 0.5) * 5;
+  });
+
+  let camX = 0, camY = 0;
+  function animate(t) {
+    requestAnimationFrame(animate);
+    const time = t * 0.001;
+
+    camX += (targetX - camX) * 0.04;
+    camY += (targetY - camY) * 0.04;
+    camera.position.x = camX;
+    camera.position.y = camY;
+    camera.lookAt(0, 0, 0);
+
+    rings.forEach((ring, i) => {
+      ring.rotation.z = time * 0.1 * (i % 2 === 0 ? 1 : -1) + i * 0.3;
+    });
+
+    renderer.render(scene, camera);
+  }
+  animate(0);
+
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+})();
+</script>
+<script src="shared.js"></script>
+</body>
+</html>

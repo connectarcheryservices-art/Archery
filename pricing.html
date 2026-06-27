@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="day">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pricing — Archery.Services</title>
+<meta name="description" content="From CHF 1/year for every archer to federation-grade infrastructure. Transparent, fixed annual pricing. No hidden fees.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+/* ── TARGET COLOR TOKENS ── */
+:root{
+  --tw:#FFFFFF; --tb:#1A1A1A; --tbl:#1A3A8C; --tr:#CC2222; --ty:#C9A227;
+  --bg:#FFFFFF; --bg2:#F5F7FA; --bg3:#EAECF5;
+  --ink:#0D1B2E; --dim:#334155; --faint:#8899AA;
+  --line:rgba(26,58,140,.1); --line2:rgba(26,58,140,.18);
+  --announce-h:0px;
+}
+
+/* ── SHARED NAV ── */
+.pr-nav{background:#fff;border-bottom:2px solid var(--tbl);position:sticky;top:0;z-index:200;box-shadow:0 2px 8px rgba(26,58,140,.06);}
+.pr-nav-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;height:64px;padding:0 var(--g);gap:16px;}
+.pr-logo{font-family:'Oswald',sans-serif;font-size:17px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--tb);text-decoration:none;flex-shrink:0;}
+.pr-logo span{color:var(--ty);}
+.pr-nav-links{display:flex;align-items:center;gap:0;list-style:none;flex:1;margin-left:32px;}
+.pr-nav-links a{font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--tbl);text-decoration:none;padding:6px 12px;transition:color .2s;}
+.pr-nav-links a:hover{color:var(--tr);}
+.pr-nav-links a.active{color:var(--tr);}
+.pr-nav-cta{background:var(--ty);color:var(--tb)!important;padding:9px 20px;border-radius:4px;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;text-decoration:none;transition:background .2s;flex-shrink:0;}
+.pr-nav-cta:hover{background:var(--tr);color:#fff!important;}
+
+/* ── HERO ── */
+.pr-hero{background:var(--tbl);padding:64px var(--g) 56px;text-align:center;position:relative;overflow:hidden;}
+.pr-hero-bg{position:absolute;inset:0;opacity:.05;background:repeating-linear-gradient(45deg,#fff,#fff 1px,transparent 1px,transparent 60px),repeating-linear-gradient(-45deg,#fff,#fff 1px,transparent 1px,transparent 60px);}
+.pr-hero-inner{position:relative;max-width:720px;margin:0 auto;}
+.pr-eyebrow{font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--ty);margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:10px;}
+.pr-eyebrow::before,.pr-eyebrow::after{content:'';display:block;width:24px;height:2px;background:var(--ty);}
+.pr-hero-title{font-family:'Oswald',sans-serif;font-size:clamp(40px,6vw,72px);font-weight:700;text-transform:uppercase;color:#fff;line-height:1;margin-bottom:16px;}
+.pr-hero-title em{color:var(--ty);font-style:normal;}
+.pr-hero-lead{font-size:15px;color:rgba(255,255,255,.75);line-height:1.7;max-width:560px;margin:0 auto 24px;}
+.pr-hero-meta{display:flex;align-items:center;justify-content:center;gap:20px;flex-wrap:wrap;}
+.pr-hero-meta span{font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.5);display:flex;align-items:center;gap:5px;}
+.pr-hero-meta span::before{content:'✓';color:var(--ty);}
+
+/* ── BILLING TOGGLE ── */
+.billing-wrap{text-align:center;padding:36px var(--g) 0;background:var(--bg);}
+.billing-row{display:inline-flex;gap:6px;background:var(--bg2);border:1px solid var(--line2);border-radius:8px;padding:5px;}
+.billing-btn{padding:9px 20px;border-radius:5px;border:none;cursor:pointer;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;transition:all .2s;background:none;color:var(--faint);}
+.billing-btn.active{background:var(--tbl);color:#fff;}
+.billing-btn .save-badge{font-size:9px;background:var(--tr);color:#fff;padding:2px 6px;border-radius:2px;margin-left:5px;letter-spacing:.04em;}
+.currency-row{display:inline-flex;gap:4px;background:var(--bg2);border:1px solid var(--line2);border-radius:8px;padding:4px;margin-top:12px;}
+.currency-btn{padding:7px 18px;border-radius:5px;border:none;cursor:pointer;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;transition:all .2s;background:none;color:var(--faint);}
+.currency-btn.active{background:var(--ty);color:#1A1A1A;}
+.billing-controls{display:flex;flex-direction:column;align-items:center;gap:0;}
+
+/* ── TABS ── */
+.tab-row{display:flex;border-bottom:2px solid var(--line2);background:var(--bg);max-width:1200px;margin:28px auto 0;padding:0 var(--g);gap:0;}
+.tab-btn{padding:14px 22px;background:none;border:none;border-bottom:3px solid transparent;margin-bottom:-2px;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);cursor:pointer;transition:all .2s;white-space:nowrap;}
+.tab-btn.active{color:var(--tbl);border-bottom-color:var(--ty);}  /* YELLOW underline on active tab */
+.tab-btn:hover:not(.active){color:var(--tbl);}
+
+/* ── SECTIONS ── */
+.pr-section{max-width:1200px;margin:0 auto;padding:40px var(--g) 80px;}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+
+/* ── TIER CARDS ── */
+.tier-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:18px;margin-bottom:32px;}
+.tier-card{background:#fff;border:1.5px solid var(--line);border-radius:10px;padding:26px;position:relative;transition:box-shadow .25s,border-color .25s,transform .2s;}
+.tier-card:hover{transform:translateY(-4px);box-shadow:0 12px 36px rgba(26,58,140,.1);}
+.tier-card.recommended{border-color:var(--tbl);box-shadow:0 0 0 2px var(--tbl);}
+.tier-badge-top{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--ty);color:var(--tb);font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:4px 14px;border-radius:20px;white-space:nowrap;}
+.tier-code{font-size:9.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);margin-bottom:5px;}
+.tier-name{font-family:'Oswald',sans-serif;font-size:22px;font-weight:700;text-transform:uppercase;margin-bottom:10px;}
+.tier-name.c-blue{color:var(--tbl);}
+.tier-name.c-red{color:var(--tr);}
+.tier-name.c-yellow{color:var(--ty);}
+.tier-name.c-black{color:var(--tb);}
+.tier-price{display:flex;align-items:baseline;gap:5px;margin-bottom:4px;}
+.tier-price-num{font-family:'Oswald',sans-serif;font-size:42px;font-weight:700;color:var(--ink);line-height:1;}
+.tier-price-per{font-size:13px;color:var(--faint);}
+.tier-price-save{font-size:11px;font-weight:700;color:#22C55E;background:rgba(34,197,94,.1);padding:2px 7px;border-radius:3px;margin-left:4px;}
+.tier-desc{font-size:13px;color:var(--dim);line-height:1.65;margin:12px 0;}
+.tier-for-label{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin-bottom:5px;}
+.tier-for{font-size:12.5px;color:var(--ink);line-height:1.5;margin-bottom:16px;}
+.tier-features{margin-bottom:22px;}
+.tier-feat{display:flex;gap:8px;padding:6px 0;border-bottom:1px solid rgba(26,58,140,.06);align-items:flex-start;}
+.tier-feat:last-child{border-bottom:none;}
+.tier-feat-icon{font-size:13px;font-weight:800;flex-shrink:0;margin-top:1px;}
+.tier-feat-text{font-size:12.5px;color:var(--ink);line-height:1.5;}
+.tier-cta-primary{display:block;width:100%;padding:13px;background:var(--tbl);color:#fff;border:none;border-radius:5px;font-family:'Oswald',sans-serif;font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;text-align:center;text-decoration:none;transition:background .2s;}
+.tier-cta-primary:hover{background:var(--tr);}  /* Blue → Red on hover */
+.tier-cta-ghost{display:block;width:100%;padding:13px;background:none;color:var(--tbl);border:2px solid var(--line2);border-radius:5px;font-family:'Oswald',sans-serif;font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;text-align:center;text-decoration:none;transition:all .2s;}
+.tier-cta-ghost:hover{border-color:var(--tr);color:var(--tr);}
+.tier-trial-note{font-size:11px;color:var(--faint);text-align:center;margin-top:9px;}
+
+/* ── ORGANISATION note ── */
+.org-note{background:var(--bg2);border-left:4px solid var(--tbl);padding:16px 20px;border-radius:0 6px 6px 0;font-size:13px;color:var(--dim);line-height:1.65;margin-bottom:28px;}
+
+/* ── COMPARE TABLE ── */
+.compare-wrap{overflow-x:auto;border:1px solid var(--line2);border-radius:8px;}
+.compare-table{width:100%;border-collapse:collapse;font-size:12px;min-width:980px;}
+.compare-table th{text-align:center;padding:12px 8px;border-bottom:2px solid var(--line2);background:var(--bg2);position:sticky;top:0;}
+.compare-table th:first-child{text-align:left;padding-left:16px;min-width:200px;}
+.th-name{font-size:11.5px;font-weight:700;color:var(--ink);}
+.th-price{font-size:10px;font-weight:700;color:var(--ty);}  /* YELLOW prices */
+.cat-row td{background:var(--tbl);color:#fff;font-size:9.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;padding:9px 16px;}
+.compare-table tr.feat-row{border-bottom:1px solid var(--line);}
+.compare-table tr.feat-row:hover td{background:rgba(26,58,140,.03);}
+.compare-table td{padding:9px 8px;text-align:center;color:var(--dim);}
+.compare-table td:first-child{text-align:left;padding-left:16px;color:var(--ink);font-size:12.5px;}
+.cell-yes{color:var(--tbl);font-weight:700;}  /* BLUE for yes */
+.cell-no{color:var(--faint);}
+.cell-partial{color:var(--ty);font-size:11px;font-weight:700;}  /* YELLOW for partial */
+
+/* ── FAQ ── */
+.faq-section{max-width:800px;margin:0 auto;}
+.faq-cat-label{font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--tr);margin:32px 0 12px;display:flex;align-items:center;gap:8px;}  /* RED category labels */
+.faq-cat-label::after{content:'';flex:1;height:1px;background:var(--line2);}
+.faq-item{border:1.5px solid var(--line);border-radius:7px;overflow:hidden;margin-bottom:8px;}
+.faq-q{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;cursor:pointer;background:none;border:none;width:100%;text-align:left;transition:background .15s;}
+.faq-q:hover{background:var(--bg2);}
+.faq-q-text{font-size:14px;font-weight:600;color:var(--ink);line-height:1.4;padding-right:12px;}
+.faq-q-icon{font-size:22px;color:var(--ty);flex-shrink:0;transition:transform .25s;font-family:'Oswald',sans-serif;font-weight:700;}  /* YELLOW icon */
+.faq-item.open .faq-q-icon{transform:rotate(45deg);}
+.faq-item.open{border-color:var(--tbl);}
+.faq-a{display:none;padding:0 20px 18px;font-size:13.5px;color:var(--dim);line-height:1.8;border-top:1px solid var(--line);}
+.faq-item.open .faq-a{display:block;}
+
+/* ── PAYMENT METHODS ── */
+.payment-block{background:var(--bg2);border-radius:8px;padding:24px;margin-top:32px;}
+.payment-grid{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;}
+.pay-chip{padding:8px 16px;background:#fff;border:1px solid var(--line2);border-radius:5px;font-size:12.5px;color:var(--ink);}
+
+/* ── CONTACT CTA ── */
+.contact-cta{background:var(--tb);border-radius:10px;padding:40px;text-align:center;margin-top:32px;}
+.contact-cta h3{font-family:'Oswald',sans-serif;font-size:28px;font-weight:700;text-transform:uppercase;color:#fff;margin-bottom:10px;}
+.contact-cta p{font-size:14px;color:rgba(255,255,255,.65);margin-bottom:24px;}
+.cta-btn-gold{display:inline-block;background:var(--ty);color:var(--tb);padding:13px 32px;border-radius:4px;font-family:'Oswald',sans-serif;font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;text-decoration:none;transition:background .2s;margin:0 6px;}
+.cta-btn-gold:hover{background:var(--tr);color:#fff;}
+
+/* ── RESPONSIVE ── */
+@media(max-width:700px){.tier-grid{grid-template-columns:1fr;}.pr-nav-links{display:none;}}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="pr-nav">
+  <div class="pr-nav-inner">
+    <a class="pr-logo" href="/">Archery<span>.</span>Services</a>
+    <ul class="pr-nav-links">
+      <li><a href="/">Home</a></li>
+      <li><a href="tournaments.html">Tournaments</a></li>
+      <li><a href="shop.html">Shop</a></li>
+      <li><a href="athletes.html">Rankings</a></li>
+      <li><a href="pricing.html" class="active">Pricing</a></li>
+    </ul>
+    <a class="pr-nav-cta" href="federation.html">Join Free</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="pr-hero">
+  <div class="pr-hero-bg"></div>
+  <div class="pr-hero-inner">
+    <div class="pr-eyebrow" id="pr-eyebrow">Pricing · All amounts in CHF · Annual billing</div>
+    <h1 class="pr-hero-title">From <em>CHF 1</em> a year</h1>
+    <p class="pr-hero-lead">Every tier is annual. Every price is public and fixed. No monthly billing. No per-seat charges. No hidden fees. No ads. No data sales.</p>
+    <div class="pr-hero-meta">
+      <span>7-day free trial on Pro+</span>
+      <span>Cancel anytime</span>
+      <span>No setup fees</span>
+      <span>Upgrade anytime</span>
+    </div>
+  </div>
+</div>
+
+<!-- BILLING TOGGLE -->
+<div class="billing-wrap">
+  <div class="billing-controls">
+    <div class="billing-row">
+      <button class="billing-btn active" onclick="setBilling('1yr',this)">Annual</button>
+      <button class="billing-btn" onclick="setBilling('2yr',this)">2 Years <span class="save-badge">Save 10%</span></button>
+      <button class="billing-btn" onclick="setBilling('3yr',this)">3 Years <span class="save-badge">Save 20%</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tab-row">
+  <button class="tab-btn active" onclick="setTab('individual',this)">Individual</button>
+  <button class="tab-btn" onclick="setTab('organisation',this)">Organisation</button>
+  <button class="tab-btn" onclick="setTab('compare',this)">Compare All</button>
+  <button class="tab-btn" onclick="setTab('faq',this)">FAQ</button>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!--  INDIVIDUAL TAB                                           -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="pr-section tab-panel active" id="tab-individual">
+  <div class="tier-grid">
+
+    <!-- ARCHER CHF 1 -->
+    <div class="tier-card">
+      <div class="tier-code">ATH</div>
+      <div class="tier-name c-blue">Archer</div>
+      <div class="tier-price">
+        <span class="tier-price-num" data-base="1">CHF 1</span>
+        <span class="tier-price-per">/ year</span>
+      </div>
+      <p class="tier-desc">Your permanent Archery ID. Everything an individual athlete needs to compete, track, and grow within the global archery community.</p>
+      <div class="tier-for-label">Best for</div>
+      <div class="tier-for">Every active archer, regardless of level, discipline or location.</div>
+      <div class="tier-features">
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tbl)">+</span><span class="tier-feat-text">Permanent Archery ID — QR-verifiable worldwide</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tbl)">+</span><span class="tier-feat-text">Lifetime scoring and classification records</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tbl)">+</span><span class="tier-feat-text">Tournament entry via platform</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tbl)">+</span><span class="tier-feat-text">Training log — unlimited sessions</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tbl)">+</span><span class="tier-feat-text">Community access — 50,000+ verified members</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tbl)">+</span><span class="tier-feat-text">Public Archery Profile + link-in-bio page</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tbl)">+</span><span class="tier-feat-text">Club and federation linking</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tbl)">+</span><span class="tier-feat-text">Event calendar — regional and global</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tbl)">+</span><span class="tier-feat-text">Knowledge library — technique, rules, equipment</span></div>
+      </div>
+      <a class="tier-cta-ghost" href="federation.html">Get Archer ID</a>
+      <div class="tier-trial-note">No trial needed — just CHF 1</div>
+    </div>
+
+    <!-- PRO ARCHER CHF 24 -->
+    <div class="tier-card recommended">
+      <div class="tier-badge-top">Most Popular</div>
+      <div class="tier-code">PRO</div>
+      <div class="tier-name c-red">Pro Archer</div>
+      <div class="tier-price">
+        <span class="tier-price-num" data-base="24">CHF 24</span>
+        <span class="tier-price-per">/ year</span>
+      </div>
+      <p class="tier-desc">Compete, rank, and train at elite level. Everything in Archer plus the full analytics and training suite.</p>
+      <div class="tier-for-label">Best for</div>
+      <div class="tier-for">Competitive archers preparing for regional, national, or international events.</div>
+      <div class="tier-features">
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tr)">+</span><span class="tier-feat-text">Everything in Archer</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tr)">+</span><span class="tier-feat-text">World ranking profile — updated after every competition</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tr)">+</span><span class="tier-feat-text">Advanced training analytics — load, volume, progress curves</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tr)">+</span><span class="tier-feat-text">Equipment tracker and bow setup log</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tr)">+</span><span class="tier-feat-text">Shot data analysis and pattern detection</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tr)">+</span><span class="tier-feat-text">Rival tracker — head-to-head records</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tr)">+</span><span class="tier-feat-text">Video library — full access, 200+ lessons</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tr)">+</span><span class="tier-feat-text">Priority grading and classification verification</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tr)">+</span><span class="tier-feat-text">Download certificates as PDF</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tr)">+</span><span class="tier-feat-text">Wellness and injury tracking</span></div>
+      </div>
+      <a class="tier-cta-primary" href="federation.html">Start Pro Trial</a>
+      <div class="tier-trial-note">7-day free trial · Cancel anytime</div>
+    </div>
+
+    <!-- COACH CHF 36 -->
+    <div class="tier-card">
+      <div class="tier-code">COACH</div>
+      <div class="tier-name c-yellow">Coach</div>
+      <div class="tier-price">
+        <span class="tier-price-num" data-base="36">CHF 36</span>
+        <span class="tier-price-per">/ year</span>
+      </div>
+      <p class="tier-desc">Teach, earn, and manage students at scale. Built for instructors who run classes, programmes, or online courses.</p>
+      <div class="tier-for-label">Best for</div>
+      <div class="tier-for">Certified coaches, range instructors, and online archery educators.</div>
+      <div class="tier-features">
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--ty)">+</span><span class="tier-feat-text">Everything in Pro Archer</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--ty)">+</span><span class="tier-feat-text">Teaching platform — list and sell courses (earn USD)</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--ty)">+</span><span class="tier-feat-text">Student CRM — up to 150 students per coach account</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--ty)">+</span><span class="tier-feat-text">Live classes — schedule and host up to 12 per month</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--ty)">+</span><span class="tier-feat-text">Course creation toolkit — video + quizzes + certificates</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--ty)">+</span><span class="tier-feat-text">Earnings dashboard — transparent payout tracking</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--ty)">+</span><span class="tier-feat-text">Coach profile — discoverable by students globally</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--ty)">+</span><span class="tier-feat-text">Priority verification and coach badge</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--ty)">+</span><span class="tier-feat-text">Attendance and grading workflow for own students</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--ty)">+</span><span class="tier-feat-text">Coach Inbox — centralised student communications</span></div>
+      </div>
+      <a class="tier-cta-ghost" href="federation.html">Start Coach Trial</a>
+      <div class="tier-trial-note">7-day free trial · Cancel anytime</div>
+    </div>
+
+  </div><!-- end tier-grid -->
+
+  <!-- Payment methods -->
+  <div class="payment-block">
+    <div style="font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);margin-bottom:4px;">Payment Methods</div>
+    <div class="payment-grid">
+      <div class="pay-chip">Visa / Mastercard / Amex</div>
+      <div class="pay-chip">UPI / Net Banking</div>
+      <div class="pay-chip">Bank Transfer</div>
+      <div class="pay-chip">Club gift subscription</div>
+      <div class="pay-chip">Invoice (org tiers)</div>
+    </div>
+    <p style="font-size:12px;color:var(--faint);margin-top:12px;">All payments processed through a PCI-DSS Level 1 certified processor. Card data is never stored on Archery.Services servers.</p>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!--  ORGANISATION TAB                                         -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="pr-section tab-panel" id="tab-organisation">
+  <p class="org-note">Organisation accounts are a flat annual licence. Member accounts are billed at their normal individual tier rate and are owned by the individual — not the organisation. No per-event fees for standard tournaments.</p>
+
+  <div class="tier-grid">
+
+    <!-- CLUB CHF 99 -->
+    <div class="tier-card recommended">
+      <div class="tier-badge-top">Most Common</div>
+      <div class="tier-code">CLUB</div>
+      <div class="tier-name c-blue">Club / Range</div>
+      <div class="tier-price">
+        <span class="tier-price-num" data-base="99">CHF 99</span>
+        <span class="tier-price-per">/ year</span>
+      </div>
+      <p class="tier-desc">Full club management suite. One fixed annual price covers the entire club or range's operations.</p>
+      <div class="tier-for-label">Best for</div>
+      <div class="tier-for">Any registered archery club or shooting range with an active head coach.</div>
+      <div class="tier-features">
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tbl)">+</span><span class="tier-feat-text">Includes 1 head coach account (Coach tier features)</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tbl)">+</span><span class="tier-feat-text">Member management — unlimited archer accounts</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tbl)">+</span><span class="tier-feat-text">Class scheduling and weekly timetable</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tbl)">+</span><span class="tier-feat-text">Attendance tracking and notifications</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tbl)">+</span><span class="tier-feat-text">Classification workflow — digital certificates</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tbl)">+</span><span class="tier-feat-text">Finance module — fee collection and expense tracking</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tbl)">+</span><span class="tier-feat-text">Range safety log and incident report storage</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tbl)">+</span><span class="tier-feat-text">Club analytics — retention, attendance, score distribution</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tbl)">+</span><span class="tier-feat-text">Public club listing — discoverable on platform</span></div>
+      </div>
+      <a class="tier-cta-primary" href="federation.html">Register Club</a>
+      <div class="tier-trial-note">7-day free trial · Cancel anytime</div>
+    </div>
+
+    <!-- DISTRICT CHF 150 -->
+    <div class="tier-card">
+      <div class="tier-code">DIST</div>
+      <div class="tier-name c-red">District Federation</div>
+      <div class="tier-price">
+        <span class="tier-price-num" data-base="150">CHF 150</span>
+        <span class="tier-price-per">/ year</span>
+      </div>
+      <p class="tier-desc">District-level federation management for inter-club coordination and rankings.</p>
+      <div class="tier-for-label">Best for</div>
+      <div class="tier-for">District or regional bodies governing multiple clubs.</div>
+      <div class="tier-features">
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tr)">+</span><span class="tier-feat-text">Up to 20 member clubs</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tr)">+</span><span class="tier-feat-text">Basic API access</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tr)">+</span><span class="tier-feat-text">District rankings — all disciplines</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tr)">+</span><span class="tier-feat-text">Tournament management and draw system</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tr)">+</span><span class="tier-feat-text">Member sync across affiliated clubs</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tr)">+</span><span class="tier-feat-text">Classification verification and oversight</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tr)">+</span><span class="tier-feat-text">District communications board</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tr)">+</span><span class="tier-feat-text">Annual report generation</span></div>
+      </div>
+      <a class="tier-cta-ghost" href="federation.html">Register Federation</a>
+    </div>
+
+    <!-- STATE CHF 499 -->
+    <div class="tier-card">
+      <div class="tier-code">STATE</div>
+      <div class="tier-name c-yellow">State Federation</div>
+      <div class="tier-price">
+        <span class="tier-price-num" data-base="499">CHF 499</span>
+        <span class="tier-price-per">/ year</span>
+      </div>
+      <p class="tier-desc">State-level federation with full API access and compliance tooling.</p>
+      <div class="tier-for-label">Best for</div>
+      <div class="tier-for">State, provincial, or regional governing bodies.</div>
+      <div class="tier-features">
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--ty)">+</span><span class="tier-feat-text">Up to 100 member clubs</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--ty)">+</span><span class="tier-feat-text">Full API access — integrate state systems</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--ty)">+</span><span class="tier-feat-text">State rankings with category breakdown</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--ty)">+</span><span class="tier-feat-text">Compliance dashboard — anti-doping education</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--ty)">+</span><span class="tier-feat-text">Tournament system with seeding and draws</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--ty)">+</span><span class="tier-feat-text">Coach and judge licensing management</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--ty)">+</span><span class="tier-feat-text">Data export — CSV and JSON</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--ty)">+</span><span class="tier-feat-text">Priority support</span></div>
+      </div>
+      <a class="tier-cta-ghost" href="federation.html">Register State Federation</a>
+    </div>
+
+    <!-- NATIONAL CHF 1000 -->
+    <div class="tier-card">
+      <div class="tier-code">NAT</div>
+      <div class="tier-name c-blue">National Federation</div>
+      <div class="tier-price">
+        <span class="tier-price-num" data-base="1000">CHF 1,000</span>
+        <span class="tier-price-per">/ year</span>
+      </div>
+      <p class="tier-desc">Full national-level platform with sovereign API and advanced compliance tooling.</p>
+      <div class="tier-for-label">Best for</div>
+      <div class="tier-for">National governing bodies recognised by their government or continental federation.</div>
+      <div class="tier-features">
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tbl)">+</span><span class="tier-feat-text">Unlimited member clubs</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tbl)">+</span><span class="tier-feat-text">Sovereign API — custom integration with national systems</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tbl)">+</span><span class="tier-feat-text">National rankings — all categories and disciplines</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tbl)">+</span><span class="tier-feat-text">Anti-doping management module</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tbl)">+</span><span class="tier-feat-text">Judge/official grading and certification system</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tbl)">+</span><span class="tier-feat-text">Multi-state roll-up reporting</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tbl)">+</span><span class="tier-feat-text">Dedicated account manager</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tbl)">+</span><span class="tier-feat-text">Custom branding for federation portal</span></div>
+      </div>
+      <a class="tier-cta-ghost" href="federation.html">Register National Federation</a>
+    </div>
+
+    <!-- INTERNATIONAL CHF 11000 -->
+    <div class="tier-card">
+      <div class="tier-code">INT</div>
+      <div class="tier-name c-red">International Federation</div>
+      <div class="tier-price">
+        <span class="tier-price-num" data-base="11000">CHF 11,000</span>
+        <span class="tier-price-per">/ year</span>
+      </div>
+      <p class="tier-desc">Multi-country platform with premium API, dedicated support, and custom feature development.</p>
+      <div class="tier-for-label">Best for</div>
+      <div class="tier-for">Continental and international governing bodies of archery.</div>
+      <div class="tier-features">
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tr)">+</span><span class="tier-feat-text">Multi-country member management</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tr)">+</span><span class="tier-feat-text">Premium API — high throughput, SLA-backed</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tr)">+</span><span class="tier-feat-text">Dedicated technical support team</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tr)">+</span><span class="tier-feat-text">Custom feature development budget included</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tr)">+</span><span class="tier-feat-text">Global tournament infrastructure</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tr)">+</span><span class="tier-feat-text">Translation and multi-language portal</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tr)">+</span><span class="tier-feat-text">Custom legal data residency options</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tr)">+</span><span class="tier-feat-text">Annual platform review and roadmap input</span></div>
+      </div>
+      <a class="tier-cta-ghost" href="federation.html">Contact Platform</a>
+    </div>
+
+    <!-- EQUIPMENT BRAND CHF 1500 -->
+    <div class="tier-card">
+      <div class="tier-code">BRAND</div>
+      <div class="tier-name c-yellow">Equipment Brand</div>
+      <div class="tier-price">
+        <span class="tier-price-num" data-base="1500">CHF 1,500</span>
+        <span class="tier-price-per">/ year</span>
+      </div>
+      <p class="tier-desc">Product listings, analytics, and campaign tools for equipment and apparel brands.</p>
+      <div class="tier-for-label">Best for</div>
+      <div class="tier-for">Manufacturers and distributors of archery equipment, bows, arrows, and accessories — globally.</div>
+      <div class="tier-features">
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--ty)">+</span><span class="tier-feat-text">Brand storefront on platform marketplace</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--ty)">+</span><span class="tier-feat-text">Product listing — unlimited SKUs</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--ty)">+</span><span class="tier-feat-text">Sales analytics and reach reports</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--ty)">+</span><span class="tier-feat-text">Sponsored content placement (4 slots/year)</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--ty)">+</span><span class="tier-feat-text">Event sponsorship tools</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--ty)">+</span><span class="tier-feat-text">Brand verification badge</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--ty)">+</span><span class="tier-feat-text">Direct-to-athlete messaging campaigns</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--ty)">+</span><span class="tier-feat-text">Affiliate link integration</span></div>
+      </div>
+      <a class="tier-cta-ghost" href="federation.html">List Your Brand</a>
+    </div>
+
+  </div><!-- end tier-grid -->
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!--  COMPARE ALL TAB                                          -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="pr-section tab-panel" id="tab-compare">
+  <div class="compare-wrap">
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th><span class="th-name">Feature</span></th>
+          <th><div class="th-name">Archer</div><div class="th-price">CHF 1</div></th>
+          <th><div class="th-name">Pro</div><div class="th-price">CHF 24</div></th>
+          <th><div class="th-name">Coach</div><div class="th-price">CHF 36</div></th>
+          <th><div class="th-name">Club</div><div class="th-price">CHF 99</div></th>
+          <th><div class="th-name">District</div><div class="th-price">CHF 150</div></th>
+          <th><div class="th-name">State</div><div class="th-price">CHF 499</div></th>
+          <th><div class="th-name">National</div><div class="th-price">CHF 1k</div></th>
+          <th><div class="th-name">Intl Fed</div><div class="th-price">CHF 11k</div></th>
+          <th><div class="th-name">Brand</div><div class="th-price">CHF 1.5k</div></th>
+        </tr>
+      </thead>
+      <tbody id="compare-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!--  FAQ TAB                                                  -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="pr-section tab-panel" id="tab-faq">
+  <div class="faq-section" id="faq-list"></div>
+  <div class="contact-cta">
+    <h3>Have More Questions?</h3>
+    <p>For bespoke federation and enterprise pricing enquiries, contact us directly.</p>
+    <a class="cta-btn-gold" href="federation.html">Contact Platform</a>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div>
+        <div class="footer-brand-name">Archery<span>.</span>Services</div>
+        <div class="footer-tagline">The world's complete digital infrastructure for archery — athletes, clubs, equipment, tournaments and federations.</div>
+      </div>
+      <div class="footer-col"><h4>Plans</h4><ul>
+        <li><a href="pricing.html">Individual Plans</a></li>
+        <li><a href="pricing.html">Club &amp; Federation</a></li>
+        <li><a href="pricing.html">Equipment Brands</a></li>
+        <li><a href="pricing.html">Compare All</a></li>
+      </ul></div>
+      <div class="footer-col"><h4>Platform</h4><ul>
+        <li><a href="shop.html">Equipment Shop</a></li>
+        <li><a href="tournaments.html">Tournaments</a></li>
+        <li><a href="athletes.html">Rankings</a></li>
+        <li><a href="knowledge.html">Knowledge Hub</a></li>
+      </ul></div>
+      <div class="footer-col"><h4>Help</h4><ul>
+        <li><a href="contact.html">Contact Us</a></li>
+        <li><a href="privacy.html">Privacy Policy</a></li>
+        <li><a href="terms.html">Terms of Use</a></li>
+        <li><a href="admin.html">Admin</a></li>
+      </ul></div>
+    </div>
+    <div class="footer-bottom">
+      <div class="footer-copy">&copy; 2025 Archery.Services. All rights reserved.</div>
+      <div class="footer-legal"><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="privacy.html#cookies">Cookies</a></div>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ── CURRENCY ──
+const CHF_RATE = 0.895; // 1 USD = ~0.895 CHF
+let currentCurrency = localStorage.getItem('archery_currency') || 'USD';
+
+function setCurrency(cur, btn){
+  currentCurrency = cur;
+  localStorage.setItem('archery_currency', cur);
+  document.querySelectorAll('.currency-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  updatePrices();
+}
+function fmtPrice(usdTotal){
+  if(currentCurrency === 'CHF'){
+    const chf = usdTotal;
+    return 'CHF ' + (chf>=1000 ? (chf/1000).toFixed(1).replace('.0','')+'k' : Math.round(chf));
+  }
+  return 'CHF ' + (usdTotal>=1000 ? (usdTotal/1000).toFixed(1).replace('.0','')+'k' : Math.round(usdTotal));
+}
+
+// ── BILLING TOGGLE ──
+let billingCycle = '1yr';
+function setBilling(cycle, btn){
+  billingCycle = cycle;
+  document.querySelectorAll('.billing-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  updatePrices();
+}
+function updatePrices(){
+  const mult = billingCycle==='1yr'?1 : billingCycle==='2yr'?2:3;
+  const disc = billingCycle==='1yr'?1 : billingCycle==='2yr'?.9:.8;
+  const perLabel = billingCycle==='1yr'?'year':billingCycle==='2yr'?'2 years':'3 years';
+  document.querySelectorAll('[data-base]').forEach(el=>{
+    const base = parseInt(el.dataset.base);
+    const total = base * mult * disc;
+    const save = billingCycle!=='1yr' ? `<span class="tier-price-save">Save ${billingCycle==='2yr'?'10':'20'}%</span>` : '';
+    el.innerHTML = fmtPrice(total) + save;
+    el.nextElementSibling.textContent = '/ ' + perLabel;
+  });
+  const ey = document.getElementById('pr-eyebrow');
+  if(ey) ey.textContent = `Pricing · All amounts in ${currentCurrency} · Annual billing`;
+}
+
+// init currency button state
+document.addEventListener('DOMContentLoaded', ()=>{
+  document.querySelectorAll('.currency-btn').forEach(b=>{
+    if(b.textContent.includes(currentCurrency)) b.classList.add('active');
+    else b.classList.remove('active');
+  });
+  updatePrices();
+});
+
+// ── TABS ──
+function setTab(id, btn){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── COMPARE TABLE DATA ──
+const COMPARE = [
+  {cat:'Identity', rows:[
+    {f:'Archery ID (permanent)',        v:['✓','✓','✓','✓','✓','✓','✓','✓','—']},
+    {f:'QR-verifiable certificate',     v:['✓','✓','✓','✓','✓','✓','✓','✓','—']},
+    {f:'Score & classification records',v:['✓','✓','✓','View','View','View','Manage','Manage','—']},
+    {f:'Public Archery Profile',        v:['✓','✓','✓','✓','✓','✓','✓','✓','✓']},
+  ]},
+  {cat:'Competition', rows:[
+    {f:'Tournament registration',       v:['✓','✓','✓','✓','✓','✓','✓','✓','—']},
+    {f:'World ranking profile',         v:['—','✓','✓','—','—','—','—','—','—']},
+    {f:'Shot data & pattern analysis',  v:['—','✓','✓','—','—','—','—','—','—']},
+    {f:'Rival tracker',                 v:['—','✓','✓','—','—','—','—','—','—']},
+    {f:'Tournament draw management',    v:['—','—','—','—','✓','✓','✓','✓','—']},
+  ]},
+  {cat:'Training', rows:[
+    {f:'Training log (unlimited)',      v:['✓','✓','✓','✓','—','—','—','—','—']},
+    {f:'Advanced training analytics',   v:['—','✓','✓','✓','—','—','—','—','—']},
+    {f:'Equipment & bow setup tracker', v:['—','✓','✓','—','—','—','—','—','—']},
+    {f:'Video library (200+ lessons)',  v:['—','✓','✓','—','—','—','—','—','—']},
+    {f:'Wellness & injury tracking',    v:['—','✓','✓','—','—','—','—','—','—']},
+  ]},
+  {cat:'Coaching & Education', rows:[
+    {f:'Knowledge library access',      v:['✓','✓','✓','✓','—','—','—','—','—']},
+    {f:'Course creation & selling',     v:['—','—','✓','—','—','—','—','—','—']},
+    {f:'Student CRM',                   v:['—','—','150','Unlimited','—','—','—','—','—']},
+    {f:'Live class scheduling',         v:['—','—','12/mo','✓','—','—','—','—','—']},
+    {f:'Earnings dashboard',            v:['—','—','✓','—','—','—','—','—','—']},
+    {f:'Coach profile listing',         v:['—','—','✓','—','—','—','—','—','—']},
+  ]},
+  {cat:'Organisation', rows:[
+    {f:'Member management',             v:['—','—','—','Unlimited','20 clubs','100 clubs','Unlimited','Unlimited','—']},
+    {f:'Class scheduling',              v:['—','—','—','✓','—','—','—','—','—']},
+    {f:'Finance module',                v:['—','—','—','✓','—','—','—','—','—']},
+    {f:'Range safety & incident log',   v:['—','—','—','✓','—','—','—','—','—']},
+    {f:'Club analytics',                v:['—','—','—','✓','—','—','—','—','—']},
+    {f:'Anti-doping module',            v:['—','—','—','—','—','✓','✓','✓','—']},
+    {f:'Judge/official licensing',      v:['—','—','—','—','—','✓','✓','✓','—']},
+    {f:'Brand storefront',              v:['—','—','—','—','—','—','—','—','✓']},
+    {f:'Sponsored placements',          v:['—','—','—','—','—','—','—','—','4/yr']},
+  ]},
+  {cat:'API & Data', rows:[
+    {f:'API access',                    v:['—','—','—','—','Basic','Full','Sovereign','Premium','—']},
+    {f:'Data export (CSV/JSON)',         v:['—','✓','✓','✓','✓','✓','✓','✓','✓']},
+    {f:'Multi-country data residency',  v:['—','—','—','—','—','—','—','✓','—']},
+  ]},
+  {cat:'Support', rows:[
+    {f:'Standard support',              v:['✓','✓','✓','✓','✓','✓','✓','✓','✓']},
+    {f:'Priority support',              v:['—','✓','✓','—','—','✓','✓','✓','—']},
+    {f:'Dedicated account manager',     v:['—','—','—','—','—','—','✓','✓','—']},
+  ]},
+];
+
+function renderCompare(){
+  const tbody = document.getElementById('compare-tbody');
+  let html = '';
+  COMPARE.forEach(section=>{
+    html += `<tr class="cat-row"><td colspan="10">${section.cat}</td></tr>`;
+    section.rows.forEach(row=>{
+      html += `<tr class="feat-row"><td>${row.f}</td>`;
+      row.v.forEach(v=>{
+        if(v==='✓') html += `<td><span class="cell-yes">✓</span></td>`;
+        else if(v==='—') html += `<td><span class="cell-no">—</span></td>`;
+        else html += `<td><span class="cell-partial">${v}</span></td>`;
+      });
+      html += '</tr>';
+    });
+  });
+  tbody.innerHTML = html;
+}
+renderCompare();
+
+// ── FAQ DATA ──
+const FAQS = [
+  {cat:'Billing', q:'Can I change my tier later?', a:'Yes. Upgrade any time — the price difference is prorated to your renewal date. Downgrades take effect at the start of your next annual period. You never lose access before your period ends.'},
+  {cat:'Billing', q:'Is CHF 1 really the full price for the Archer tier?', a:'Yes. CHF 1 per year is the complete price. No setup fees, no in-app purchases, no advertising revenue, no data sales. The platform is funded by the distribution of tiers across its user base, not by monetising individuals.'},
+  {cat:'Billing', q:'Is there a free trial?', a:'Yes. A 7-day free preview is available for Pro Archer, Coach, and Club tiers. You can explore the full feature set without entering payment details. At the end of the trial, choose to subscribe or revert to the Archer tier (CHF 1).'},
+  {cat:'Billing', q:'Can I cancel my subscription?', a:'Yes. Cancel any time from your account settings. Your subscription remains active until the end of the annual period you have paid for. There are no cancellation fees.'},
+  {cat:'Billing', q:'Are there discounts for multi-year subscriptions?', a:'Yes. 2-year subscriptions receive a 10% discount on the total. 3-year subscriptions receive a 20% discount. Multi-year pricing is available for all tiers including organisation plans.'},
+  {cat:'Billing', q:'Can a club pay for its members\' subscriptions?', a:'Yes. A registered club can purchase Archer or Pro Archer subscriptions in bulk and assign them to members. This appears as a gift subscription in the member\'s account. The member retains the account fully if they leave the club.'},
+  {cat:'Identity', q:'What is an Archery ID?', a:'An Archery ID is a unique, permanent alphanumeric identifier assigned to your account on registration. It is paired with a QR code that links to your verified profile. It persists across club changes, federation affiliations, and discipline changes.'},
+  {cat:'Identity', q:'What happens to my Archery ID if I leave my club?', a:'Your Archery ID belongs to you permanently. It is not owned by your club or federation. If you move clubs, change federation, or stop training for a period, your records and certificates remain accessible and valid.'},
+  {cat:'Limits', q:'How many students can a Coach account manage?', a:'A Coach account supports up to 150 students in the CRM. For larger student populations, a Club plan includes unlimited member management.'},
+  {cat:'Commerce', q:'How does the earning model work for coaches?', a:'Coaches set their own course prices in USD. The platform retains 15% of gross course revenue as a platform fee. The remaining 85% is paid to the coach monthly via bank transfer or platform wallet.'},
+  {cat:'API', q:'What does "sovereign API" mean for national federations?', a:'Sovereign API means the federation has a dedicated API endpoint, its own authentication domain, and data residency controls. The federation\'s data does not pass through shared federation endpoints — designed for national bodies with data sovereignty obligations.'},
+  {cat:'API', q:'Are there additional costs for tournaments run on the platform?', a:'No per-event fees are charged to the federation or club for standard tournaments. Entry fees collected through the platform are handled as pass-through — the platform charges only standard payment processor rates.'},
+  {cat:'Security', q:'How are payments processed?', a:'All payments are processed through a PCI-DSS Level 1 compliant payment processor. Card details are never stored on Archery.Services servers. Payment data is tokenised and handled entirely within the processor\'s secure environment.'},
+  {cat:'Access', q:'Is the platform available in multiple languages?', a:'Yes. The platform supports English, Spanish, French, German, Arabic, Hindi, Portuguese, Russian, Turkish, Korean, Chinese (Simplified), and Japanese. Additional languages are added based on federation adoption.'},
+];
+
+function renderFAQs(){
+  const cats = [...new Set(FAQS.map(f=>f.cat))];
+  const el = document.getElementById('faq-list');
+  let html = '';
+  cats.forEach(cat=>{
+    html += `<div class="faq-cat-label">${cat}</div>`;
+    FAQS.filter(f=>f.cat===cat).forEach((faq,i)=>{
+      const id = `faq-${cat}-${i}`;
+      html += `<div class="faq-item" id="${id}">
+        <button class="faq-q" onclick="toggleFAQ('${id}')">
+          <span class="faq-q-text">${faq.q}</span>
+          <span class="faq-q-icon">+</span>
+        </button>
+        <div class="faq-a">${faq.a}</div>
+      </div>`;
+    });
+  });
+  el.innerHTML = html;
+}
+function toggleFAQ(id){
+  const el = document.getElementById(id);
+  el.classList.toggle('open');
+}
+renderFAQs();
+</script>
+<script src="shared.js"></script>
+</body>
+</html>

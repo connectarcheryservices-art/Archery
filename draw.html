@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="day">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tournament Draw — Archery.Services</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+:root{--tw:#FFFFFF;--tb:#1A1A1A;--tbl:#1A3A8C;--tr:#CC2222;--ty:#C9A227;--bg:#F5F7FA;--bg2:#FFFFFF;--ink:#0D1B2E;--dim:#334155;--faint:#8899AA;--line:rgba(26,58,140,.1);}
+body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;margin:0;}
+[data-theme="night"]{--bg:#0D1117;--bg2:#161B22;--ink:#E6EDF3;--dim:#8B949E;--faint:#4A5568;--line:rgba(255,255,255,.08);}
+.page-hero{background:linear-gradient(135deg,#0D1840,#1A3A8C);padding:52px 24px 40px;text-align:center;color:#fff;}
+.page-hero h1{font-family:'Oswald',sans-serif;font-size:clamp(28px,5vw,48px);font-weight:700;text-transform:uppercase;margin:0 0 10px;}
+.page-hero h1 em{color:#C9A227;font-style:normal;}
+.page-hero p{font-size:15px;color:rgba(255,255,255,.75);max-width:520px;margin:0 auto;line-height:1.6;}
+.wrap{max-width:1140px;margin:0 auto;padding:36px 24px;}
+.tab-bar{display:flex;gap:0;border-bottom:2px solid var(--line);margin-bottom:32px;overflow-x:auto;}
+.tab-btn{padding:12px 24px;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;border:none;background:none;cursor:pointer;color:var(--faint);border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .2s;white-space:nowrap;}
+.tab-btn.active{color:#C9A227;border-bottom-color:#C9A227;}
+.tab-panel{display:none;}.tab-panel.active{display:block;}
+
+/* ACTIVE DRAWS */
+.draw-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:18px;}
+.draw-card{background:var(--bg2);border-radius:10px;border:1px solid var(--line);overflow:hidden;transition:box-shadow .2s;}
+.draw-card:hover{box-shadow:0 6px 24px rgba(26,58,140,.1);}
+.draw-card-head{padding:18px 20px;background:#1A3A8C;color:#fff;position:relative;}
+.draw-name{font-family:'Oswald',sans-serif;font-size:17px;font-weight:700;}
+.draw-meta{font-size:12px;color:rgba(255,255,255,.65);margin-top:4px;}
+.draw-status{position:absolute;top:16px;right:16px;padding:4px 10px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;}
+.s-published{background:#22C55E;color:#fff;}
+.s-draft{background:#C9A227;color:#1A1A1A;}
+.s-progress{background:#CC2222;color:#fff;}
+.s-complete{background:rgba(255,255,255,.2);color:#fff;}
+.draw-body{padding:18px 20px;}
+.draw-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;}
+.ds-val{font-family:'Oswald',sans-serif;font-size:22px;font-weight:700;color:#1A3A8C;}
+.ds-label{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--faint);}
+.draw-hash{font-family:monospace;font-size:11px;color:var(--faint);margin-bottom:14px;}
+.draw-actions{display:flex;gap:8px;}
+.da-btn{flex:1;padding:9px;border:none;border-radius:6px;font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;}
+.da-view{background:#1A3A8C;color:#fff;}
+.da-export{background:var(--bg);color:var(--dim);border:1.5px solid var(--line);}
+
+/* BRACKET */
+.bracket-wrap{overflow-x:auto;padding-bottom:16px;}
+.bracket{display:flex;gap:0;align-items:flex-start;}
+.bracket-round{display:flex;flex-direction:column;gap:0;min-width:200px;}
+.bracket-round-label{font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);text-align:center;padding:8px 16px;background:var(--bg);border-bottom:1px solid var(--line);}
+.bracket-matches{display:flex;flex-direction:column;justify-content:space-around;padding:8px;}
+.bracket-match{margin:4px 8px;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--bg2);}
+.bracket-athlete{padding:8px 12px;font-size:12px;color:var(--ink);border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;}
+.bracket-athlete:last-child{border-bottom:none;}
+.bracket-athlete.winner{font-weight:700;color:#1A3A8C;}
+.bracket-athlete.winner::after{content:'✓';color:#22C55E;font-size:11px;}
+.bracket-bye{padding:8px 12px;font-size:12px;color:var(--faint);font-style:italic;}
+.ba-score{font-family:'Oswald',sans-serif;font-weight:700;color:#C9A227;}
+.connector{width:24px;display:flex;align-items:center;}
+
+/* GENERATOR */
+.gen-form{background:var(--bg2);border-radius:12px;border:1px solid var(--line);overflow:hidden;max-width:700px;}
+.gen-head{background:#1A3A8C;color:#fff;padding:20px 24px;font-family:'Oswald',sans-serif;font-size:18px;font-weight:700;}
+.gen-body{padding:24px;}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+.field-group{display:flex;flex-direction:column;gap:5px;}
+.field-label{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);}
+.field-input{padding:10px 14px;border:1.5px solid var(--line);border-radius:6px;font-size:14px;font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);outline:none;}
+.field-input:focus{border-color:#1A3A8C;}
+.field-row-full{margin-bottom:16px;}
+.athletes-box{min-height:140px;padding:10px 14px;border:1.5px solid var(--line);border-radius:6px;font-size:13px;font-family:monospace;background:var(--bg);color:var(--ink);resize:vertical;outline:none;width:100%;box-sizing:border-box;}
+.gen-btn{width:100%;padding:14px;background:#C9A227;color:#1A1A1A;border:none;border-radius:6px;font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:background .2s;margin-top:8px;}
+.gen-btn:hover{background:#DDB42A;}
+.gen-output{background:var(--bg);border-radius:8px;padding:16px;margin-top:16px;display:none;}
+.gen-output h3{font-family:'Oswald',sans-serif;font-size:15px;color:var(--ink);margin:0 0 12px;}
+</style>
+</head>
+<body>
+
+<nav style="position:sticky;top:0;z-index:300;background:#fff;border-bottom:1px solid rgba(26,58,140,.1);display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:68px;">
+  <a href="/" style="font-family:'Oswald',sans-serif;font-size:20px;font-weight:700;color:#1A3A8C;text-decoration:none;">Archery<span style="color:#C9A227">.</span>Services</a>
+  <div style="display:flex;gap:24px;align-items:center;">
+    <a href="tournaments.html" style="font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#334155;text-decoration:none;">Tournaments</a>
+    <a href="admin.html" style="font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#334155;text-decoration:none;">Admin</a>
+    <a href="pricing.html" style="padding:9px 20px;background:#C9A227;color:#1A1A1A;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;border-radius:4px;">Join Free</a>
+  </div>
+</nav>
+
+<div class="page-hero">
+  <h1>Tournament <em>Draw</em> Generator</h1>
+  <p>Generate, publish, and manage fair brackets for any archery format — recurve, compound, field, or 3D.</p>
+</div>
+
+<div class="wrap">
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="setTab('active',this)">Active Draws</button>
+    <button class="tab-btn" onclick="setTab('bracket',this)">Sample Bracket</button>
+    <button class="tab-btn" onclick="setTab('generate',this)">Generate Draw</button>
+    <button class="tab-btn" onclick="setTab('history',this)">Archive</button>
+  </div>
+
+  <!-- ACTIVE DRAWS -->
+  <div class="tab-panel active" id="tab-active">
+    <div class="draw-grid" id="draws-grid"></div>
+  </div>
+
+  <!-- BRACKET VIEW -->
+  <div class="tab-panel" id="tab-bracket">
+    <div style="margin-bottom:20px;">
+      <div style="font-family:'Oswald',sans-serif;font-size:20px;font-weight:700;color:var(--ink);">India Open 2026 — Recurve Men Senior</div>
+      <div style="font-size:13px;color:var(--faint);margin-top:4px;">12 Sep 2026 · New Delhi · 8 athletes · Elimination format</div>
+      <div style="font-family:monospace;font-size:11px;color:var(--faint);margin-top:4px;">Draw hash: 7f3a9b2c1d · Published · Verified</div>
+    </div>
+    <div class="bracket-wrap">
+      <div class="bracket" id="bracket-display"></div>
+    </div>
+  </div>
+
+  <!-- GENERATOR -->
+  <div class="tab-panel" id="tab-generate">
+    <div class="gen-form">
+      <div class="gen-head">🎯 New Tournament Draw</div>
+      <div class="gen-body">
+        <div class="field-row">
+          <div class="field-group">
+            <label class="field-label">Tournament Name</label>
+            <input class="field-input" id="g-name" placeholder="e.g. India Open 2026">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Date</label>
+            <input class="field-input" type="date" id="g-date">
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field-group">
+            <label class="field-label">Category</label>
+            <select class="field-input" id="g-cat">
+              <option>Recurve Men Senior</option>
+              <option>Recurve Women Senior</option>
+              <option>Compound Men Senior</option>
+              <option>Compound Women Senior</option>
+              <option>Recurve Men U21</option>
+              <option>Recurve Women U21</option>
+              <option>Traditional Men</option>
+              <option>Traditional Women</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Format</label>
+            <select class="field-input" id="g-format">
+              <option>Single Elimination</option>
+              <option>Double Elimination</option>
+              <option>Round Robin</option>
+              <option>Seeded Elimination</option>
+            </select>
+          </div>
+        </div>
+        <div class="field-row-full">
+          <div class="field-group">
+            <label class="field-label">Athletes (one per line — add seedings with # e.g. "Deepika Kumari #1")</label>
+            <textarea class="athletes-box" id="g-athletes" placeholder="Deepika Kumari #1&#10;Ankita Bhakat #2&#10;Komalika Bari #3&#10;Tanisha Sawant&#10;Simranjeet Kaur&#10;Priya Sharma&#10;Bhajan Kaur&#10;Laishram Bombayla Devi"></textarea>
+          </div>
+        </div>
+        <button class="gen-btn" onclick="generateDraw()">Generate Draw</button>
+        <div class="gen-output" id="gen-output">
+          <h3>Draw Generated</h3>
+          <div id="gen-result"></div>
+          <div style="margin-top:12px;display:flex;gap:8px;">
+            <button class="da-btn da-view" style="flex:none;padding:9px 20px;" onclick="setTab('bracket',document.querySelectorAll('.tab-btn')[1]);renderBracket(genAthletes)">View Bracket</button>
+            <button class="da-btn da-export" style="flex:none;padding:9px 20px;">Export PDF</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="tab-panel" id="tab-history">
+    <div id="history-list"></div>
+  </div>
+</div>
+
+<script>
+const DRAWS = [
+  {id:'d1',tournament:'India Open 2026',date:'2026-09-12',category:'Recurve Men Senior',entries:16,status:'published',format:'Single Elimination',hash:'7f3a9b2c',organiser:'Archery Association of India'},
+  {id:'d2',tournament:'Swiss Indoor Open',date:'2026-10-04',category:'Recurve Women Senior',entries:24,status:'published',format:'Seeded Elimination',hash:'3b8c7e1a',organiser:'Swiss Archery Federation'},
+  {id:'d3',tournament:'UK Grand Prix',date:'2026-11-15',category:'Compound Mixed Team',entries:12,status:'draft',format:'Round Robin',hash:'9d2f4a8b',organiser:'Archery GB'},
+  {id:'d4',tournament:'Australia Field Championship',date:'2026-10-28',category:'Field Archery Open',entries:32,status:'in progress',format:'Double Elimination',hash:'1e5c9f2d',organiser:'Archery Australia'},
+  {id:'d5',tournament:'Delhi State Championship',date:'2026-08-30',category:'Recurve U21',entries:20,status:'complete',format:'Single Elimination',hash:'4a7b3c0e',organiser:'Delhi Archery Association'},
+];
+
+const HISTORY = [
+  {id:'h1',tournament:'World Championship 2025',date:'2025-09-18',category:'Recurve Men Senior',entries:64,winner:'Brady Ellison',format:'Single Elimination',hash:'aa1b2c3d'},
+  {id:'h2',tournament:'Asian Games 2025',date:'2025-10-04',category:'Recurve Mixed Team',entries:24,winner:'Republic of Korea',format:'Seeded Elimination',hash:'bb2c3d4e'},
+  {id:'h3',tournament:'India Open 2025',date:'2025-09-14',category:'Recurve Women Senior',entries:18,winner:'Deepika Kumari',format:'Single Elimination',hash:'cc3d4e5f'},
+];
+
+const STATUS_CLS={published:'s-published',draft:'s-draft','in progress':'s-progress',complete:'s-complete'};
+const STATUS_LABEL={published:'Published',draft:'Draft','in progress':'In Progress',complete:'Complete'};
+
+function renderDraws(){
+  document.getElementById('draws-grid').innerHTML=DRAWS.map(d=>`
+    <div class="draw-card">
+      <div class="draw-card-head">
+        <div class="draw-name">${d.tournament}</div>
+        <div class="draw-meta">${d.date} · ${d.organiser}</div>
+        <div class="draw-status ${STATUS_CLS[d.status]}">${STATUS_LABEL[d.status]}</div>
+      </div>
+      <div class="draw-body">
+        <div class="draw-stats">
+          <div><div class="ds-val">${d.entries}</div><div class="ds-label">Athletes</div></div>
+          <div><div class="ds-val">${Math.ceil(Math.log2(d.entries))}</div><div class="ds-label">Rounds</div></div>
+          <div><div class="ds-val">${d.format.split(' ')[0]}</div><div class="ds-label">Format</div></div>
+        </div>
+        <div class="draw-hash"># ${d.hash} · ${d.category}</div>
+        <div class="draw-actions">
+          <button class="da-btn da-view">View Bracket</button>
+          <button class="da-btn da-export">Export</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+const SAMPLE_ATHLETES=[
+  'Deepika Kumari','Ankita Bhakat','Komalika Bari','Tanisha Sawant',
+  'Simranjeet Kaur','Priya Sharma','Bhajan Kaur','L. Bombayla Devi',
+];
+let genAthletes=[];
+
+function renderBracket(athletes){
+  const n=athletes.length;
+  const rounds=Math.ceil(Math.log2(n));
+  const bracket=document.getElementById('bracket-display');
+  const ROUND_NAMES=['QF','SF','Final','Champion'];
+
+  let currentRound=athletes.map((a,i)=>({a,seed:i+1}));
+  let html='';
+  for(let r=0;r<rounds;r++){
+    const label=rounds-r<=ROUND_NAMES.length?ROUND_NAMES[rounds-r-1]:`Round ${r+1}`;
+    const matches=[];
+    for(let i=0;i<currentRound.length;i+=2){
+      const a=currentRound[i];
+      const b=currentRound[i+1]||null;
+      matches.push({a,b});
+    }
+    html+=`<div class="bracket-round"><div class="bracket-round-label">${label}</div><div class="bracket-matches">`;
+    matches.forEach(m=>{
+      const winA=m.b&&Math.random()>.5;
+      html+=`<div class="bracket-match">
+        <div class="bracket-athlete ${winA?'winner':''}">${m.a.a} <span class="ba-score">${winA?Math.floor(Math.random()*30+170):Math.floor(Math.random()*20+155)}</span></div>
+        ${m.b?`<div class="bracket-athlete ${!winA?'winner':''}">${m.b.a} <span class="ba-score">${!winA?Math.floor(Math.random()*30+170):Math.floor(Math.random()*20+155)}</span></div>`:
+        `<div class="bracket-bye">— BYE —</div>`}
+      </div>`;
+    });
+    html+='</div></div><div class="connector"></div>';
+    currentRound=matches.map(m=>m.b?(Math.random()>.5?m.a:m.b):m.a);
+  }
+  html+=`<div class="bracket-round"><div class="bracket-round-label">🥇 Winner</div><div class="bracket-matches"><div class="bracket-match"><div class="bracket-athlete winner" style="background:#C9A22722;">${currentRound[0]?.a||'TBD'} 🏆</div></div></div></div>`;
+  bracket.innerHTML=html;
+}
+
+function generateDraw(){
+  const raw=document.getElementById('g-athletes').value.trim().split('\n').filter(s=>s.trim());
+  genAthletes=raw.map(s=>s.replace(/#\d+/,'').trim());
+  if(genAthletes.length<2){alert('Enter at least 2 athletes.');return;}
+  const shuffled=[...genAthletes].sort(()=>Math.random()-.5);
+  const hash=Math.random().toString(36).slice(2,10);
+  document.getElementById('gen-result').innerHTML=`
+    <div style="font-size:13px;color:var(--dim);margin-bottom:8px;">Tournament: <strong>${document.getElementById('g-name').value||'New Draw'}</strong></div>
+    <div style="font-size:13px;color:var(--dim);margin-bottom:8px;">Athletes: <strong>${genAthletes.length}</strong> · Format: <strong>${document.getElementById('g-format').value}</strong></div>
+    <div style="font-family:monospace;font-size:11px;color:var(--faint);">Draw hash: ${hash} · Generated ${new Date().toLocaleString()}</div>
+    <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px;">${shuffled.map((a,i)=>`<span style="padding:4px 10px;background:rgba(26,58,140,.07);border-radius:4px;font-size:12px;color:#1A3A8C;"><strong>${i+1}.</strong> ${a}</span>`).join('')}</div>`;
+  document.getElementById('gen-output').style.display='block';
+}
+
+function renderHistory(){
+  document.getElementById('history-list').innerHTML=HISTORY.map(h=>`
+    <div style="background:var(--bg2);border-radius:10px;border:1px solid var(--line);padding:20px;margin-bottom:12px;display:flex;align-items:center;gap:20px;">
+      <div style="flex:1;">
+        <div style="font-family:'Oswald',sans-serif;font-size:16px;font-weight:700;color:var(--ink);">${h.tournament}</div>
+        <div style="font-size:12px;color:var(--faint);margin-top:3px;">${h.date} · ${h.category} · ${h.entries} athletes</div>
+        <div style="font-size:12px;color:var(--faint);margin-top:2px;font-family:monospace;">Hash: ${h.hash}</div>
+      </div>
+      <div style="text-align:center;min-width:120px;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);">Winner</div>
+        <div style="font-family:'Oswald',sans-serif;font-size:15px;font-weight:700;color:#C9A227;">${h.winner} 🏆</div>
+      </div>
+      <button class="da-btn da-export" style="padding:8px 16px;border:1.5px solid var(--line);border-radius:6px;background:var(--bg);cursor:pointer;">View Archive</button>
+    </div>`).join('');
+}
+
+function setTab(id,btn){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
+renderDraws();renderBracket(SAMPLE_ATHLETES);renderHistory();
+</script>
+<script src="shared.js"></script>
+</body>
+</html>
