@@ -2,7 +2,7 @@
 // Handles: nav active state, announcement banner, settings from API
 
 (function() {
-  const API = 'http://localhost:3000/api';
+  const API = '/api';   // relative so it works on Vercel and locally alike
   const page = location.pathname.split('/').pop() || 'index.html';
 
   // ── ARCHERY TARGET-COLOUR THEME + ENHANCEMENTS ──
