@@ -387,18 +387,16 @@ footer{background:var(--ink-2);border-top:.5px solid rgba(255,255,255,.06);paddi
   </div>
 </div>
 
-<!-- BRAND TABS -->
+<!-- CATEGORY TABS -->
 <div class="brand-tabs-wrap reveal">
   <div class="brand-tabs" id="brand-tabs">
-    <button class="brand-tab active" onclick="filterBrand('all',this)">All Brands</button>
-    <button class="brand-tab" onclick="filterBrand('Yuggenite',this)">Yuggenite Archery</button>
-    <button class="brand-tab" onclick="filterBrand('Superspeed',this)">Superspeed Archery</button>
-    <button class="brand-tab" onclick="filterBrand('Ten Ring',this)">Ten Ring Archery</button>
-    <button class="brand-tab" onclick="filterBrand('Gosports',this)">Gosports</button>
-    <button class="brand-tab" onclick="filterBrand('Archery Card',this)">Archery Card</button>
-    <button class="brand-tab" onclick="filterBrand('Mychoice',this)">Mychoice Archery</button>
-    <button class="brand-tab" onclick="filterBrand('Indiamart',this)">Indiamart Verified</button>
-    <button class="brand-tab" onclick="filterBrand('Sells Zone',this)">Archery Sells Zone</button>
+    <button class="brand-tab active" onclick="filterBrand('all',this)">All Equipment</button>
+    <button class="brand-tab" onclick="filterBrand('Recurve',this)">Recurve Bows</button>
+    <button class="brand-tab" onclick="filterBrand('Compound',this)">Compound Bows</button>
+    <button class="brand-tab" onclick="filterBrand('Arrow',this)">Arrows</button>
+    <button class="brand-tab" onclick="filterBrand('Target',this)">Targets</button>
+    <button class="brand-tab" onclick="filterBrand('Accessory',this)">Accessories</button>
+    <button class="brand-tab" onclick="filterBrand('Safety',this)">Protective Gear</button>
   </div>
 </div>
 
@@ -514,10 +512,10 @@ footer{background:var(--ink-2);border-top:.5px solid rgba(255,255,255,.06);paddi
     <!-- Brand showcase (shown when brand tab selected) -->
     <div class="brand-showcase reveal" id="brand-showcase" style="display:none;">
       <div class="brand-showcase-header">
-        <span class="brand-showcase-name" id="bs-name">Yuggenite Archery</span>
+        <span class="brand-showcase-name" id="bs-name">Verified Seller</span>
         <span class="brand-verified"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Verified Seller</span>
       </div>
-      <p class="brand-showcase-desc" id="bs-desc">India's leading professional archery equipment manufacturer. Supplying national athletes, state federations, and clubs since 2008. All products are World Archery compliant.</p>
+      <p class="brand-showcase-desc" id="bs-desc">All products are sold by registered sellers and are World Archery compliant.</p>
       <div class="brand-showcase-stats">
         <div class="bs-stat"><div class="bs-stat-val" id="bs-products">–</div><div class="bs-stat-label">Products</div></div>
         <div class="bs-stat"><div class="bs-stat-val" id="bs-rating">–</div><div class="bs-stat-label">Avg Rating</div></div>
@@ -589,31 +587,24 @@ footer{background:var(--ink-2);border-top:.5px solid rgba(255,255,255,.06);paddi
 
 <script>
 // ── DATA ──
+// Demo fallback only (the live shop loads real products from /api/products).
+// Brand is shown only when a product is from a formally-registered seller.
 const PRODUCTS = [
-  {id:1,name:'Pro Recurve Bow — 68" 36lbs',brand:'Yuggenite',price:24500,was:29900,rating:5,reviews:142,badge:'sale',save:18,tags:['Competition','Intermediate'],color:'#C9A227',bg:'#1A1A26',icon:'recurve',delivery:'Free delivery by Thu',inCart:false,wished:false},
-  {id:2,name:'Carbon Compound Bow — 60lbs Draw',brand:'Gosports',price:42000,was:null,rating:4,reviews:67,badge:'new',save:0,tags:['Competition','Advanced'],color:'#22C55E',bg:'#1A201A',icon:'compound',delivery:'Free delivery by Fri',inCart:false,wished:false},
-  {id:3,name:'Aluminium Arrow Set — 12pcs Spine 400',brand:'Ten Ring',price:3200,was:3800,rating:5,reviews:218,badge:'hot',save:16,tags:['Recurve','Field'],color:'#3B82F6',bg:'#1A1A2A',icon:'arrows',delivery:'Free delivery by Thu',inCart:false,wished:false},
-  {id:4,name:'Competition Target Face — 80cm WA',brand:'Archery Card',price:850,was:960,rating:4,reviews:95,badge:'sale',save:12,tags:['Target','Indoor'],color:'#EF4444',bg:'#211A1A',icon:'target',delivery:'₹49 delivery',inCart:false,wished:false},
-  {id:5,name:'Olympic Recurve Riser — Carbon ILF',brand:'Superspeed',price:68000,was:78000,rating:5,reviews:34,badge:'pro',save:13,tags:['Elite','Competition'],color:'#A855F7',bg:'#1E1A2A',icon:'riser',delivery:'Free delivery by Sat',inCart:false,wished:false},
-  {id:6,name:'Finger Tab — Pro Leather Right Hand',brand:'Mychoice',price:1200,was:null,rating:4,reviews:180,badge:'new',save:0,tags:['Accessory','All Levels'],color:'#F97316',bg:'#201A18',icon:'tab',delivery:'Free delivery by Thu',inCart:false,wished:false},
-  {id:7,name:'Bowstand Foldable — Carbon Fibre',brand:'Yuggenite',price:2800,was:3200,rating:5,reviews:72,badge:'sale',save:12,tags:['Accessory','Training'],color:'#C9A227',bg:'#1A1A26',icon:'stand',delivery:'Free delivery by Thu',inCart:false,wished:false},
-  {id:8,name:'Carbon Arrow Set — 12pcs Spine 500 ACE',brand:'Sells Zone',price:8400,was:9200,rating:5,reviews:156,badge:'hot',save:9,tags:['Competition','Elite'],color:'#EC4899',bg:'#1E1A1E',icon:'arrows',delivery:'Free delivery by Fri',inCart:false,wished:false},
-  {id:9,name:'Arm Guard — Full Length Leather',brand:'Indiamart',price:650,was:null,rating:3,reviews:240,badge:null,save:0,tags:['Safety','Beginner'],color:'#14B8A6',bg:'#1A1E1E',icon:'guard',delivery:'₹49 delivery',inCart:false,wished:false},
-  {id:10,name:'Recurve Sight — Olympic 4-Pin',brand:'Superspeed',price:12500,was:15000,rating:5,reviews:88,badge:'sale',save:17,tags:['Sight','Competition'],color:'#3B82F6',bg:'#1A1A2A',icon:'sight',delivery:'Free delivery by Thu',inCart:false,wished:false},
-  {id:11,name:'String Wax & Maintenance Kit',brand:'Mychoice',price:380,was:null,rating:4,reviews:420,badge:null,save:0,tags:['Maintenance','All Levels'],color:'#22C55E',bg:'#1A201A',icon:'kit',delivery:'Free delivery by Thu',inCart:false,wished:false},
-  {id:12,name:'Long Rod Stabiliser — 28" Carbon',brand:'Ten Ring',price:5600,was:6500,rating:4,reviews:63,badge:'sale',save:14,tags:['Stabiliser','Intermediate'],color:'#C9A227',bg:'#1A1A26',icon:'rod',delivery:'Free delivery by Sat',inCart:false,wished:false},
+  {id:1,name:'Pro Recurve Bow — 68" 36lbs',brand:'Recurve Bow',price:24500,was:29900,rating:5,reviews:142,badge:'sale',save:18,tags:['Recurve','Competition','Intermediate'],color:'#C9A227',bg:'#1A1A26',icon:'recurve',delivery:'Free delivery by Thu',inCart:false,wished:false},
+  {id:2,name:'Carbon Compound Bow — 60lbs Draw',brand:'Compound Bow',price:42000,was:null,rating:4,reviews:67,badge:'new',save:0,tags:['Compound','Competition','Advanced'],color:'#22C55E',bg:'#1A201A',icon:'compound',delivery:'Free delivery by Fri',inCart:false,wished:false},
+  {id:3,name:'Aluminium Arrow Set — 12pcs Spine 400',brand:'Arrows',price:3200,was:3800,rating:5,reviews:218,badge:'hot',save:16,tags:['Arrow','Recurve','Field'],color:'#3B82F6',bg:'#1A1A2A',icon:'arrows',delivery:'Free delivery by Thu',inCart:false,wished:false},
+  {id:4,name:'Competition Target Face — 80cm WA',brand:'Target Faces',price:850,was:960,rating:4,reviews:95,badge:'sale',save:12,tags:['Target','Indoor'],color:'#EF4444',bg:'#211A1A',icon:'target',delivery:'₹49 delivery',inCart:false,wished:false},
+  {id:5,name:'Olympic Recurve Riser — Carbon ILF',brand:'Risers',price:68000,was:78000,rating:5,reviews:34,badge:'pro',save:13,tags:['Recurve','Elite','Competition'],color:'#A855F7',bg:'#1E1A2A',icon:'riser',delivery:'Free delivery by Sat',inCart:false,wished:false},
+  {id:6,name:'Finger Tab — Pro Leather Right Hand',brand:'Accessories',price:1200,was:null,rating:4,reviews:180,badge:'new',save:0,tags:['Accessory','All Levels'],color:'#F97316',bg:'#201A18',icon:'tab',delivery:'Free delivery by Thu',inCart:false,wished:false},
+  {id:7,name:'Bowstand Foldable — Carbon Fibre',brand:'Accessories',price:2800,was:3200,rating:5,reviews:72,badge:'sale',save:12,tags:['Accessory','Training'],color:'#C9A227',bg:'#1A1A26',icon:'stand',delivery:'Free delivery by Thu',inCart:false,wished:false},
+  {id:8,name:'Carbon Arrow Set — 12pcs Spine 500 ACE',brand:'Arrows',price:8400,was:9200,rating:5,reviews:156,badge:'hot',save:9,tags:['Arrow','Competition','Elite'],color:'#EC4899',bg:'#1E1A1E',icon:'arrows',delivery:'Free delivery by Fri',inCart:false,wished:false},
+  {id:9,name:'Arm Guard — Full Length Leather',brand:'Protective Gear',price:650,was:null,rating:3,reviews:240,badge:null,save:0,tags:['Safety','Beginner'],color:'#14B8A6',bg:'#1A1E1E',icon:'guard',delivery:'₹49 delivery',inCart:false,wished:false},
+  {id:10,name:'Recurve Sight — Olympic 4-Pin',brand:'Accessories',price:12500,was:15000,rating:5,reviews:88,badge:'sale',save:17,tags:['Accessory','Sight','Competition'],color:'#3B82F6',bg:'#1A1A2A',icon:'sight',delivery:'Free delivery by Thu',inCart:false,wished:false},
+  {id:11,name:'String Wax & Maintenance Kit',brand:'Maintenance',price:380,was:null,rating:4,reviews:420,badge:null,save:0,tags:['Accessory','Maintenance','All Levels'],color:'#22C55E',bg:'#1A201A',icon:'kit',delivery:'Free delivery by Thu',inCart:false,wished:false},
+  {id:12,name:'Long Rod Stabiliser — 28" Carbon',brand:'Accessories',price:5600,was:6500,rating:4,reviews:63,badge:'sale',save:14,tags:['Accessory','Stabiliser','Intermediate'],color:'#C9A227',bg:'#1A1A26',icon:'rod',delivery:'Free delivery by Sat',inCart:false,wished:false},
 ];
 
-const BRAND_INFO = {
-  'Yuggenite':{desc:"India's leading professional archery equipment manufacturer. Supplying national athletes and federations since 2008. World Archery compliant.",products:'184',rating:'4.8★',sold:'12,400'},
-  'Superspeed':{desc:'Specialists in high-performance recurve and compound systems. Used by national team members and Olympians across South Asia.',products:'96',rating:'4.9★',sold:'6,800'},
-  'Ten Ring':{desc:'Premium arrow and shaft manufacturer. Known for precise spine tolerances and consistent quality at competitive prices.',products:'120',rating:'4.7★',sold:'28,000'},
-  'Gosports':{desc:'Multi-sport equipment brand with a dedicated archery line. Popular for beginner-to-intermediate compound systems.',products:'64',rating:'4.5★',sold:'9,200'},
-  'Archery Card':{desc:'Specialist in WA-approved target faces, scoring systems, and competition consumables.',products:'48',rating:'4.6★',sold:'45,000'},
-  'Mychoice':{desc:'Wide-range archery accessories brand. Tabs, quivers, arm guards, and training aids at every price point.',products:'210',rating:'4.4★',sold:'32,000'},
-  'Indiamart':{desc:'India\'s largest B2B marketplace network with a curated archery supplies section. Bulk and wholesale available.',products:'480',rating:'4.2★',sold:'80,000+'},
-  'Sells Zone':{desc:'Premium carbon arrow specialists and competition equipment importers. Authorised distributor for several international brands.',products:'72',rating:'4.8★',sold:'7,600'},
-};
+const BRAND_INFO = {};
 
 let cart = [];
 let currentView = 'grid';
@@ -805,7 +796,14 @@ function filterBrand(brand, btn) {
 
 function getFilteredProducts() {
   let list = [...PRODUCTS];
-  if (currentBrand !== 'all') list = list.filter(p => p.brand.toLowerCase().includes(currentBrand.toLowerCase()) || currentBrand.toLowerCase().includes(p.brand.toLowerCase()));
+  if (currentBrand !== 'all') {
+    const key = currentBrand.toLowerCase();
+    list = list.filter(p =>
+      (p.tags || []).some(t => t.toLowerCase().includes(key)) ||
+      p.name.toLowerCase().includes(key) ||
+      (p.brand || '').toLowerCase().includes(key)
+    );
+  }
   const q = document.getElementById('search-input').value.toLowerCase();
   if (q) list = list.filter(p => p.name.toLowerCase().includes(q) || p.brand.toLowerCase().includes(q) || p.tags.some(t => t.toLowerCase().includes(q)));
   return list;
