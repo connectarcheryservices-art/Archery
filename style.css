@@ -4,16 +4,16 @@
 :root {
   /* World Archery target-face palette — gold(yellow) · red · blue · black · white */
   --tgt-gold:#FFC72C; --tgt-red:#E4002B; --tgt-blue:#009BDE; --tgt-black:#141414; --tgt-white:#F5F7FA;
-  --forest:#0C0D10; --forest-2:#15171C; --forest-3:#1E2129; --forest-4:#272B35;
+  --forest:#0A1730; --forest-2:#102444; --forest-3:#173159; --forest-4:#1F3D6B;
   --ember:#E4002B; --ember-light:#FF3B53; --ember-dark:#B00020;
-  --ivory:#F5F7FA; --ivory-2:#B7BECA; --ivory-3:#7A828F;
+  --ivory:#F5F8FF; --ivory-2:#B9C3D8; --ivory-3:#7E8AA0;
   --gold-ring:#FFC72C;
   --gold:#FFC72C; --gold-light:#FFD45E; --gold-dark:#C9971A;
 
-  /* Base tokens (remapped onto the target palette) */
-  --ink:#0C0D10; --ink-2:#15171C; --ink-3:#1E2129;
-  --muted:#7A828F; --muted-2:#9AA2AE;
-  --text:#F5F7FA; --text-2:#B7BECA;
+  /* Base tokens (remapped onto the target palette — archery navy) */
+  --ink:#0A1730; --ink-2:#102444; --ink-3:#173159;
+  --muted:#7E8AA0; --muted-2:#9AA6BD;
+  --text:#F5F8FF; --text-2:#B9C3D8;
   --green:#22C55E; --red:#E4002B; --blue:#009BDE;
   --purple:#A855F7; --orange:#F97316; --pink:#EC4899;
 
@@ -30,10 +30,10 @@
 html{scroll-behavior:smooth;}
 body{font-family:'Inter',sans-serif;background:var(--forest);color:var(--text);overflow-x:hidden;cursor:none;
   background-image:
-    radial-gradient(1100px 680px at 82% -8%, rgba(228,0,43,.12), transparent 58%),
-    radial-gradient(820px 560px at 4% 8%, rgba(0,155,222,.12), transparent 55%),
-    radial-gradient(900px 900px at 50% 122%, rgba(255,199,44,.08), transparent 60%),
-    linear-gradient(180deg,#0A0B0E,#0C0D10 45%,#08090C);
+    radial-gradient(1100px 700px at 84% -10%, rgba(228,0,43,.12), transparent 56%),
+    radial-gradient(1000px 720px at 2% 2%, rgba(0,133,222,.28), transparent 56%),
+    radial-gradient(900px 900px at 50% 124%, rgba(255,199,44,.08), transparent 60%),
+    linear-gradient(180deg,#0E2552,#0A1730 52%,#070F22);
   background-attachment:fixed;}
 #cursor-dot{width:8px;height:8px;background:var(--gold);border-radius:50%;position:fixed;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);}
 #cursor-ring{width:36px;height:36px;border:1.5px solid var(--gold);border-radius:50%;position:fixed;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);opacity:.6;transition:width .2s,height .2s,opacity .2s;}
