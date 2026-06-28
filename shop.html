@@ -314,7 +314,7 @@ footer{background:var(--ink-2);border-top:.5px solid rgba(255,255,255,.06);paddi
       <input class="coupon-input" placeholder="Enter coupon code" id="coupon-input">
       <button class="coupon-apply" onclick="applyCoupon()">Apply</button>
     </div>
-    <button class="btn-checkout">Proceed to Checkout →</button>
+    <button class="btn-checkout" onclick="location.href='checkout.html'">Proceed to Checkout →</button>
     <div class="cart-secure"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Secured payment · Buyer Protection Active</div>
   </div>
 </div>
@@ -589,7 +589,7 @@ footer{background:var(--ink-2);border-top:.5px solid rgba(255,255,255,.06);paddi
 // ── DATA ──
 // Demo fallback only (the live shop loads real products from /api/products).
 // Brand is shown only when a product is from a formally-registered seller.
-const PRODUCTS = [
+let PRODUCTS = [
   {id:1,name:'Pro Recurve Bow — 68" 36lbs',brand:'Recurve Bow',price:24500,was:29900,rating:5,reviews:142,badge:'sale',save:18,tags:['Recurve','Competition','Intermediate'],color:'#C9A227',bg:'#1A1A26',icon:'recurve',delivery:'Free delivery by Thu',inCart:false,wished:false},
   {id:2,name:'Carbon Compound Bow — 60lbs Draw',brand:'Compound Bow',price:42000,was:null,rating:4,reviews:67,badge:'new',save:0,tags:['Compound','Competition','Advanced'],color:'#22C55E',bg:'#1A201A',icon:'compound',delivery:'Free delivery by Fri',inCart:false,wished:false},
   {id:3,name:'Aluminium Arrow Set — 12pcs Spine 400',brand:'Arrows',price:3200,was:3800,rating:5,reviews:218,badge:'hot',save:16,tags:['Arrow','Recurve','Field'],color:'#3B82F6',bg:'#1A1A2A',icon:'arrows',delivery:'Free delivery by Thu',inCart:false,wished:false},
@@ -606,7 +606,7 @@ const PRODUCTS = [
 
 const BRAND_INFO = {};
 
-let cart = [];
+let cart = JSON.parse(localStorage.getItem('archery_cart') || '[]');
 let currentView = 'grid';
 let currentBrand = 'all';
 
@@ -712,6 +712,7 @@ function changeQty(id, delta) {
 }
 
 function updateCartUI() {
+  localStorage.setItem('archery_cart', JSON.stringify(cart));
   const total = cart.reduce((s, x) => s + x.qty, 0);
   document.getElementById('cart-count').textContent = total;
   document.getElementById('cart-header-count').textContent = total > 0 ? `(${total} items)` : '';
@@ -870,6 +871,35 @@ document.querySelectorAll('.reveal').forEach(r => ro.observe(r));
 // INIT
 renderProducts(PRODUCTS);
 updateCartUI();
+
+// Load live products from the API (Supabase). Falls back to the demo list when empty/offline.
+(async function loadLiveProducts(){
+  try{
+    const data = await fetch('/api/products').then(r => r.json());
+    if(Array.isArray(data) && data.length){
+      const CAT = {
+        'Recurve Bows':['recurve','#FFC72C'], 'Compound Bows':['compound','#22C55E'],
+        'Arrows':['arrows','#009BDE'], 'Targets':['target','#E4002B'],
+        'Accessories':['tab','#F97316'], 'Protective Gear':['guard','#14B8A6']
+      };
+      PRODUCTS = data.filter(p => p.active !== false).map(p => {
+        const c = CAT[p.category] || ['recurve','#FFC72C'];
+        const price = Number(p.price)||0, was = p.was ? Number(p.was) : null;
+        return {
+          id:p.id, name:p.name, brand:p.brand||'', price, was,
+          rating:5, reviews:0, badge: was ? 'sale' : null,
+          save: (was && was>price) ? Math.round((1-price/was)*100) : 0,
+          tags:[p.category||'Equipment'], color:c[1], bg:'rgba(255,255,255,.04)', icon:c[0],
+          img:p.imgUrl||null, delivery: price>=999 ? 'Free delivery' : '₹49 delivery',
+          inCart:false, wished:false
+        };
+      });
+      currentBrand = 'all';
+      renderProducts(getFilteredProducts());
+      const rc = document.getElementById('results-num'); if(rc) rc.textContent = PRODUCTS.length;
+    }
+  }catch(e){ /* keep demo products on any error */ }
+})();
 </script>
 </body>
 </html>
