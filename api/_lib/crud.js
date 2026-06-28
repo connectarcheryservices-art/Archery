@@ -13,6 +13,7 @@ const TABLES = {
   jobs:        ['title','org','location','type','salary','active'],
   knowledge:   ['title','category','level','read_time','excerpt','body','published','active'],
   news:        ['title','category','date','excerpt','active'],
+  profiles:    ['handle','name','headline','location','discipline','bio','pb','rank','events','years','links','achievements','experience','certifications','verified','active'],
 };
 
 const toSnake = o => { const out = {}; for (const [k, v] of Object.entries(o)) out[k.replace(/([A-Z])/g, c => '_' + c.toLowerCase())] = v; return out; };
@@ -21,7 +22,10 @@ function pick(table, data) {
   const allowed = TABLES[table] || [];
   const snake = toSnake(data);
   const out = {};
-  for (const c of allowed) if (snake[c] !== undefined) out[c] = snake[c];
+  for (const c of allowed) if (snake[c] !== undefined) {
+    const v = snake[c];
+    out[c] = (v !== null && typeof v === 'object') ? JSON.stringify(v) : v; // JSONB columns
+  }
   return out;
 }
 

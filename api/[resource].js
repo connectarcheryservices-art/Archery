@@ -3,6 +3,7 @@
 'use strict';
 const { cors, json, readBody } = require('./_lib/respond');
 const { TABLES, listOrCreate } = require('./_lib/crud');
+const { INBOX, inboxList, inboxCreate } = require('./_lib/inbox');
 const { checkAdmin } = require('./_lib/auth');
 const { q } = require('./_lib/db');
 
@@ -12,6 +13,13 @@ module.exports = async (req, res) => {
   const resource = req.query.resource;
 
   try {
+    // Public submissions (registrations / welfare reports / federation applications)
+    if (INBOX[resource]) {
+      if (req.method === 'GET')  return await inboxList(resource, req, res);
+      if (req.method === 'POST') return await inboxCreate(resource, req, res);
+      return json(res, { error: 'Method not allowed' }, 405);
+    }
+
     if (resource === 'settings' || resource === 'stats') {
       if (req.method === 'GET') {
         const r = await q(`select data from ${resource} where id=1`);
