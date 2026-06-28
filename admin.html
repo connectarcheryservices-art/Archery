@@ -249,6 +249,10 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
       Athletes
     </button>
+    <button class="nav-item" onclick="showPanel('profiles',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 016-6h4a6 6 0 016 6v1"/></svg>
+      Archery Profiles
+    </button>
     <button class="nav-item" onclick="showPanel('jobs',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>
       Jobs Board
@@ -258,16 +262,39 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
       Knowledge Hub
     </button>
+    <button class="nav-item" onclick="showPanel('news',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 22h16a2 2 0 002-2V4a2 2 0 00-2-2H8a2 2 0 00-2 2v16a2 2 0 01-2 2zm0 0a2 2 0 01-2-2v-9h4"/><line x1="10" y1="7" x2="18" y2="7"/><line x1="10" y1="11" x2="18" y2="11"/></svg>
+      News &amp; Results
+    </button>
+    <button class="nav-item" onclick="showPanel('forum',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 11.5a8.5 8.5 0 01-12.6 7.4L3 20l1.1-5.4A8.5 8.5 0 1121 11.5z"/></svg>
+      Community Forum
+    </button>
 
     <div class="sidebar-section-label">Platform</div>
     <button class="nav-item" onclick="showPanel('registrations',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
       Registrations
-      <span class="badge-count badge-red">12</span>
+      <span class="badge-count badge-red" id="reg-badge" style="display:none;">0</span>
+    </button>
+    <button class="nav-item" onclick="showPanel('reports',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      Welfare Reports
+      <span class="badge-count badge-red" id="rep-badge" style="display:none;">0</span>
+    </button>
+    <button class="nav-item" onclick="showPanel('applications',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/></svg>
+      Federation Applications
+      <span class="badge-count badge-red" id="app-badge" style="display:none;">0</span>
     </button>
     <button class="nav-item" onclick="showPanel('announcements',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 17H2a3 3 0 000 6h20v-6zM22 1H2a3 3 0 000 6h20V1zM22 9H2a3 3 0 000 6h20V9z"/></svg>
       Announcements
+    </button>
+    <button class="nav-item" onclick="showPanel('chat',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 11.5a8.5 8.5 0 01-12.6 7.4L3 20l1.1-5.4A8.5 8.5 0 1121 11.5z"/></svg>
+      Live Chat
+      <span class="badge-count badge-red" id="chat-badge" style="display:none;">0</span>
     </button>
 
     <div class="sidebar-section-label">System</div>
@@ -480,15 +507,11 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
     <div class="panel" id="panel-registrations">
       <div class="breadcrumb">Admin <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg> <span>Pending Registrations</span></div>
       <div class="card">
-        <div class="card-title">Pending Tournament Registrations <span class="td-badge badge-active" style="font-size:11px;">12 Pending</span></div>
+        <div class="card-title">Tournament Registrations <span class="td-badge badge-soon" style="font-size:11px;" id="reg-count">0 Pending</span></div>
+        <p style="font-size:13px;color:var(--text-2);margin-bottom:14px;">Submissions from the public tournament registration form. Approving an entry adds it to that tournament's registered count.</p>
         <table class="data-table">
-          <thead><tr><th>Athlete</th><th>Tournament</th><th>Category</th><th>State</th><th>Applied</th><th>Actions</th></tr></thead>
-          <tbody>
-            <tr><td class="td-name">Ananya Roy</td><td>Assam Open 2025</td><td>Recurve W Open</td><td>West Bengal</td><td>Today, 9:14 AM</td><td class="td-actions"><button class="btn-toggle" onclick="toast('Registration approved')">Approve</button><button class="btn-delete">Reject</button></td></tr>
-            <tr><td class="td-name">Siddharth Nair</td><td>Assam Open 2025</td><td>Recurve M Open</td><td>Kerala</td><td>Today, 8:52 AM</td><td class="td-actions"><button class="btn-toggle" onclick="toast('Registration approved')">Approve</button><button class="btn-delete">Reject</button></td></tr>
-            <tr><td class="td-name">Meena Sharma</td><td>NRT Round 3</td><td>Recurve W U-21</td><td>Rajasthan</td><td>Yesterday</td><td class="td-actions"><button class="btn-toggle" onclick="toast('Registration approved')">Approve</button><button class="btn-delete">Reject</button></td></tr>
-            <tr><td class="td-name">Rahul Dev</td><td>NRT Round 3</td><td>Compound M Open</td><td>Punjab</td><td>Yesterday</td><td class="td-actions"><button class="btn-toggle" onclick="toast('Registration approved')">Approve</button><button class="btn-delete">Reject</button></td></tr>
-          </tbody>
+          <thead><tr><th>Athlete</th><th>Tournament</th><th>Discipline</th><th>Country</th><th>Applied</th><th>Status / Actions</th></tr></thead>
+          <tbody id="registrations-tbody"></tbody>
         </table>
       </div>
     </div>
@@ -583,6 +606,88 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
           <div class="progress-item"><div class="progress-label-row"><span>Google Search</span><span>31%</span></div><div class="progress-track"><div class="progress-fill" style="width:31%;background:var(--blue);"></div></div></div>
           <div class="progress-item"><div class="progress-label-row"><span>Social Media</span><span>18%</span></div><div class="progress-track"><div class="progress-fill" style="width:18%;background:var(--purple);"></div></div></div>
           <div class="progress-item"><div class="progress-label-row"><span>Referral</span><span>9%</span></div><div class="progress-track"><div class="progress-fill" style="width:9%;background:var(--green);"></div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ARCHERY PROFILES ── -->
+    <div class="panel" id="panel-profiles">
+      <div class="breadcrumb">Admin <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg> <span>Archery Profiles</span></div>
+      <div class="card">
+        <div class="card-title">Athlete &amp; Coach Profiles <span class="td-badge badge-active" style="font-size:11px;" id="prof-count">0</span></div>
+        <table class="data-table">
+          <thead><tr><th>Name</th><th>Handle</th><th>Headline</th><th>Discipline</th><th>Status / Actions</th></tr></thead>
+          <tbody id="profiles-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── NEWS & RESULTS ── -->
+    <div class="panel" id="panel-news">
+      <div class="breadcrumb">Admin <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg> <span>News &amp; Results</span></div>
+      <div class="card">
+        <div class="card-title">News &amp; Results <span class="td-badge badge-active" style="font-size:11px;" id="news-count">0</span></div>
+        <table class="data-table">
+          <thead><tr><th>Headline</th><th>Category</th><th>Date</th><th>Status / Actions</th></tr></thead>
+          <tbody id="news-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── COMMUNITY FORUM ── -->
+    <div class="panel" id="panel-forum">
+      <div class="breadcrumb">Admin <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg> <span>Community Forum</span></div>
+      <div class="card">
+        <div class="card-title">Forum Discussions <span class="td-badge badge-active" style="font-size:11px;" id="forum-count">0</span></div>
+        <p style="font-size:13px;color:var(--text-2);margin-bottom:14px;">Discussions posted by the community. Pin important threads, hide rule-breakers, or delete spam.</p>
+        <table class="data-table">
+          <thead><tr><th>Title</th><th>Author</th><th>Category</th><th>Replies</th><th>Likes</th><th>Status / Actions</th></tr></thead>
+          <tbody id="forum-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── WELFARE REPORTS ── -->
+    <div class="panel" id="panel-reports">
+      <div class="breadcrumb">Admin <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg> <span>Welfare Reports</span></div>
+      <div class="card">
+        <div class="card-title">Confidential Welfare &amp; Safeguarding Reports <span class="td-badge badge-soon" style="font-size:11px;" id="rep-count">0 Open</span></div>
+        <p style="font-size:13px;color:var(--text-2);margin-bottom:14px;">Submitted via the Guard Rail safeguarding page. Treat every report as confidential. Reporters may be anonymous.</p>
+        <table class="data-table">
+          <thead><tr><th>Type</th><th>Urgency</th><th>Description</th><th>Reporter</th><th>Received</th><th>Status / Actions</th></tr></thead>
+          <tbody id="reports-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── FEDERATION APPLICATIONS ── -->
+    <div class="panel" id="panel-applications">
+      <div class="breadcrumb">Admin <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg> <span>Federation Applications</span></div>
+      <div class="card">
+        <div class="card-title">Federation &amp; Association Access Applications <span class="td-badge badge-soon" style="font-size:11px;" id="app-count">0 Pending</span></div>
+        <p style="font-size:13px;color:var(--text-2);margin-bottom:14px;">Submitted via the Federation portal. Approve to grant access, or reject. Contact the official email to follow up.</p>
+        <table class="data-table">
+          <thead><tr><th>Organisation</th><th>Type</th><th>Contact</th><th>Email</th><th>Phone</th><th>Status / Actions</th></tr></thead>
+          <tbody id="applications-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── LIVE CHAT ── -->
+    <div class="panel" id="panel-chat">
+      <div class="breadcrumb">Admin <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg> <span>Live Chat</span></div>
+      <div style="display:grid;grid-template-columns:300px 1fr;gap:14px;align-items:start;" class="chat-admin-grid">
+        <div class="card" style="padding:10px;">
+          <div class="card-title" style="padding:6px 8px;">Conversations</div>
+          <div id="chat-threads" style="max-height:60vh;overflow-y:auto;"></div>
+        </div>
+        <div class="card" style="display:flex;flex-direction:column;min-height:50vh;">
+          <div class="card-title" id="chat-head">Select a conversation</div>
+          <div id="chat-msgs" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:8px 0;"><div style="color:var(--text-2);font-size:13px;padding:20px;">Pick a conversation on the left to read and reply.</div></div>
+          <form id="chat-form" style="display:none;gap:8px;margin-top:10px;" onsubmit="return sendChatReply(event)">
+            <input id="chat-reply" placeholder="Type your reply…" autocomplete="off" style="flex:1;background:var(--ink);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:11px 13px;color:var(--text);outline:none;">
+            <button class="btn-save" type="submit">Send</button>
+          </form>
         </div>
       </div>
     </div>
@@ -859,20 +964,136 @@ async function loadAnalytics(){
   document.getElementById('analytics-labels').innerHTML=series.map(s=>`<div class="chart-label">${s.d}</div>`).join('');
 }
 
+function setBadge(id,n){const b=document.getElementById(id); if(b){b.style.display=n?'inline-block':'none';b.textContent=n;}}
+
+// ── INBOX PANELS (registrations / welfare reports / federation applications) ──
+async function loadRegistrations(){
+  const data=await get('registrations'); if(!Array.isArray(data))return;
+  const pending=data.filter(r=>r.status==='pending').length;
+  setBadge('reg-badge',pending); const c=document.getElementById('reg-count'); if(c)c.textContent=pending+' Pending';
+  const tb=document.getElementById('registrations-tbody'); if(!tb)return;
+  tb.innerHTML=data.length?data.map(r=>{
+    const name=escA(((r.firstName||'')+' '+(r.lastName||'')).trim()||'—');
+    const when=r.createdAt?new Date(r.createdAt).toLocaleString('en-IN'):'';
+    const badge=r.status==='approved'?'badge-active':r.status==='rejected'?'badge-inactive':'badge-soon';
+    const act=r.status==='pending'
+      ?`<button class="btn-toggle" onclick="setInbox('registrations',${r.id},'approved')">Approve</button><button class="btn-delete" onclick="setInbox('registrations',${r.id},'rejected')">Reject</button>`
+      :`<span class="td-badge ${badge}">${r.status}</span> <button class="btn-delete" onclick="delInbox('registrations',${r.id})">Delete</button>`;
+    return `<tr><td class="td-name">${name}</td><td>${escA(r.tournamentName||'—')}</td><td>${escA(r.discipline||'')}</td><td>${escA(r.country||'')}</td><td style="font-size:12px;">${when}</td><td class="td-actions">${act}</td></tr>`;
+  }).join(''):'<tr><td colspan="6" style="padding:22px;color:var(--text-2);">No registrations yet.</td></tr>';
+}
+async function loadReports(){
+  const data=await get('reports'); if(!Array.isArray(data))return;
+  const open=data.filter(r=>r.status!=='reviewed').length;
+  setBadge('rep-badge',open); const c=document.getElementById('rep-count'); if(c)c.textContent=open+' Open';
+  const tb=document.getElementById('reports-tbody'); if(!tb)return;
+  tb.innerHTML=data.length?data.map(r=>{
+    const when=r.createdAt?new Date(r.createdAt).toLocaleString('en-IN'):'';
+    const reporter=r.name?escA(r.name)+(r.email?`<br><span style="color:var(--text-2);font-size:11px;">${escA(r.email)}</span>`:''):'<em style="color:var(--text-2);">Anonymous</em>';
+    const urgent=/urgent|emergency/i.test(r.urgency||''); const reviewed=r.status==='reviewed';
+    const act=reviewed?`<span class="td-badge badge-active">reviewed</span> <button class="btn-delete" onclick="delInbox('reports',${r.id})">Delete</button>`
+      :`<button class="btn-toggle" onclick="setInbox('reports',${r.id},'reviewed')">Mark reviewed</button><button class="btn-delete" onclick="delInbox('reports',${r.id})">Delete</button>`;
+    return `<tr><td class="td-name">${escA(r.type||'—')}</td><td>${urgent?'<span class="td-badge badge-live">'+escA(r.urgency||'')+'</span>':escA((r.urgency||'').split('—')[0])}</td><td style="max-width:320px;white-space:normal;">${escA(r.description||'')}</td><td>${reporter}</td><td style="font-size:12px;">${when}</td><td class="td-actions">${act}</td></tr>`;
+  }).join(''):'<tr><td colspan="6" style="padding:22px;color:var(--text-2);">No welfare reports.</td></tr>';
+}
+async function loadApplications(){
+  const data=await get('applications'); if(!Array.isArray(data))return;
+  const pending=data.filter(a=>a.status==='pending').length;
+  setBadge('app-badge',pending); const c=document.getElementById('app-count'); if(c)c.textContent=pending+' Pending';
+  const tb=document.getElementById('applications-tbody'); if(!tb)return;
+  tb.innerHTML=data.length?data.map(a=>{
+    const badge=a.status==='approved'?'badge-active':a.status==='rejected'?'badge-inactive':'badge-soon';
+    const act=a.status==='pending'
+      ?`<button class="btn-toggle" onclick="setInbox('applications',${a.id},'approved')">Approve</button><button class="btn-delete" onclick="setInbox('applications',${a.id},'rejected')">Reject</button>`
+      :`<span class="td-badge ${badge}">${a.status}</span> <button class="btn-delete" onclick="delInbox('applications',${a.id})">Delete</button>`;
+    const mail=a.email?`<a href="mailto:${escA(a.email)}" style="color:var(--gold);text-decoration:none;">${escA(a.email)}</a>`:'';
+    return `<tr><td class="td-name">${escA(a.orgName||'—')}</td><td>${escA(a.orgType||'')}</td><td>${escA(a.contactName||'')}</td><td>${mail}</td><td>${escA(a.phone||'')}</td><td class="td-actions">${act}</td></tr>`;
+  }).join(''):'<tr><td colspan="6" style="padding:22px;color:var(--text-2);">No applications yet.</td></tr>';
+}
+async function setInbox(resource,id,status){await put(resource,id,{status});({registrations:loadRegistrations,reports:loadReports,applications:loadApplications}[resource])();toast('Updated');}
+async function delInbox(resource,id){if(!confirm('Delete this item?'))return;await del(resource,id);({registrations:loadRegistrations,reports:loadReports,applications:loadApplications}[resource])();toast('Deleted');}
+
+// ── PROFILES / NEWS ──
+async function loadProfiles(){
+  const data=await get('profiles'); if(!Array.isArray(data))return;
+  const c=document.getElementById('prof-count'); if(c)c.textContent=data.length+' profiles';
+  const tb=document.getElementById('profiles-tbody'); if(!tb)return;
+  tb.innerHTML=data.length?data.map(p=>`<tr><td class="td-name">${escA(p.name)}</td><td><a href="profile.html?h=${encodeURIComponent(p.handle||'')}" target="_blank" style="color:var(--gold);text-decoration:none;">/${escA(p.handle||'')}</a></td><td>${escA(p.headline||'')}</td><td>${escA(p.discipline||'')}</td><td class="td-actions"><span class="td-badge ${p.active!==false?'badge-active':'badge-inactive'}">${p.active!==false?'live':'hidden'}</span> <button class="btn-edit" onclick="setContent('profiles',${p.id},{active:${!(p.active!==false)}})">${p.active!==false?'Hide':'Show'}</button><button class="btn-delete" onclick="delContent('profiles',${p.id})">Delete</button></td></tr>`).join(''):'<tr><td colspan="5" style="padding:22px;color:var(--text-2);">No profiles yet.</td></tr>';
+}
+async function loadNews(){
+  const data=await get('news'); if(!Array.isArray(data))return;
+  const c=document.getElementById('news-count'); if(c)c.textContent=data.length+' posts';
+  const tb=document.getElementById('news-tbody'); if(!tb)return;
+  tb.innerHTML=data.length?data.map(n=>`<tr><td class="td-name">${escA(n.title)}</td><td>${escA(n.category||'')}</td><td>${escA(n.date||'')}</td><td class="td-actions"><span class="td-badge ${n.active!==false?'badge-active':'badge-inactive'}">${n.active!==false?'live':'hidden'}</span> <button class="btn-edit" onclick="setContent('news',${n.id},{active:${!(n.active!==false)}})">${n.active!==false?'Hide':'Show'}</button><button class="btn-delete" onclick="delContent('news',${n.id})">Delete</button></td></tr>`).join(''):'<tr><td colspan="4" style="padding:22px;color:var(--text-2);">No posts yet.</td></tr>';
+}
+async function setContent(resource,id,patch){await put(resource,id,patch);({profiles:loadProfiles,news:loadNews}[resource])();toast('Updated');}
+async function delContent(resource,id){if(!confirm('Delete?'))return;await del(resource,id);({profiles:loadProfiles,news:loadNews}[resource])();toast('Deleted');}
+
+// ── COMMUNITY FORUM ──
+async function loadForum(){
+  const data=await get('posts'); if(!Array.isArray(data))return;
+  const c=document.getElementById('forum-count'); if(c)c.textContent=data.length+' threads';
+  const tb=document.getElementById('forum-tbody'); if(!tb)return;
+  tb.innerHTML=data.length?data.map(p=>{
+    const replies=(p.replies||[]).length;
+    const badge=p.active===false?'badge-inactive':p.pinned?'badge-soon':'badge-active';
+    const label=p.active===false?'hidden':p.pinned?'pinned':'live';
+    return `<tr><td class="td-name">${escA(p.title)}</td><td>${escA(p.author)}</td><td>${escA(p.category)}</td><td>${replies}</td><td>${p.likes||0}</td><td class="td-actions"><span class="td-badge ${badge}">${label}</span> <button class="btn-toggle" onclick="setPost(${p.id},{pinned:${!p.pinned}})">${p.pinned?'Unpin':'Pin'}</button><button class="btn-edit" onclick="setPost(${p.id},{active:${p.active===false}})">${p.active===false?'Show':'Hide'}</button><button class="btn-delete" onclick="delPost(${p.id})">Delete</button></td></tr>`;
+  }).join(''):'<tr><td colspan="6" style="padding:22px;color:var(--text-2);">No discussions yet.</td></tr>';
+}
+async function setPost(id,patch){await put('posts',id,patch);loadForum();toast('Updated');}
+async function delPost(id){if(!confirm('Delete this discussion?'))return;await del('posts',id);loadForum();toast('Deleted');}
+
+// ── LIVE CHAT ──
+let chatActive=null;
+async function loadChat(){
+  const data=await get('chat'); if(!Array.isArray(data))return;
+  setBadge('chat-badge',data.filter(c=>c.unread).length);
+  const el=document.getElementById('chat-threads'); if(!el)return;
+  el.innerHTML=data.length?data.map(c=>{
+    const last=c.messages&&c.messages.length?c.messages[c.messages.length-1].text:'';
+    return `<div onclick="openThread(${c.id})" style="padding:11px;border-radius:9px;cursor:pointer;${c.id===chatActive?'background:rgba(255,199,44,.1);':''}border-bottom:1px solid rgba(255,255,255,.05);"><div style="display:flex;justify-content:space-between;align-items:center;"><strong style="font-size:13px;">${escA(c.name||'Guest')} <span style="color:var(--text-2);font-weight:400;">#${c.id}</span></strong>${c.unread?'<span style="width:8px;height:8px;border-radius:50%;background:var(--red);display:inline-block;"></span>':''}</div><div style="font-size:12px;color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escA(last)}</div></div>`;
+  }).join(''):'<div style="padding:18px;color:var(--text-2);font-size:13px;">No conversations yet.</div>';
+}
+async function openThread(id){
+  chatActive=id;
+  const t=await get('chat/'+id); if(!t||t.error)return;
+  document.getElementById('chat-head').textContent=(t.name||'Guest')+' · #'+t.id+(t.email?(' · '+t.email):'');
+  document.getElementById('chat-msgs').innerHTML=(t.messages||[]).map(m=>`<div style="max-width:80%;padding:9px 13px;border-radius:13px;font-size:13.5px;line-height:1.5;${m.from==='admin'?'align-self:flex-start;background:var(--ink-3);color:var(--text);':'align-self:flex-end;background:var(--gold);color:#141414;'}">${escA(m.text)}</div>`).join('');
+  const box=document.getElementById('chat-msgs'); box.scrollTop=box.scrollHeight;
+  document.getElementById('chat-form').style.display='flex';
+  if(t.unread) await put('chat',id,{});
+  loadChat();
+}
+async function sendChatReply(e){
+  e.preventDefault();
+  const inp=document.getElementById('chat-reply'); const text=inp.value.trim();
+  if(!text||chatActive==null)return false; inp.value='';
+  await post('chat/'+chatActive+'/reply',{text}); openThread(chatActive);
+  return false;
+}
+
 function loadPanel(name){
   if(name==='dashboard'){loadStats();}
   else if(name==='products'){loadProducts();}
   else if(name==='orders'){loadOrders();}
   else if(name==='tournaments'){loadTournaments();}
   else if(name==='athletes'){loadAthletes();}
+  else if(name==='profiles'){loadProfiles();}
   else if(name==='jobs'){loadJobs();}
+  else if(name==='news'){loadNews();}
+  else if(name==='forum'){loadForum();}
+  else if(name==='registrations'){loadRegistrations();}
+  else if(name==='reports'){loadReports();}
+  else if(name==='applications'){loadApplications();}
+  else if(name==='chat'){loadChat();}
   else if(name==='settings'){loadSettings();}
   else if(name==='announcements'){loadSettings();}
   else if(name==='analytics'){loadAnalytics();}
 }
 
 // ── INIT / AUTH BOOT ──
-function boot(){ loadStats(); loadOrders(); }
+function boot(){ loadStats(); loadOrders(); loadRegistrations(); loadReports(); loadApplications(); loadChat(); }
 if(AUTH_TOKEN){ hideLogin(); boot(); } else { showLogin(); }
 </script>
 </body>
