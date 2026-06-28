@@ -188,6 +188,17 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
   <div class="toast-admin-text" id="admin-toast-text">Saved successfully</div>
 </div>
 
+<!-- LOGIN OVERLAY -->
+<div id="login-overlay" style="position:fixed;inset:0;z-index:99999;display:none;align-items:center;justify-content:center;background:#070F22;">
+  <form onsubmit="return doLogin(event)" style="background:#102444;border:1px solid rgba(255,255,255,.09);border-radius:16px;padding:34px 30px;width:340px;max-width:90vw;text-align:center;box-shadow:0 30px 80px rgba(0,0,0,.5);">
+    <div style="font-family:'Oswald',sans-serif;font-size:21px;color:#fff;letter-spacing:.04em;">ARCHERY<span style="color:#FFC72C;">.</span>SERVICES</div>
+    <div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#9AA6BD;margin:5px 0 24px;">Admin Panel</div>
+    <input id="login-pw" type="password" placeholder="Admin password" autocomplete="current-password" style="width:100%;background:#0A1730;border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:13px 14px;color:#fff;font-size:14px;outline:none;box-sizing:border-box;">
+    <div id="login-err" style="display:none;color:#FF6B7A;font-size:12px;margin-top:9px;">Incorrect password</div>
+    <button type="submit" style="width:100%;margin-top:16px;background:#FFC72C;color:#141414;border:none;border-radius:10px;padding:14px;font-family:'Oswald',sans-serif;font-size:14px;letter-spacing:.06em;text-transform:uppercase;font-weight:700;cursor:pointer;">Sign in</button>
+  </form>
+</div>
+
 <div class="admin-layout">
 
   <!-- TOP BAR -->
@@ -202,6 +213,7 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
         View Site
       </a>
+      <button onclick="doLogout()" style="background:rgba(228,0,43,.15);border:1px solid rgba(228,0,43,.35);color:#FF6B7A;border-radius:7px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;padding:6px 14px;cursor:pointer;">Logout</button>
       <div class="topbar-avatar">A</div>
     </div>
   </header>
@@ -222,7 +234,11 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
     <button class="nav-item" onclick="showPanel('products',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
       Shop Products
-      <span class="badge-count">6</span>
+    </button>
+    <button class="nav-item" onclick="showPanel('orders',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+      Shop Orders
+      <span class="badge-count badge-red" id="ord-badge" style="display:none;">0</span>
     </button>
     <button class="nav-item" onclick="showPanel('tournaments',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 21V7a2 2 0 012-2h4a2 2 0 012 2v14"/><path d="M5 21h14"/></svg>
@@ -571,15 +587,44 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
       </div>
     </div>
 
+    <!-- ── SHOP ORDERS ── -->
+    <div class="panel" id="panel-orders">
+      <div class="breadcrumb">Admin <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg> <span>Shop Orders</span></div>
+      <div class="card">
+        <div class="card-title">Customer Orders <span class="td-badge badge-active" style="font-size:11px;" id="ord-count">0</span></div>
+        <p style="font-size:13px;color:var(--text-2);margin-bottom:16px;">Paid orders placed from the shop. Stock reduces automatically on payment. Move each order new &rarr; confirmed &rarr; packed &rarr; shipped &rarr; delivered, or cancel it. "Map" opens the customer's captured location.</p>
+        <table class="data-table">
+          <thead><tr><th>#</th><th>Customer</th><th>Items</th><th>Total</th><th>Payment</th><th>Placed</th><th>Status / Actions</th></tr></thead>
+          <tbody id="orders-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
   </main>
 </div>
 
 <script>
-const API = 'http://localhost:3000/api';
-const get  = r => fetch(`${API}/${r}`).then(x=>x.json()).catch(()=>null);
-const post = (r,d) => fetch(`${API}/${r}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}).then(x=>x.json()).catch(()=>null);
-const put  = (r,id,d) => fetch(`${API}/${r}/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}).then(x=>x.json()).catch(()=>null);
-const del  = (r,id) => fetch(`${API}/${r}/${id}`,{method:'DELETE'}).then(x=>x.json()).catch(()=>null);
+const API = '/api';
+let AUTH_TOKEN = sessionStorage.getItem('archery_admin_token') || '';
+const authH = () => ({'Content-Type':'application/json','Authorization':'Bearer '+AUTH_TOKEN});
+const get  = r => fetch(`${API}/${r}`,{headers:{'Authorization':'Bearer '+AUTH_TOKEN}}).then(x=>x.json()).catch(()=>null);
+const post = (r,d) => fetch(`${API}/${r}`,{method:'POST',headers:authH(),body:JSON.stringify(d)}).then(x=>x.json()).catch(()=>null);
+const put  = (r,id,d) => fetch(`${API}/${r}/${id}`,{method:'PUT',headers:authH(),body:JSON.stringify(d)}).then(x=>x.json()).catch(()=>null);
+const del  = (r,id) => fetch(`${API}/${r}/${id}`,{method:'DELETE',headers:authH()}).then(x=>x.json()).catch(()=>null);
+
+// ── ADMIN AUTH ──
+async function doLogin(e){
+  if(e&&e.preventDefault) e.preventDefault();
+  const pw=document.getElementById('login-pw').value;
+  const err=document.getElementById('login-err'); if(err) err.style.display='none';
+  const r=await fetch(API+'/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pw})}).then(x=>x.json()).catch(()=>({ok:false}));
+  if(r&&r.ok&&r.token){ AUTH_TOKEN=r.token; sessionStorage.setItem('archery_admin_token',AUTH_TOKEN); hideLogin(); boot(); }
+  else if(err){ err.style.display='block'; }
+  return false;
+}
+function showLogin(){ const o=document.getElementById('login-overlay'); if(o)o.style.display='flex'; const l=document.querySelector('.admin-layout'); if(l)l.style.visibility='hidden'; }
+function hideLogin(){ const o=document.getElementById('login-overlay'); if(o)o.style.display='none'; const l=document.querySelector('.admin-layout'); if(l)l.style.visibility='visible'; }
+function doLogout(){ AUTH_TOKEN=''; sessionStorage.removeItem('archery_admin_token'); showLogin(); }
 
 function toast(msg='Saved'){
   const t=document.getElementById('admin-toast');
@@ -780,19 +825,55 @@ function loadAnalyticsChart(){
 }
 
 // ── PANEL LOADER ──
+// ── SHOP ORDERS ──
+function escA(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+const ORD_FLOW={new:'confirmed',confirmed:'packed',packed:'shipped',shipped:'delivered'};
+async function loadOrders(){
+  const data=await get('orders'); if(!Array.isArray(data)) return;
+  const open=data.filter(o=>['new','confirmed','packed'].includes(o.status)).length;
+  const b=document.getElementById('ord-badge'); if(b){b.style.display=open?'inline-block':'none';b.textContent=open;}
+  const c=document.getElementById('ord-count'); if(c) c.textContent=data.length+' orders';
+  const tb=document.getElementById('orders-tbody'); if(!tb) return;
+  tb.innerHTML=data.length?data.map(o=>{
+    const when=o.createdAt?new Date(o.createdAt).toLocaleString('en-IN'):'';
+    const items=(o.items||[]).map(i=>`${i.qty}× ${escA(i.name)}`).join('<br>');
+    const cust=escA(o.customerName||'Guest')+(o.customerPhone?`<br><span style="color:var(--text-2);font-size:11px;">${escA(o.customerPhone)}</span>`:'')+(o.city?`<br><span style="color:var(--text-2);font-size:11px;">${escA([o.city,o.state,o.pincode].filter(Boolean).join(', '))}</span>`:'');
+    const pay=o.paymentStatus==='paid'?'<span class="td-badge badge-active">paid</span>':`<span class="td-badge badge-inactive">${escA(o.paymentStatus||'pending')}</span>`;
+    const sb={new:'badge-soon',confirmed:'badge-open',packed:'badge-soon',shipped:'badge-active',delivered:'badge-active',cancelled:'badge-inactive'}[o.status]||'badge-soon';
+    const next=ORD_FLOW[o.status];
+    const nextBtn=next?`<button class="btn-toggle" onclick="setOrder(${o.id},'${next}')">Mark ${next}</button>`:'';
+    const cancel=(o.status!=='cancelled'&&o.status!=='delivered')?`<button class="btn-edit" onclick="setOrder(${o.id},'cancelled')">Cancel</button>`:'';
+    const map=(o.geoLat&&o.geoLng)?`<a class="btn-edit" href="https://www.google.com/maps?q=${o.geoLat},${o.geoLng}" target="_blank" style="text-decoration:none;">Map</a>`:'';
+    return `<tr><td>#${o.id}</td><td class="td-name">${cust}</td><td style="font-size:12px;line-height:1.6;">${items}</td><td>₹${Number(o.total).toLocaleString('en-IN')}</td><td>${pay}</td><td style="font-size:12px;">${when}</td><td class="td-actions"><span class="td-badge ${sb}">${escA(o.status)}</span> ${nextBtn}${cancel}${map}<button class="btn-delete" onclick="delOrder(${o.id})">Delete</button></td></tr>`;
+  }).join(''):'<tr><td colspan="7" style="padding:22px;color:var(--text-2);">No paid orders yet.</td></tr>';
+}
+async function setOrder(id,status){ await put('orders',id,{status}); loadOrders(); toast('Order '+status); }
+async function delOrder(id){ if(!confirm('Delete this order?'))return; await del('orders',id); loadOrders(); toast('Deleted'); }
+
+// ── ANALYTICS (real revenue series; demo fallback) ──
+async function loadAnalytics(){
+  const a=await get('analytics');
+  if(!a||a.error||!a.revenueSeries||!a.revenueSeries.length){ loadAnalyticsChart(); return; }
+  const series=a.revenueSeries, max=Math.max(1,...series.map(s=>Number(s.v)));
+  document.getElementById('analytics-chart').innerHTML=series.map(s=>`<div class="chart-bar" style="height:${(Number(s.v)/max*100).toFixed(0)}%;" title="₹${Number(s.v).toLocaleString('en-IN')}"></div>`).join('');
+  document.getElementById('analytics-labels').innerHTML=series.map(s=>`<div class="chart-label">${s.d}</div>`).join('');
+}
+
 function loadPanel(name){
   if(name==='dashboard'){loadStats();}
   else if(name==='products'){loadProducts();}
+  else if(name==='orders'){loadOrders();}
   else if(name==='tournaments'){loadTournaments();}
   else if(name==='athletes'){loadAthletes();}
   else if(name==='jobs'){loadJobs();}
   else if(name==='settings'){loadSettings();}
   else if(name==='announcements'){loadSettings();}
-  else if(name==='analytics'){loadAnalyticsChart();}
+  else if(name==='analytics'){loadAnalytics();}
 }
 
-// INIT
-loadStats();
+// ── INIT / AUTH BOOT ──
+function boot(){ loadStats(); loadOrders(); }
+if(AUTH_TOKEN){ hideLogin(); boot(); } else { showLogin(); }
 </script>
 </body>
 </html>
