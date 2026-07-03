@@ -258,9 +258,22 @@ async function payNow(){
   try{
     data = await fetch('/api/checkout/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items,customer:cust,delivery,geo})}).then(r=>r.json());
   }catch(e){ data=null; }
+  if(data && data.ok && data.testMode){
+    // Local test mode — the order is already confirmed server-side.
+    localStorage.removeItem('archery_cart');
+    document.getElementById('checkout').style.display='none';
+    document.getElementById('done-ref').textContent='Order '+data.orderNo+' (test mode — no payment charged)';
+    document.getElementById('done').style.display='block';
+    window.scrollTo({top:0,behavior:'smooth'});
+    return;
+  }
   if(!data || !data.ok || !data.razorpay || !data.razorpay.keyId){
     pay.disabled=false; pay.innerHTML='Pay <span id="pay-amt">'+INR(lastQuote?lastQuote.total:0)+'</span>';
     return showErr((data && data.error) || 'Could not start payment. Please make sure the store is fully configured and try again.');
+  }
+  if(typeof Razorpay === 'undefined'){
+    pay.disabled=false; pay.innerHTML='Pay <span id="pay-amt">'+INR(lastQuote?lastQuote.total:0)+'</span>';
+    return showErr('The payment window could not load — please check your internet connection and refresh the page.');
   }
 
   const rp = new Razorpay({
