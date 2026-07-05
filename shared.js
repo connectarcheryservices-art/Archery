@@ -149,7 +149,7 @@
         localStorage.removeItem('archery_user_token');
         location.reload();
       });
-      right.querySelectorAll('a.btn-ghost,button.btn-ghost,a.btn-primary-nav,button.btn-primary-nav,a.btn-gold,button.btn-gold').forEach(function(el){
+      right.querySelectorAll('a.btn-ghost,button.btn-ghost,a.btn-primary-nav,button.btn-primary-nav,a.btn-gold,button.btn-gold,a.nav-cta').forEach(function(el){
         if (/sign in|join free/i.test(el.textContent)) el.remove();
       });
       right.insertBefore(out, right.querySelector('#nav-burger'));
