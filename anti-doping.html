@@ -7,61 +7,61 @@
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <style>
-:root{--tw:#FFFFFF;--tb:#1A1A1A;--tbl:#1A3A8C;--tr:#CC2222;--ty:#C9A227;--bg:#F5F7FA;--bg2:#FFFFFF;--ink:#0D1B2E;--dim:#334155;--faint:#8899AA;--line:rgba(26,58,140,.1);}
+:root{--tw:#FFFFFF;--tb:#1A1A1A;--tbl:#0F5FA8;--tr:#E4002B;--ty:#FFC72C;--bg:#F5F7FA;--bg2:#FFFFFF;--ink:#0D1B2E;--dim:#334155;--faint:#8899AA;--line:rgba(15,95,168,.1);}
 body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;margin:0;}
 [data-theme="night"]{--bg:#0D1117;--bg2:#161B22;--ink:#E6EDF3;--dim:#8B949E;--faint:#4A5568;--line:rgba(255,255,255,.08);}
-.page-hero{background:linear-gradient(135deg,#1A1A1A,#1A3A8C);padding:52px 24px 40px;text-align:center;color:#fff;}
+.page-hero{background:linear-gradient(135deg,#1A1A1A,#0F5FA8);padding:52px 24px 40px;text-align:center;color:#fff;}
 .page-hero h1{font-family:'Oswald',sans-serif;font-size:clamp(28px,5vw,48px);font-weight:700;text-transform:uppercase;margin:0 0 10px;}
-.page-hero h1 em{color:#C9A227;font-style:normal;}
+.page-hero h1 em{color:#FFC72C;font-style:normal;}
 .page-hero p{font-size:15px;color:rgba(255,255,255,.7);max-width:520px;margin:0 auto;line-height:1.6;}
-.stat-bar{background:#1A3A8C;display:flex;justify-content:center;gap:0;flex-wrap:wrap;}
+.stat-bar{background:#0F5FA8;display:flex;justify-content:center;gap:0;flex-wrap:wrap;}
 .stat-item{padding:18px 36px;text-align:center;border-right:1px solid rgba(255,255,255,.1);}
 .stat-item:last-child{border-right:none;}
-.stat-num{font-family:'Oswald',sans-serif;font-size:28px;font-weight:700;color:#C9A227;line-height:1;}
+.stat-num{font-family:'Oswald',sans-serif;font-size:28px;font-weight:700;color:#FFC72C;line-height:1;}
 .stat-label{font-size:10.5px;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.6);margin-top:2px;}
 .wrap{max-width:1100px;margin:0 auto;padding:36px 24px;}
 .tab-bar{display:flex;gap:0;border-bottom:2px solid var(--line);margin-bottom:32px;overflow-x:auto;}
 .tab-btn{padding:12px 24px;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;border:none;background:none;cursor:pointer;color:var(--faint);border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .2s;white-space:nowrap;}
-.tab-btn.active{color:#C9A227;border-bottom-color:#C9A227;}
+.tab-btn.active{color:#FFC72C;border-bottom-color:#FFC72C;}
 .tab-panel{display:none;}.tab-panel.active{display:block;}
 
 .test-table{width:100%;border-collapse:collapse;background:var(--bg2);border-radius:10px;overflow:hidden;border:1px solid var(--line);}
-.test-table th{background:#1A3A8C;color:#fff;padding:12px 16px;font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;text-align:left;}
+.test-table th{background:#0F5FA8;color:#fff;padding:12px 16px;font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;text-align:left;}
 .test-table td{padding:12px 16px;border-bottom:1px solid var(--line);font-size:13px;color:var(--dim);}
 .test-table tr:last-child td{border-bottom:none;}
-.test-table tr:hover td{background:rgba(26,58,140,.03);}
+.test-table tr:hover td{background:rgba(15,95,168,.03);}
 .result-badge{padding:3px 10px;border-radius:4px;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;}
 .r-negative{background:rgba(34,197,94,.1);color:#16A34A;}
-.r-positive{background:rgba(204,34,34,.1);color:#CC2222;}
-.r-pending{background:rgba(201,162,39,.1);color:#92691A;}
+.r-positive{background:rgba(228,0,43,.1);color:#E4002B;}
+.r-pending{background:rgba(255,199,44,.1);color:#92691A;}
 .r-inconclusive{background:rgba(107,114,128,.1);color:#6B7280;}
-.type-badge{padding:3px 9px;border-radius:3px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;background:rgba(26,58,140,.07);color:#1A3A8C;}
+.type-badge{padding:3px 9px;border-radius:3px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;background:rgba(15,95,168,.07);color:#0F5FA8;}
 
 .tue-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;}
 .tue-card{background:var(--bg2);border-radius:10px;border:1px solid var(--line);padding:20px;}
 .tue-status{display:inline-block;padding:4px 10px;border-radius:4px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;}
 .s-approved{background:rgba(34,197,94,.1);color:#16A34A;}
-.s-pending{background:rgba(201,162,39,.1);color:#92691A;}
-.s-rejected{background:rgba(204,34,34,.1);color:#CC2222;}
-.s-review{background:rgba(26,58,140,.1);color:#1A3A8C;}
+.s-pending{background:rgba(255,199,44,.1);color:#92691A;}
+.s-rejected{background:rgba(228,0,43,.1);color:#E4002B;}
+.s-review{background:rgba(15,95,168,.1);color:#0F5FA8;}
 .tue-athlete{font-family:'Oswald',sans-serif;font-size:16px;font-weight:700;color:var(--ink);margin-bottom:4px;}
 .tue-sub{font-size:12px;color:var(--faint);}
 .tue-details{margin-top:12px;padding-top:12px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:5px;font-size:12.5px;color:var(--dim);}
 
 .edu-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
 .edu-card{background:var(--bg2);border-radius:10px;border:1px solid var(--line);padding:20px;transition:box-shadow .2s;}
-.edu-card:hover{box-shadow:0 6px 20px rgba(26,58,140,.1);}
+.edu-card:hover{box-shadow:0 6px 20px rgba(15,95,168,.1);}
 .edu-badge{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
 .edu-title{font-family:'Oswald',sans-serif;font-size:16px;font-weight:700;color:var(--ink);margin-bottom:6px;}
 .edu-desc{font-size:12.5px;color:var(--dim);line-height:1.5;margin-bottom:12px;}
 .edu-meta{display:flex;align-items:center;justify-content:space-between;}
 .edu-dur{font-size:11.5px;color:var(--faint);}
-.edu-btn{padding:7px 16px;background:#1A3A8C;color:#fff;border:none;border-radius:5px;font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;}
-.mandatory-tag{padding:2px 7px;border-radius:3px;background:rgba(204,34,34,.1);color:#CC2222;font-size:10px;font-weight:700;text-transform:uppercase;}
+.edu-btn{padding:7px 16px;background:#0F5FA8;color:#fff;border:none;border-radius:5px;font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;}
+.mandatory-tag{padding:2px 7px;border-radius:3px;background:rgba(228,0,43,.1);color:#E4002B;font-size:10px;font-weight:700;text-transform:uppercase;}
 .level-tag{padding:2px 7px;border-radius:3px;font-size:10px;font-weight:700;text-transform:uppercase;}
 .l-beg{background:rgba(34,197,94,.1);color:#16A34A;}
-.l-int{background:rgba(201,162,39,.1);color:#92691A;}
-.l-adv{background:rgba(26,58,140,.1);color:#1A3A8C;}
+.l-int{background:rgba(255,199,44,.1);color:#92691A;}
+.l-adv{background:rgba(15,95,168,.1);color:#0F5FA8;}
 .progress-row{display:flex;align-items:center;gap:6px;margin-top:8px;}
 .prog-bar{flex:1;height:4px;background:var(--line);border-radius:2px;overflow:hidden;}
 .prog-fill{height:100%;background:#22C55E;border-radius:2px;}
@@ -70,12 +70,12 @@ body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;margin
 </head>
 <body>
 
-<nav style="position:sticky;top:0;z-index:300;background:#fff;border-bottom:1px solid rgba(26,58,140,.1);display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:68px;">
-  <a href="/" style="font-family:'Oswald',sans-serif;font-size:20px;font-weight:700;color:#1A3A8C;text-decoration:none;">Archery<span style="color:#C9A227">.</span>Services</a>
+<nav style="position:sticky;top:0;z-index:300;background:#fff;border-bottom:1px solid rgba(15,95,168,.1);display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:68px;">
+  <a href="/" style="font-family:'Oswald',sans-serif;font-size:20px;font-weight:700;color:#0F5FA8;text-decoration:none;">Archery<span style="color:#FFC72C">.</span>Services</a>
   <div style="display:flex;gap:24px;align-items:center;">
     <a href="federation.html" style="font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#334155;text-decoration:none;">Federation</a>
     <a href="guard-rail.html" style="font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#334155;text-decoration:none;">Safeguarding</a>
-    <a href="pricing.html" style="padding:9px 20px;background:#C9A227;color:#1A1A1A;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;border-radius:4px;">Join Free</a>
+    <a href="pricing.html" style="padding:9px 20px;background:#FFC72C;color:#1A1A1A;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;border-radius:4px;">Join Free</a>
   </div>
 </nav>
 
@@ -136,7 +136,7 @@ body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;margin
 
   <!-- EDUCATION -->
   <div class="tab-panel" id="tab-education">
-    <div style="background:#1A3A8C;border-radius:10px;padding:20px 24px;color:#fff;margin-bottom:24px;display:flex;align-items:center;gap:14px;">
+    <div style="background:#0F5FA8;border-radius:10px;padding:20px 24px;color:#fff;margin-bottom:24px;display:flex;align-items:center;gap:14px;">
       <div style="font-size:32px;">📚</div>
       <div>
         <div style="font-family:'Oswald',sans-serif;font-size:17px;font-weight:700;">Mandatory Anti-Doping Education</div>
@@ -148,8 +148,8 @@ body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;margin
 
   <!-- SUBSTANCES -->
   <div class="tab-panel" id="tab-substances">
-    <div style="background:rgba(204,34,34,.07);border:1px solid rgba(204,34,34,.2);border-radius:10px;padding:20px 24px;margin-bottom:24px;">
-      <div style="font-family:'Oswald',sans-serif;font-size:16px;font-weight:700;color:#CC2222;margin-bottom:6px;">⚠️ WADA Prohibited List applies to all Archery.Services registered athletes</div>
+    <div style="background:rgba(228,0,43,.07);border:1px solid rgba(228,0,43,.2);border-radius:10px;padding:20px 24px;margin-bottom:24px;">
+      <div style="font-family:'Oswald',sans-serif;font-size:16px;font-weight:700;color:#E4002B;margin-bottom:6px;">⚠️ WADA Prohibited List applies to all Archery.Services registered athletes</div>
       <div style="font-size:13px;color:var(--dim);">Archery falls under the WADA Code. Beta-blockers (e.g. propranolol, atenolol) are prohibited in-competition. Athletes are strictly liable — "I didn't know" is not a defence. Always check with your physician and the Global Drug Reference Online (GDRO) before taking any medication.</div>
     </div>
     <div id="substances-list"></div>
@@ -186,10 +186,10 @@ const MODULES = [
 ];
 
 const SUBSTANCES_CATS = [
-  {name:'Beta-Blockers',status:'Prohibited In-Competition Only',color:'#CC2222',examples:'Propranolol, Atenolol, Metoprolol, Carvedilol, Bisoprolol',note:'Specifically prohibited in archery because they reduce heart rate and tremor, directly enhancing aim stability.'},
-  {name:'Stimulants',status:'Prohibited In-Competition',color:'#CC2222',examples:'Amphetamines, Cocaine, Ephedrine, Methylhexaneamine',note:'Prohibited across all WADA sports in-competition. Some (ephedrine, pseudoephedrine) have threshold levels.'},
-  {name:'Glucocorticoids',status:'Prohibited In-Competition (systemic)',color:'#C9A227',examples:'Prednisolone, Methylprednisolone, Cortisone',note:'Prohibited systemically in-competition. Topical, inhaled, and intra-articular routes have TUE pathways.'},
-  {name:'Diuretics',status:'Prohibited At All Times',color:'#CC2222',examples:'Furosemide, Hydrochlorothiazide, Spironolactone',note:'Prohibited as masking agents. No threshold — any detectable amount constitutes a violation.'},
+  {name:'Beta-Blockers',status:'Prohibited In-Competition Only',color:'#E4002B',examples:'Propranolol, Atenolol, Metoprolol, Carvedilol, Bisoprolol',note:'Specifically prohibited in archery because they reduce heart rate and tremor, directly enhancing aim stability.'},
+  {name:'Stimulants',status:'Prohibited In-Competition',color:'#E4002B',examples:'Amphetamines, Cocaine, Ephedrine, Methylhexaneamine',note:'Prohibited across all WADA sports in-competition. Some (ephedrine, pseudoephedrine) have threshold levels.'},
+  {name:'Glucocorticoids',status:'Prohibited In-Competition (systemic)',color:'#FFC72C',examples:'Prednisolone, Methylprednisolone, Cortisone',note:'Prohibited systemically in-competition. Topical, inhaled, and intra-articular routes have TUE pathways.'},
+  {name:'Diuretics',status:'Prohibited At All Times',color:'#E4002B',examples:'Furosemide, Hydrochlorothiazide, Spironolactone',note:'Prohibited as masking agents. No threshold — any detectable amount constitutes a violation.'},
   {name:'Permitted Substances',status:'No restriction',color:'#22C55E',examples:'Standard analgesics (paracetamol, ibuprofen), Antihistamines, Antibiotics, Vitamins, Caffeine',note:'Caffeine is not prohibited — it was removed from the list in 2004. Always verify using GDRO.'},
 ];
 
@@ -269,7 +269,7 @@ function startModule(id){
     ov=document.createElement('div');ov.id='mod-ov';
     ov.style.cssText='position:fixed;inset:0;z-index:9995;background:rgba(7,15,34,.8);backdrop-filter:blur(4px);display:flex;align-items:flex-start;justify-content:center;padding:48px 14px;overflow-y:auto;';
     ov.innerHTML='<div style="background:#fff;border-radius:14px;width:100%;max-width:640px;padding:28px;color:#0D1B2E;">'
-      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;"><span id="mod-tag" style="font-size:10px;padding:4px 10px;border-radius:3px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;background:#1A3A8C;color:#fff;"></span><button onclick="document.getElementById(\'mod-ov\').style.display=\'none\'" style="background:none;border:none;font-size:26px;line-height:1;cursor:pointer;color:#8899AA;">&times;</button></div>'
+      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;"><span id="mod-tag" style="font-size:10px;padding:4px 10px;border-radius:3px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;background:#0F5FA8;color:#fff;"></span><button onclick="document.getElementById(\'mod-ov\').style.display=\'none\'" style="background:none;border:none;font-size:26px;line-height:1;cursor:pointer;color:#8899AA;">&times;</button></div>'
       +'<h2 id="mod-title" style="font-family:Oswald,sans-serif;font-size:24px;margin:12px 0 4px;"></h2>'
       +'<div id="mod-dur" style="font-size:12px;color:#8899AA;margin-bottom:18px;"></div>'
       +'<div id="mod-body" style="font-size:14.5px;line-height:1.8;white-space:pre-line;color:#334155;"></div>'

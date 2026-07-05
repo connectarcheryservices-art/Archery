@@ -10,15 +10,15 @@
 <style>
 /* ── TARGET COLOR TOKENS ── */
 :root{
-  --tw:#FFFFFF; --tb:#1A1A1A; --tbl:#1A3A8C; --tr:#CC2222; --ty:#C9A227;
+  --tw:#FFFFFF; --tb:#1A1A1A; --tbl:#0F5FA8; --tr:#E4002B; --ty:#FFC72C;
   --bg:#FFFFFF; --bg2:#F5F7FA; --bg3:#EAECF5;
   --ink:#0D1B2E; --dim:#334155; --faint:#8899AA;
-  --line:rgba(26,58,140,.1); --line2:rgba(26,58,140,.18);
+  --line:rgba(15,95,168,.1); --line2:rgba(15,95,168,.18);
   --announce-h:0px;
 }
 
 /* ── SHARED NAV ── */
-.pr-nav{background:#fff;border-bottom:2px solid var(--tbl);position:sticky;top:0;z-index:200;box-shadow:0 2px 8px rgba(26,58,140,.06);}
+.pr-nav{background:#fff;border-bottom:2px solid var(--tbl);position:sticky;top:0;z-index:200;box-shadow:0 2px 8px rgba(15,95,168,.06);}
 .pr-nav-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;height:64px;padding:0 var(--g);gap:16px;}
 .pr-logo{font-family:'Oswald',sans-serif;font-size:17px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--tb);text-decoration:none;flex-shrink:0;}
 .pr-logo span{color:var(--ty);}
@@ -67,7 +67,7 @@
 /* ── TIER CARDS ── */
 .tier-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:18px;margin-bottom:32px;}
 .tier-card{background:#fff;border:1.5px solid var(--line);border-radius:10px;padding:26px;position:relative;transition:box-shadow .25s,border-color .25s,transform .2s;}
-.tier-card:hover{transform:translateY(-4px);box-shadow:0 12px 36px rgba(26,58,140,.1);}
+.tier-card:hover{transform:translateY(-4px);box-shadow:0 12px 36px rgba(15,95,168,.1);}
 .tier-card.recommended{border-color:var(--tbl);box-shadow:0 0 0 2px var(--tbl);}
 .tier-badge-top{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--ty);color:var(--tb);font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:4px 14px;border-radius:20px;white-space:nowrap;}
 .tier-code{font-size:9.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);margin-bottom:5px;}
@@ -84,7 +84,7 @@
 .tier-for-label{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin-bottom:5px;}
 .tier-for{font-size:12.5px;color:var(--ink);line-height:1.5;margin-bottom:16px;}
 .tier-features{margin-bottom:22px;}
-.tier-feat{display:flex;gap:8px;padding:6px 0;border-bottom:1px solid rgba(26,58,140,.06);align-items:flex-start;}
+.tier-feat{display:flex;gap:8px;padding:6px 0;border-bottom:1px solid rgba(15,95,168,.06);align-items:flex-start;}
 .tier-feat:last-child{border-bottom:none;}
 .tier-feat-icon{font-size:13px;font-weight:800;flex-shrink:0;margin-top:1px;}
 .tier-feat-text{font-size:12.5px;color:var(--ink);line-height:1.5;}
@@ -106,7 +106,7 @@
 .th-price{font-size:10px;font-weight:700;color:var(--ty);}  /* YELLOW prices */
 .cat-row td{background:var(--tbl);color:#fff;font-size:9.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;padding:9px 16px;}
 .compare-table tr.feat-row{border-bottom:1px solid var(--line);}
-.compare-table tr.feat-row:hover td{background:rgba(26,58,140,.03);}
+.compare-table tr.feat-row:hover td{background:rgba(15,95,168,.03);}
 .compare-table td{padding:9px 8px;text-align:center;color:var(--dim);}
 .compare-table td:first-child{text-align:left;padding-left:16px;color:var(--ink);font-size:12.5px;}
 .cell-yes{color:var(--tbl);font-weight:700;}  /* BLUE for yes */

@@ -7,20 +7,20 @@
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <style>
-:root{--tw:#FFFFFF;--tb:#1A1A1A;--tbl:#1A3A8C;--tr:#CC2222;--ty:#C9A227;--bg:#F5F7FA;--bg2:#FFFFFF;--ink:#0D1B2E;--dim:#334155;--faint:#8899AA;--line:rgba(26,58,140,.1);}
+:root{--tw:#FFFFFF;--tb:#1A1A1A;--tbl:#0F5FA8;--tr:#E4002B;--ty:#FFC72C;--bg:#F5F7FA;--bg2:#FFFFFF;--ink:#0D1B2E;--dim:#334155;--faint:#8899AA;--line:rgba(15,95,168,.1);}
 body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;margin:0;}
 [data-theme="night"]{--bg:#0D1117;--bg2:#161B22;--ink:#E6EDF3;--dim:#8B949E;--faint:#4A5568;--line:rgba(255,255,255,.08);}
-.page-hero{background:linear-gradient(135deg,#0D1840,#1A3A8C,#0D1840);padding:72px 24px 52px;text-align:center;color:#fff;position:relative;overflow:hidden;}
+.page-hero{background:linear-gradient(135deg,#0E2552,#0F5FA8,#0E2552);padding:72px 24px 52px;text-align:center;color:#fff;position:relative;overflow:hidden;}
 .hero-rings{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:600px;height:600px;opacity:.06;}
 .hero-rings circle{fill:none;stroke:#fff;}
 .page-hero h1{font-family:'Oswald',sans-serif;font-size:clamp(32px,5vw,56px);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin:0 0 10px;position:relative;}
-.page-hero h1 em{color:#C9A227;font-style:normal;}
+.page-hero h1 em{color:#FFC72C;font-style:normal;}
 .page-hero p{font-size:15px;color:rgba(255,255,255,.7);max-width:460px;margin:0 auto;line-height:1.6;position:relative;}
 
 .wrap{max-width:960px;margin:0 auto;padding:40px 24px;}
 .tab-bar{display:flex;gap:0;border-bottom:2px solid var(--line);margin-bottom:36px;}
 .tab-btn{padding:12px 24px;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;border:none;background:none;cursor:pointer;color:var(--faint);border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .2s;white-space:nowrap;}
-.tab-btn.active{color:#C9A227;border-bottom-color:#C9A227;}
+.tab-btn.active{color:#FFC72C;border-bottom-color:#FFC72C;}
 .tab-panel{display:none;}.tab-panel.active{display:block;}
 
 /* DRAW FORTUNE */
@@ -29,18 +29,18 @@ body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;margin
 .fortune-card::before{content:'🎯';position:absolute;top:-10px;right:-10px;font-size:100px;opacity:.05;}
 .fortune-date{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:20px;}
 .fortune-quote{font-family:'Oswald',sans-serif;font-size:clamp(22px,4vw,34px);font-weight:600;color:var(--ink);line-height:1.3;margin-bottom:16px;letter-spacing:.02em;}
-.fortune-quote em{color:#C9A227;font-style:normal;}
+.fortune-quote em{color:#FFC72C;font-style:normal;}
 .fortune-desc{font-size:14px;color:var(--dim);line-height:1.65;max-width:560px;margin:0 auto 20px;}
 .fortune-source{font-size:11.5px;color:var(--faint);font-style:italic;}
-.fortune-cat{display:inline-block;padding:4px 12px;border-radius:4px;font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;background:rgba(201,162,39,.1);color:#C9A227;margin-bottom:16px;}
-.draw-btn{padding:14px 36px;background:#C9A227;color:#1A1A1A;border:none;border-radius:8px;font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:background .2s;margin-right:10px;}
-.draw-btn:hover{background:#DDB42A;}
+.fortune-cat{display:inline-block;padding:4px 12px;border-radius:4px;font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;background:rgba(255,199,44,.1);color:#FFC72C;margin-bottom:16px;}
+.draw-btn{padding:14px 36px;background:#FFC72C;color:#1A1A1A;border:none;border-radius:8px;font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:background .2s;margin-right:10px;}
+.draw-btn:hover{background:#FFD45E;}
 .share-btn{padding:14px 24px;background:var(--bg);color:var(--dim);border:1.5px solid var(--line);border-radius:8px;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;}
 
 /* ARCHIVE */
 .archive-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
 .arch-card{background:var(--bg2);border-radius:10px;border:1px solid var(--line);padding:20px;transition:box-shadow .2s;cursor:pointer;}
-.arch-card:hover{box-shadow:0 6px 24px rgba(26,58,140,.1);}
+.arch-card:hover{box-shadow:0 6px 24px rgba(15,95,168,.1);}
 .arch-date{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);margin-bottom:8px;}
 .arch-quote{font-family:'Oswald',sans-serif;font-size:15px;font-weight:600;color:var(--ink);line-height:1.35;margin-bottom:8px;}
 .arch-cat{display:inline-block;padding:3px 8px;border-radius:3px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;}
@@ -51,17 +51,17 @@ body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;margin
 .wisdom-type{font-family:'Oswald',sans-serif;font-size:15px;font-weight:700;color:var(--ink);margin-bottom:6px;}
 .wisdom-desc{font-size:12.5px;color:var(--dim);line-height:1.5;}
 
-const CAT_COLORS={Accuracy:'#1A3A8C',Patience:'#22C55E',Competition:'#CC2222',Mindset:'#C9A227',Discipline:'#6B7280',Humility:'#8B5CF6',Focus:'#0891B2',Equipment:'#92400E'};
+const CAT_COLORS={Accuracy:'#0F5FA8',Patience:'#22C55E',Competition:'#E4002B',Mindset:'#FFC72C',Discipline:'#6B7280',Humility:'#8B5CF6',Focus:'#0891B2',Equipment:'#92400E'};
 </style>
 </head>
 <body>
 
-<nav style="position:sticky;top:0;z-index:300;background:#fff;border-bottom:1px solid rgba(26,58,140,.1);display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:68px;">
-  <a href="/" style="font-family:'Oswald',sans-serif;font-size:20px;font-weight:700;color:#1A3A8C;text-decoration:none;">Archery<span style="color:#C9A227">.</span>Services</a>
+<nav style="position:sticky;top:0;z-index:300;background:#fff;border-bottom:1px solid rgba(15,95,168,.1);display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:68px;">
+  <a href="/" style="font-family:'Oswald',sans-serif;font-size:20px;font-weight:700;color:#0F5FA8;text-decoration:none;">Archery<span style="color:#FFC72C">.</span>Services</a>
   <div style="display:flex;gap:24px;align-items:center;">
     <a href="discover.html" style="font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#334155;text-decoration:none;">Discover</a>
     <a href="ai-coach.html" style="font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#334155;text-decoration:none;">AI Coach</a>
-    <a href="pricing.html" style="padding:9px 20px;background:#C9A227;color:#1A1A1A;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;border-radius:4px;">Join Free</a>
+    <a href="pricing.html" style="padding:9px 20px;background:#FFC72C;color:#1A1A1A;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;border-radius:4px;">Join Free</a>
   </div>
 </nav>
 
@@ -121,10 +121,10 @@ const FORTUNES = [
 ];
 
 const WISDOM_TYPES = [
-  {type:'Accuracy',color:'#1A3A8C',desc:'Technical truths about grouping, alignment, arrow flight, and the physical mechanics of the shot.'},
-  {type:'Mindset',color:'#C9A227',desc:'Mental coaching: releasing results, managing pressure, and the inner game of archery.'},
+  {type:'Accuracy',color:'#0F5FA8',desc:'Technical truths about grouping, alignment, arrow flight, and the physical mechanics of the shot.'},
+  {type:'Mindset',color:'#FFC72C',desc:'Mental coaching: releasing results, managing pressure, and the inner game of archery.'},
   {type:'Discipline',color:'#6B7280',desc:'Wisdom about practice quality, repetition, and the long road of skill development.'},
-  {type:'Competition',color:'#CC2222',desc:'Match play, pressure situations, pre-competition routines, and winning under scrutiny.'},
+  {type:'Competition',color:'#E4002B',desc:'Match play, pressure situations, pre-competition routines, and winning under scrutiny.'},
   {type:'Patience',color:'#22C55E',desc:'The virtue between shots — managing time, resetting, and trusting the process.'},
   {type:'Humility',color:'#8B5CF6',desc:'The beginner\'s mind. Always ready to learn, regardless of experience or rank.'},
   {type:'Commitment',color:'#0891B2',desc:'Total engagement — the moment of full investment in each shot, free from hesitation.'},
@@ -132,7 +132,7 @@ const WISDOM_TYPES = [
 ];
 
 let drawSeed = 0;
-const CAT_COL={Accuracy:'#1A3A8C',Mindset:'#C9A227',Discipline:'#6B7280',Competition:'#CC2222',Patience:'#22C55E',Humility:'#8B5CF6',Commitment:'#0891B2',Equipment:'#92400E'};
+const CAT_COL={Accuracy:'#0F5FA8',Mindset:'#FFC72C',Discipline:'#6B7280',Competition:'#E4002B',Patience:'#22C55E',Humility:'#8B5CF6',Commitment:'#0891B2',Equipment:'#92400E'};
 
 function drawFortune(){
   drawSeed=(drawSeed+7)%FORTUNES.length;

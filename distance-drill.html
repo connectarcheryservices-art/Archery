@@ -7,50 +7,50 @@
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <style>
-:root{--tw:#FFFFFF;--tb:#1A1A1A;--tbl:#1A3A8C;--tr:#CC2222;--ty:#C9A227;--bg:#F5F7FA;--bg2:#FFFFFF;--ink:#0D1B2E;--dim:#334155;--faint:#8899AA;--line:rgba(26,58,140,.1);}
+:root{--tw:#FFFFFF;--tb:#1A1A1A;--tbl:#0F5FA8;--tr:#E4002B;--ty:#FFC72C;--bg:#F5F7FA;--bg2:#FFFFFF;--ink:#0D1B2E;--dim:#334155;--faint:#8899AA;--line:rgba(15,95,168,.1);}
 body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;margin:0;}
 [data-theme="night"]{--bg:#0D1117;--bg2:#161B22;--ink:#E6EDF3;--dim:#8B949E;--faint:#4A5568;--line:rgba(255,255,255,.08);}
-.page-hero{background:linear-gradient(135deg,#0D1840,#1A3A8C);padding:52px 24px 40px;text-align:center;color:#fff;}
+.page-hero{background:linear-gradient(135deg,#0E2552,#0F5FA8);padding:52px 24px 40px;text-align:center;color:#fff;}
 .page-hero h1{font-family:'Oswald',sans-serif;font-size:clamp(28px,5vw,48px);font-weight:700;text-transform:uppercase;margin:0 0 10px;}
-.page-hero h1 em{color:#C9A227;font-style:normal;}
+.page-hero h1 em{color:#FFC72C;font-style:normal;}
 .page-hero p{font-size:15px;color:rgba(255,255,255,.75);max-width:520px;margin:0 auto;line-height:1.6;}
 .wrap{max-width:1100px;margin:0 auto;padding:36px 24px;}
 .tab-bar{display:flex;gap:0;border-bottom:2px solid var(--line);margin-bottom:32px;overflow-x:auto;}
 .tab-btn{padding:12px 24px;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;border:none;background:none;cursor:pointer;color:var(--faint);border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .2s;white-space:nowrap;}
-.tab-btn.active{color:#C9A227;border-bottom-color:#C9A227;}
+.tab-btn.active{color:#FFC72C;border-bottom-color:#FFC72C;}
 .tab-panel{display:none;}.tab-panel.active{display:block;}
 .filter-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px;}
 .f-pill{padding:6px 14px;border-radius:20px;border:1px solid var(--line);background:var(--bg2);color:var(--dim);font-size:11.5px;cursor:pointer;transition:all .2s;}
-.f-pill.active,.f-pill:hover{background:#1A3A8C;color:#fff;border-color:#1A3A8C;}
+.f-pill.active,.f-pill:hover{background:#0F5FA8;color:#fff;border-color:#0F5FA8;}
 
 .drill-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:18px;}
 .drill-card{background:var(--bg2);border-radius:10px;border:1px solid var(--line);padding:22px;transition:box-shadow .2s,transform .2s;cursor:pointer;}
-.drill-card:hover,.drill-card.open{box-shadow:0 8px 30px rgba(26,58,140,.12);transform:translateY(-2px);}
-.drill-card.open{border-color:#1A3A8C;}
+.drill-card:hover,.drill-card.open{box-shadow:0 8px 30px rgba(15,95,168,.12);transform:translateY(-2px);}
+.drill-card.open{border-color:#0F5FA8;}
 .drill-head{display:flex;align-items:center;gap:14px;margin-bottom:12px;}
-.drill-icon{width:44px;height:44px;border-radius:10px;background:#1A3A8C;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.drill-icon{width:44px;height:44px;border-radius:10px;background:#0F5FA8;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
 .drill-name{font-family:'Oswald',sans-serif;font-size:16px;font-weight:700;color:var(--ink);}
 .drill-sub{font-size:11px;color:var(--faint);margin-top:2px;}
 .drill-badges{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
 .badge{padding:3px 10px;border-radius:3px;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;}
 .badge-beg{background:rgba(34,197,94,.1);color:#16A34A;}
-.badge-int{background:rgba(201,162,39,.1);color:#92691A;}
-.badge-adv{background:rgba(204,34,34,.1);color:#CC2222;}
-.badge-dist{background:rgba(26,58,140,.1);color:#1A3A8C;}
+.badge-int{background:rgba(255,199,44,.1);color:#92691A;}
+.badge-adv{background:rgba(228,0,43,.1);color:#E4002B;}
+.badge-dist{background:rgba(15,95,168,.1);color:#0F5FA8;}
 .badge-pair{background:rgba(107,114,128,.1);color:#6B7280;}
 .drill-setup{font-size:13px;color:var(--dim);line-height:1.55;margin-bottom:10px;}
-.drill-purpose{font-size:12.5px;color:var(--faint);line-height:1.5;font-style:italic;border-left:3px solid #C9A227;padding-left:10px;margin-bottom:10px;}
+.drill-purpose{font-size:12.5px;color:var(--faint);line-height:1.5;font-style:italic;border-left:3px solid #FFC72C;padding-left:10px;margin-bottom:10px;}
 .drill-extra{display:none;border-top:1px solid var(--line);padding-top:12px;margin-top:4px;}
 .drill-card.open .drill-extra{display:block;}
-.drill-note{font-size:12px;color:var(--faint);background:rgba(201,162,39,.07);border-radius:6px;padding:8px 12px;}
+.drill-note{font-size:12px;color:var(--faint);background:rgba(255,199,44,.07);border-radius:6px;padding:8px 12px;}
 
 /* INTERVAL TIMER */
 .timer-panel{background:var(--bg2);border-radius:12px;border:1px solid var(--line);overflow:hidden;}
-.timer-head{background:#1A3A8C;color:#fff;padding:20px 24px;display:flex;align-items:center;gap:14px;}
+.timer-head{background:#0F5FA8;color:#fff;padding:20px 24px;display:flex;align-items:center;gap:14px;}
 .timer-head h2{font-family:'Oswald',sans-serif;font-size:20px;font-weight:700;margin:0;}
 .preset-row{display:flex;gap:8px;flex-wrap:wrap;padding:20px 24px 0;}
 .preset-btn{padding:9px 18px;border-radius:6px;border:1.5px solid var(--line);background:var(--bg);color:var(--dim);font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:all .2s;}
-.preset-btn.active{background:#1A3A8C;color:#fff;border-color:#1A3A8C;}
+.preset-btn.active{background:#0F5FA8;color:#fff;border-color:#0F5FA8;}
 .timer-body{padding:24px;display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start;}
 @media(max-width:600px){.timer-body{grid-template-columns:1fr;}}
 .timer-clock{text-align:center;}
@@ -63,8 +63,8 @@ body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;margin
 .clock-phase{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);}
 .timer-controls{display:flex;gap:10px;justify-content:center;margin-top:16px;}
 .tc-btn{padding:10px 22px;border-radius:8px;border:none;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;}
-.tc-start{background:#C9A227;color:#1A1A1A;}
-.tc-stop{background:#CC2222;color:#fff;}
+.tc-start{background:#FFC72C;color:#1A1A1A;}
+.tc-stop{background:#E4002B;color:#fff;}
 .tc-reset{background:var(--bg);color:var(--dim);border:1.5px solid var(--line);}
 .timer-info{display:flex;flex-direction:column;gap:14px;}
 .ti-block{background:var(--bg);border-radius:8px;padding:14px 16px;}
@@ -73,19 +73,19 @@ body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;margin
 .ti-cue{font-size:13px;color:var(--dim);line-height:1.5;margin-top:6px;}
 .round-dots{display:flex;gap:5px;flex-wrap:wrap;}
 .round-dot{width:12px;height:12px;border-radius:50%;background:var(--line);}
-.round-dot.done{background:#C9A227;}
-.round-dot.active{background:#CC2222;animation:pulse 1s infinite;}
+.round-dot.done{background:#FFC72C;}
+.round-dot.active{background:#E4002B;animation:pulse 1s infinite;}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.5;}}
 </style>
 </head>
 <body>
 
-<nav style="position:sticky;top:0;z-index:300;background:#fff;border-bottom:1px solid rgba(26,58,140,.1);display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:68px;">
-  <a href="/" style="font-family:'Oswald',sans-serif;font-size:20px;font-weight:700;color:#1A3A8C;text-decoration:none;">Archery<span style="color:#C9A227">.</span>Services</a>
+<nav style="position:sticky;top:0;z-index:300;background:#fff;border-bottom:1px solid rgba(15,95,168,.1);display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:68px;">
+  <a href="/" style="font-family:'Oswald',sans-serif;font-size:20px;font-weight:700;color:#0F5FA8;text-decoration:none;">Archery<span style="color:#FFC72C">.</span>Services</a>
   <div style="display:flex;gap:24px;align-items:center;">
     <a href="discover.html" style="font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#334155;text-decoration:none;">Discover</a>
     <a href="ai-coach.html" style="font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#334155;text-decoration:none;">AI Coach</a>
-    <a href="pricing.html" style="padding:9px 20px;background:#C9A227;color:#1A1A1A;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;border-radius:4px;">Join Free</a>
+    <a href="pricing.html" style="padding:9px 20px;background:#FFC72C;color:#1A1A1A;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;border-radius:4px;">Join Free</a>
   </div>
 </nav>
 
@@ -118,7 +118,7 @@ body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;margin
   <div class="tab-panel" id="tab-timer">
     <div class="timer-panel">
       <div class="timer-head">
-        <div style="width:44px;height:44px;border-radius:50%;background:#C9A227;display:flex;align-items:center;justify-content:center;font-size:20px;">⏱</div>
+        <div style="width:44px;height:44px;border-radius:50%;background:#FFC72C;display:flex;align-items:center;justify-content:center;font-size:20px;">⏱</div>
         <div>
           <h2>Interval Training Timer</h2>
           <div style="font-size:12px;color:rgba(255,255,255,.65);">Select a preset or configure manually</div>
@@ -130,7 +130,7 @@ body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;margin
           <div class="clock-ring">
             <svg class="clock-svg" viewBox="0 0 200 200">
               <circle class="clock-bg" cx="100" cy="100" r="88"/>
-              <circle class="clock-arc" id="clock-arc" cx="100" cy="100" r="88" stroke="#C9A227" stroke-dasharray="553" stroke-dashoffset="0"/>
+              <circle class="clock-arc" id="clock-arc" cx="100" cy="100" r="88" stroke="#FFC72C" stroke-dasharray="553" stroke-dashoffset="0"/>
             </svg>
             <div class="clock-center">
               <div class="clock-time" id="clock-time">00:00</div>
@@ -250,14 +250,14 @@ function renderDistances(){
   document.getElementById('dist-grid').innerHTML=DISTANCES.map(d=>`
     <div style="background:var(--bg2);border-radius:10px;border:1px solid var(--line);padding:20px;">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
-        <div style="width:52px;height:52px;border-radius:10px;background:#1A3A8C;display:flex;align-items:center;justify-content:center;font-size:22px;">${d.icon}</div>
+        <div style="width:52px;height:52px;border-radius:10px;background:#0F5FA8;display:flex;align-items:center;justify-content:center;font-size:22px;">${d.icon}</div>
         <div>
-          <div style="font-family:'Oswald',sans-serif;font-size:22px;font-weight:700;color:#C9A227;line-height:1;">${d.dist}</div>
+          <div style="font-family:'Oswald',sans-serif;font-size:22px;font-weight:700;color:#FFC72C;line-height:1;">${d.dist}</div>
           <div style="font-size:12px;color:var(--faint);">${d.name}</div>
         </div>
       </div>
       <div style="font-size:13px;color:var(--dim);line-height:1.5;margin-bottom:10px;">${d.desc}</div>
-      <div style="display:flex;gap:5px;flex-wrap:wrap;">${d.drills.map(dr=>`<span style="padding:3px 9px;background:rgba(26,58,140,.07);border-radius:3px;font-size:11px;color:#1A3A8C;font-weight:600;">${dr}</span>`).join('')}</div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;">${d.drills.map(dr=>`<span style="padding:3px 9px;background:rgba(15,95,168,.07);border-radius:3px;font-size:11px;color:#0F5FA8;font-weight:600;">${dr}</span>`).join('')}</div>
     </div>`).join('');
 }
 
@@ -294,7 +294,7 @@ function tick(){
   const total=phase==='work'?work:rest;
   const pct=(remaining/total)*553;
   document.getElementById('clock-arc').style.strokeDashoffset=553-pct;
-  document.getElementById('clock-arc').style.stroke=phase==='work'?'#C9A227':'#1A3A8C';
+  document.getElementById('clock-arc').style.stroke=phase==='work'?'#FFC72C':'#0F5FA8';
   document.getElementById('clock-time').textContent=`${String(Math.floor(remaining/60)).padStart(2,'0')}:${String(remaining%60).padStart(2,'0')}`;
   document.getElementById('clock-phase').textContent=phase.toUpperCase();
   document.getElementById('ti-phase').textContent=phase==='work'?'🏹 SHOOT':'💨 REST';
