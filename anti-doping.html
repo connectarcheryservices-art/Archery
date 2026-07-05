@@ -247,9 +247,45 @@ function renderEducation(){
       </div>
       <div class="edu-meta" style="margin-top:12px;">
         <div class="edu-dur">⏱ ${m.duration}</div>
-        <button class="edu-btn">Start Module</button>
+        <button class="edu-btn" onclick="startModule('${m.id}')">${doneModules().includes(m.id)?'✓ Review':'Start Module'}</button>
       </div>
     </div>`).join('');
+}
+
+// ── MODULE VIEWER (real course content; completion saved on this device) ──
+const MODULE_CONTENT={
+ m1:`WHAT DOPING MEANS\nDoping is any violation of the World Anti-Doping Code — not only a positive test. The Code lists 11 violations, including possession, refusing a test, tampering, and helping someone else dope.\n\nSTRICT LIABILITY\nYou are responsible for anything found in your sample, however it got there. "My physio gave it to me" or "it was in a supplement" is not a defence. Every athlete must personally check every substance and method they use.\n\nWHY IT MATTERS IN ARCHERY\nSanctions run from a public warning to a 4-year ban for a first intentional violation — enough to erase an Olympic cycle. Team results can be disqualified, and coaches and support staff can be sanctioned separately.\n\nYOUR THREE HABITS\n1. Check every medicine on the Global DRO before taking it.\n2. Declare everything on the doping-control form.\n3. If a medicine is prohibited and medically necessary, apply for a TUE (Module 3) BEFORE competing.`,
+ m2:`WHY BETA-BLOCKERS ARE THE ARCHERY DRUG\nBeta-blockers (propranolol, atenolol, metoprolol and others) lower heart rate and suppress tremor — directly enhancing the steadiness an archer needs. That is why archery bans them IN AND OUT OF COMPETITION, stricter than most sports.\n\nWHERE THEY HIDE\nBeta-blockers are prescribed for blood pressure, migraine prevention, anxiety, glaucoma (eye drops!) and heart conditions. Timolol eye drops are a classic accidental violation in shooting sports.\n\nWHAT TO DO\n• Tell every doctor you are a competitive archer subject to WADA rules — before they prescribe.\n• Check every prescription on Global DRO for "Archery (WA)".\n• If a beta-blocker is genuinely required (e.g., a heart condition), your cardiologist and NADO must handle it through a TUE — approval is rare and alternatives are usually required.\n\nCOMMON PERMITTED ALTERNATIVES (doctor decides): ACE inhibitors or calcium-channel blockers for blood pressure; non-pharmacological routes for performance anxiety — breathing protocols, routine training (see the Mental Game guide).`,
+ m3:`WHAT A TUE IS\nA Therapeutic Use Exemption lets you use a prohibited substance/method when there is a documented medical need. It is granted BEFORE use, except in emergencies.\n\nTHE FOUR CRITERIA (all must be met)\n1. You would suffer significant health impairment without it.\n2. It is highly unlikely to enhance performance beyond restoring normal health.\n3. No reasonable permitted alternative exists.\n4. The need is not a consequence of prior doping.\n\nHOW TO APPLY\n• National-level athlete → NADA India TUE Committee. International-level (WA registered testing pool / world events) → World Archery.\n• Form + full medical file: diagnosis, test results, treatment history, why alternatives failed. Your doctor completes the clinical sections.\n• Timeline: apply at least 30 days before competition. Decisions typically take up to 21 days.\n\nEMERGENCIES\nEmergency treatment first, retroactive TUE application immediately after — keep every hospital document.\n\nKEY POINT: a prescription is NOT a TUE. Without an approved TUE, a prescribed prohibited medicine is still a violation.`,
+ m4:`THE SUPPLEMENT PROBLEM\nSupplements are not licensed like medicines. Studies repeatedly find 10–15% of products contain substances not on the label — including anabolic agents and stimulants. Under strict liability (Module 1), a contaminated protein powder is YOUR violation.\n\nRISK LADDER (low → high)\n• Food-first: normal diet covers most archers' needs.\n• Basic, batch-tested products (whey, creatine, vitamin D) from companies in third-party certification programmes.\n• Multi-ingredient "performance blends", fat burners, pre-workouts — highest contamination rates. Avoid.\n\nHOW TO REDUCE RISK\n1. Ask: do I actually need this? (Dietitian, not marketing.)\n2. Only use products certified by a recognised batch-testing programme — check the batch number on the certifier's site.\n3. Keep the container, batch number and purchase receipt for anything you use.\n4. Never share or borrow supplements at camps.\n\nRED FLAGS: "pharma grade", proprietary blends, results promised in days, sold only through social media.`,
+ m5:`WHO FILES WHEREABOUTS\nOnly athletes placed in a Registered Testing Pool (RTP) by NADA or World Archery. If you are notified, filing is mandatory — it enables no-notice out-of-competition testing, the backbone of clean sport.\n\nWHAT YOU FILE (quarterly, in ADAMS)\n• Overnight address for every day.\n• Training venues and times.\n• Competition schedule.\n• One specific 60-minute slot per day, at a fixed location, where you guarantee availability for testing.\n\nDEADLINES\nQuarterly filings are due before each quarter starts. Update immediately when plans change — updates are allowed any time, even by the app on the way to a new hotel.\n\nSTRIKES\nA missed test (not present during your 60-minute slot) or a filing failure = one strike. THREE strikes in 12 months = an anti-doping rule violation, sanction up to 2 years. Strikes expire 12 months after they occur.\n\nPRACTICAL HABITS: set a phone reminder for your daily slot; put your slot at home early morning; make one teammate/coach aware of your filing so travel changes trigger an update.`,
+ m6:`SUPPORT PERSONNEL ARE BOUND BY THE CODE\nCoaches, physios, managers and federation officials can commit violations: administering a prohibited substance, trafficking, complicity, and discouraging reporting all carry sanctions — often longer than athletes' bans.\n\nCOACH DUTIES\n• Know the Prohibited List basics and where to check (Global DRO, WADA site).\n• Never hand an athlete ANY pill, powder or drop without documented checking.\n• Build TUE and whereabouts awareness into athlete induction.\n• Create a culture where athletes can question anything they are given.\n\nFEDERATION / CLUB DUTIES\n• Ensure every national-squad athlete completes anti-doping education yearly (these modules count).\n• Cooperate fully with NADA/WA testing at events — private space, chaperones, no interference.\n• Have a safeguarding-compatible route for reporting doping concerns (see the Guard Rail page).\n\nREPORTING\nSuspicions of doping can be reported confidentially to NADA India or World Archery integrity units. Retaliation against a reporter is itself a Code violation.`,
+};
+function doneModules(){try{return JSON.parse(localStorage.getItem('ad_done')||'[]');}catch(e){return[];}}
+function startModule(id){
+  const m=MODULES.find(x=>x.id===id);if(!m)return;
+  let ov=document.getElementById('mod-ov');
+  if(!ov){
+    ov=document.createElement('div');ov.id='mod-ov';
+    ov.style.cssText='position:fixed;inset:0;z-index:9995;background:rgba(7,15,34,.8);backdrop-filter:blur(4px);display:flex;align-items:flex-start;justify-content:center;padding:48px 14px;overflow-y:auto;';
+    ov.innerHTML='<div style="background:#fff;border-radius:14px;width:100%;max-width:640px;padding:28px;color:#0D1B2E;">'
+      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;"><span id="mod-tag" style="font-size:10px;padding:4px 10px;border-radius:3px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;background:#1A3A8C;color:#fff;"></span><button onclick="document.getElementById(\'mod-ov\').style.display=\'none\'" style="background:none;border:none;font-size:26px;line-height:1;cursor:pointer;color:#8899AA;">&times;</button></div>'
+      +'<h2 id="mod-title" style="font-family:Oswald,sans-serif;font-size:24px;margin:12px 0 4px;"></h2>'
+      +'<div id="mod-dur" style="font-size:12px;color:#8899AA;margin-bottom:18px;"></div>'
+      +'<div id="mod-body" style="font-size:14.5px;line-height:1.8;white-space:pre-line;color:#334155;"></div>'
+      +'<button id="mod-done" style="margin-top:22px;width:100%;padding:13px;background:#22C55E;color:#fff;border:none;border-radius:8px;font-family:Oswald,sans-serif;font-size:14px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;">Mark Module Complete</button></div>';
+    document.body.appendChild(ov);
+    ov.addEventListener('click',e=>{if(e.target===ov)ov.style.display='none';});
+  }
+  document.getElementById('mod-tag').textContent=(m.mandatory?'Mandatory · ':'')+m.level;
+  document.getElementById('mod-title').textContent=m.title;
+  document.getElementById('mod-dur').textContent='⏱ '+m.duration+(doneModules().includes(id)?' · ✓ You completed this module':'');
+  document.getElementById('mod-body').textContent=MODULE_CONTENT[id]||m.desc;
+  document.getElementById('mod-done').onclick=()=>{
+    const d=doneModules();if(!d.includes(id)){d.push(id);localStorage.setItem('ad_done',JSON.stringify(d));}
+    ov.style.display='none';renderEducation();
+  };
+  ov.style.display='flex';
 }
 
 function renderSubstances(){

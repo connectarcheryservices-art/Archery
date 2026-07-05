@@ -563,17 +563,8 @@ footer{background:var(--ink-2);border-top:.5px solid rgba(255,255,255,.06);paddi
     <!-- Products grid -->
     <div class="products-grid reveal" id="products-grid"></div>
 
-    <!-- Pagination -->
-    <div class="pagination reveal">
-      <button class="page-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
-      <button class="page-btn active">1</button>
-      <button class="page-btn">2</button>
-      <button class="page-btn">3</button>
-      <button class="page-btn">4</button>
-      <span style="color:var(--muted);font-size:13px;padding:0 4px;">...</span>
-      <button class="page-btn">18</button>
-      <button class="page-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></button>
-    </div>
+    <!-- Pagination (built from the real filtered count) -->
+    <div class="pagination reveal" id="pagination"></div>
   </div>
 </div>
 
@@ -640,11 +631,42 @@ function hexToRgb(hex) {
   return `${r},${g},${b}`;
 }
 
+// Real pagination over the filtered list
+const PAGE_SIZE = 12;
+let currentPage = 1;
+function renderPagination(total){
+  const el=document.getElementById('pagination'); if(!el) return;
+  const pages=Math.max(1,Math.ceil(total/PAGE_SIZE));
+  if(currentPage>pages)currentPage=pages;
+  if(pages<=1){el.innerHTML='';return;}
+  let html='<button class="page-btn" onclick="goPage('+(currentPage-1)+')"'+(currentPage===1?' disabled style="opacity:.4;"':'')+'>&lsaquo;</button>';
+  for(let i=1;i<=pages;i++)html+='<button class="page-btn '+(i===currentPage?'active':'')+'" onclick="goPage('+i+')">'+i+'</button>';
+  html+='<button class="page-btn" onclick="goPage('+(currentPage+1)+')"'+(currentPage===pages?' disabled style="opacity:.4;"':'')+'>&rsaquo;</button>';
+  el.innerHTML=html;
+}
+function goPage(p){
+  const total=getFilteredProducts().length;
+  const pages=Math.max(1,Math.ceil(total/PAGE_SIZE));
+  currentPage=Math.min(Math.max(1,p),pages);
+  renderProducts(getFilteredProducts());
+  document.getElementById('products-grid').scrollIntoView({behavior:'smooth',block:'start'});
+}
+// Buy Now = add to cart and go straight to checkout
+function buyNow(id){
+  const p=PRODUCTS.find(x=>x.id===id); if(!p)return;
+  const existing=cart.find(x=>x.id===id);
+  if(existing)existing.qty++; else cart.push({...p,qty:1});
+  localStorage.setItem('archery_cart',JSON.stringify(cart));
+  location.href='checkout.html';
+}
+
 function renderProducts(list) {
   const grid = document.getElementById('products-grid');
   const isList = currentView === 'list';
   grid.className = 'products-grid reveal visible' + (isList ? ' list-view' : '');
   document.getElementById('results-num').textContent = list.length;
+  renderPagination(list.length);
+  list = list.slice((currentPage-1)*PAGE_SIZE, currentPage*PAGE_SIZE);
 
   grid.innerHTML = list.map(p => {
     const badgeHTML = p.badge ? `<div class="product-badges"><span class="badge badge-${p.badge}">${p.badge === 'sale' ? `-${p.save}%` : p.badge.toUpperCase()}</span></div>` : '';
@@ -669,7 +691,7 @@ function renderProducts(list) {
         </div>
         <div class="p-actions-side">
           <button class="btn-add-cart" onclick="addToCart(${p.id})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add to Cart</button>
-          <button class="btn-buy-now">Buy Now</button>
+          <button class="btn-buy-now" onclick="buyNow(${p.id})">Buy Now</button>
         </div>
       </div>`;
 
@@ -688,7 +710,7 @@ function renderProducts(list) {
           <div class="p-delivery"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>${p.delivery}</div>
           <div class="p-actions">
             <button class="btn-add-cart" onclick="addToCart(${p.id})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add</button>
-            <button class="btn-buy-now">Buy</button>
+            <button class="btn-buy-now" onclick="buyNow(${p.id})">Buy</button>
           </div>
         </div>
       </div>`;
@@ -817,8 +839,8 @@ function getFilteredProducts() {
   return list;
 }
 
-function filterProducts() { renderProducts(getFilteredProducts()); }
-function applyFilters() { renderProducts(getFilteredProducts()); }
+function filterProducts() { currentPage=1; renderProducts(getFilteredProducts()); }
+function applyFilters() { currentPage=1; renderProducts(getFilteredProducts()); }
 function clearFilters() {
   document.querySelectorAll('.filter-opt input').forEach(i => i.checked = false);
   document.getElementById('search-input').value = '';

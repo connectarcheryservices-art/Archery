@@ -496,17 +496,23 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
     <div class="panel" id="panel-knowledge">
       <div class="breadcrumb">Admin <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg> <span>Knowledge Hub</span></div>
       <div class="card">
-        <div class="card-title">Article Management</div>
+        <div class="card-title">Article Management <span class="td-badge badge-active" style="font-size:11px;" id="kn-count">0</span></div>
         <p style="color:var(--text-2);font-size:13px;margin-bottom:16px;">Manage guides, tutorials, and articles published in the Knowledge Hub.</p>
-        <button class="btn-add-new"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Write New Article</button>
+        <button class="btn-add-new" onclick="const f=document.getElementById('kn-form');f.style.display=f.style.display==='block'?'none':'block'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Write New Article</button>
+        <div id="kn-form" style="display:none;background:rgba(255,255,255,.03);border:1px solid rgba(255,199,44,.25);border-radius:10px;padding:16px;margin-bottom:16px;">
+          <div class="form-grid">
+            <div class="form-group"><label class="form-label">Title</label><input class="form-input" id="kn-title" placeholder="e.g. Paper Tuning a Recurve Bow"></div>
+            <div class="form-group"><label class="form-label">Category</label><select class="form-select" id="kn-cat"><option>Technique</option><option>Equipment</option><option>Rules</option><option>Training</option><option>Mental Game</option></select></div>
+            <div class="form-group"><label class="form-label">Level</label><input class="form-input" id="kn-level" placeholder="e.g. Beginner"></div>
+            <div class="form-group"><label class="form-label">Read Time</label><input class="form-input" id="kn-read" placeholder="e.g. 8 min"></div>
+            <div class="form-group" style="grid-column:1/-1;"><label class="form-label">Excerpt</label><input class="form-input" id="kn-excerpt" placeholder="One-line summary shown on the card"></div>
+            <div class="form-group" style="grid-column:1/-1;"><label class="form-label">Article Body</label><textarea class="form-input" id="kn-body" style="min-height:120px;resize:vertical;" placeholder="Full guide text…"></textarea></div>
+          </div>
+          <button class="btn-save" onclick="saveKnowledge()" style="margin-top:12px;">Publish Article</button>
+        </div>
         <table class="data-table">
-          <thead><tr><th>Title</th><th>Category</th><th>Level</th><th>Read Time</th><th>Status</th><th>Actions</th></tr></thead>
-          <tbody>
-            <tr><td class="td-name">The Complete 8-Step Shot Cycle</td><td>Technique</td><td>Beginner–Intermediate</td><td>8 min</td><td><span class="td-badge badge-active">Published</span></td><td class="td-actions"><button class="btn-edit">Edit</button><button class="btn-delete">Unpublish</button></td></tr>
-            <tr><td class="td-name">How to Choose Your First Recurve Bow</td><td>Equipment</td><td>Beginner</td><td>12 min</td><td><span class="td-badge badge-active">Published</span></td><td class="td-actions"><button class="btn-edit">Edit</button><button class="btn-delete">Unpublish</button></td></tr>
-            <tr><td class="td-name">WA 70m Outdoor Scoring System</td><td>Rules</td><td>All Levels</td><td>6 min</td><td><span class="td-badge badge-active">Published</span></td><td class="td-actions"><button class="btn-edit">Edit</button><button class="btn-delete">Unpublish</button></td></tr>
-            <tr><td class="td-name">8-Week Training Block for Championships</td><td>Training</td><td>Advanced</td><td>14 min</td><td><span class="td-badge badge-active">Published</span></td><td class="td-actions"><button class="btn-edit">Edit</button><button class="btn-delete">Unpublish</button></td></tr>
-          </tbody>
+          <thead><tr><th>Title</th><th>Category</th><th>Level</th><th>Read Time</th><th>Status / Actions</th></tr></thead>
+          <tbody id="knowledge-tbody"></tbody>
         </table>
       </div>
     </div>
@@ -1105,6 +1111,27 @@ async function sendChatReply(e){
   return false;
 }
 
+// ── KNOWLEDGE HUB (dynamic) ──
+async function loadKnowledge(){
+  const data=await get('knowledge'); if(!Array.isArray(data))return;
+  const c=document.getElementById('kn-count'); if(c)c.textContent=data.length+' articles';
+  const tb=document.getElementById('knowledge-tbody'); if(!tb)return;
+  tb.innerHTML=data.length?data.map(k=>{
+    const pub=k.published!==false&&k.active!==false;
+    return `<tr><td class="td-name">${escA(k.title)}</td><td>${escA(k.category||'')}</td><td>${escA(k.level||'')}</td><td>${escA(k.readTime||'')}</td><td class="td-actions"><span class="td-badge ${pub?'badge-active':'badge-inactive'}">${pub?'Published':'Hidden'}</span> <button class="btn-edit" onclick="toggleKnowledge(${k.id},${pub})">${pub?'Unpublish':'Publish'}</button><button class="btn-delete" onclick="delKnowledge(${k.id})">Delete</button></td></tr>`;
+  }).join(''):'<tr><td colspan="5" style="padding:22px;color:var(--text-2);">No articles yet — write the first one.</td></tr>';
+}
+async function saveKnowledge(){
+  const v=id=>document.getElementById(id).value.trim();
+  if(!v('kn-title')){toast('Enter a title');return;}
+  await post('knowledge',{title:v('kn-title'),category:document.getElementById('kn-cat').value,level:v('kn-level'),readTime:v('kn-read'),excerpt:v('kn-excerpt'),body:v('kn-body'),published:true,active:true});
+  ['kn-title','kn-level','kn-read','kn-excerpt','kn-body'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('kn-form').style.display='none';
+  loadKnowledge(); toast('Article published');
+}
+async function toggleKnowledge(id,cur){ await put('knowledge',id,{published:!cur,active:!cur}); loadKnowledge(); toast('Updated'); }
+async function delKnowledge(id){ if(!confirm('Delete this article?'))return; await del('knowledge',id); loadKnowledge(); toast('Deleted'); }
+
 function loadPanel(name){
   if(name==='dashboard'){loadStats();}
   else if(name==='products'){loadProducts();}
@@ -1114,6 +1141,7 @@ function loadPanel(name){
   else if(name==='profiles'){loadProfiles();}
   else if(name==='jobs'){loadJobs();}
   else if(name==='news'){loadNews();}
+  else if(name==='knowledge'){loadKnowledge();}
   else if(name==='forum'){loadForum();}
   else if(name==='registrations'){loadRegistrations();}
   else if(name==='reports'){loadReports();}

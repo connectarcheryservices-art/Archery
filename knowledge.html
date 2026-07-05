@@ -60,8 +60,8 @@
   <p style="font-family:'Source Serif 4',serif;font-size:16px;color:var(--ivory-2);max-width:540px;margin:0 auto 36px;font-style:italic;font-weight:300;line-height:1.8;" class="reveal">Bow types, equipment setup, competition rules, scoring systems, training science, and technique breakdowns — all in one place.</p>
   <div class="k-search-wrap reveal">
     <div class="k-search">
-      <input placeholder="Search guides, techniques, rules, equipment...">
-      <button>Search</button>
+      <input id="k-q" placeholder="Search guides, techniques, rules, equipment..." oninput="kSearch()">
+      <button onclick="kSearch()">Search</button>
     </div>
   </div>
 </div>
@@ -164,6 +164,114 @@
   </div>
 </div>
 
-<footer><div class="footer-inner"><div class="footer-top"><div><div class="footer-brand-name">Archery<span>.</span>Services</div><p class="footer-tagline">India's complete virtual archery infrastructure.</p></div><div class="footer-col"><h4>Knowledge</h4><ul><li><a href="knowledge.html">All Guides</a></li><li><a href="#">Technique</a></li><li><a href="#">Rules</a></li><li><a href="#">Training</a></li></ul></div><div class="footer-col"><h4>Platform</h4><ul><li><a href="index.html">Home</a></li><li><a href="shop.html">Shop</a></li><li><a href="federation.html">Federation</a></li></ul></div><div class="footer-col"><h4>Company</h4><ul><li><a href="#">About</a></li><li><a href="admin.html">Admin</a></li></ul></div></div><div class="footer-bottom"><p class="footer-copy">© 2025 Archery.Services</p><div class="footer-legal"><a href="#">Privacy</a><a href="#">Terms</a></div></div></div></footer>
+<footer><div class="footer-inner"><div class="footer-top"><div><div class="footer-brand-name">Archery<span>.</span>Services</div><p class="footer-tagline">India's complete virtual archery infrastructure.</p></div><div class="footer-col"><h4>Knowledge</h4><ul><li><a href="knowledge.html">All Guides</a></li><li><a href="#articles">Technique</a></li><li><a href="#articles">Rules</a></li><li><a href="#articles">Training</a></li></ul></div><div class="footer-col"><h4>Platform</h4><ul><li><a href="index.html">Home</a></li><li><a href="shop.html">Shop</a></li><li><a href="federation.html">Federation</a></li></ul></div><div class="footer-col"><h4>Company</h4><ul><li><a href="about.html">About</a></li><li><a href="admin.html">Admin</a></li></ul></div></div><div class="footer-bottom"><p class="footer-copy">© 2026 Archery.Services</p><div class="footer-legal"><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="refund-policy.html">Refunds</a><a href="shipping-policy.html">Shipping</a></div></div></div></footer>
+
+<!-- ARTICLE READER -->
+<div id="k-reader" style="position:fixed;inset:0;z-index:9995;background:rgba(7,15,34,.8);backdrop-filter:blur(4px);display:none;align-items:flex-start;justify-content:center;padding:48px 14px;overflow-y:auto;" onclick="if(event.target===this)closeReader()">
+  <div style="background:var(--forest-2,#142818);border:1px solid rgba(245,240,232,.12);border-radius:16px;width:100%;max-width:680px;padding:30px;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <span id="kr-cat" style="font-size:9px;padding:4px 10px;border-radius:2px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;background:rgba(200,96,26,.15);color:var(--ember-light,#E07A40);"></span>
+      <button onclick="closeReader()" style="background:none;border:none;color:var(--ivory-3,#8C8273);font-size:26px;line-height:1;cursor:pointer;">&times;</button>
+    </div>
+    <h2 id="kr-title" style="font-family:'Oswald',sans-serif;font-size:26px;font-weight:600;color:var(--ivory,#F5F0E8);line-height:1.25;margin:12px 0 6px;"></h2>
+    <div id="kr-meta" style="font-size:12px;color:var(--ivory-3,#8C8273);margin-bottom:20px;letter-spacing:.04em;"></div>
+    <div id="kr-body" style="font-family:'Source Serif 4',serif;font-size:15.5px;color:var(--ivory-2,#D4CCBA);line-height:1.9;white-space:pre-line;"></div>
+  </div>
+</div>
+
 <script src="shared.js"></script>
+<script>
+// Full guides — opened by clicking any article card
+const GUIDES=[
+ {t:'The Complete 8-Step Shot Cycle',cat:'Technique',meta:'8 min · Beginner–Intermediate',body:
+`Every repeatable shot is built from the same eight steps. Master them in order — each one sets up the next.
+
+1. STANCE — Feet shoulder-width across the shooting line, weight 60/40 toward the balls of the feet, hips and shoulders level. Mark your foot position with tape so every arrow starts identically.
+
+2. NOCK — Seat the arrow under the nocking point with the index vane pointing away from the riser. Listen for the click; a half-seated nock is a dropped arrow at full draw.
+
+3. SET / HOOK & GRIP — Hook the string in the first groove of all three fingers, deep enough that the fingers stay relaxed. Set the bow hand: pressure point on the thumb pad, knuckles at 45°, fingers loose. Grip tension is the most common hidden error in scattered groups.
+
+4. SET-UP — Raise the bow to shoulder height with the drawing elbow already behind the arrow line. Pre-align your shoulders to the target now; you cannot fix alignment at full draw.
+
+5. DRAW — Pull with the back muscles, not the arm. The elbow travels around, not backwards. The draw should feel like the shoulder blades sliding toward each other.
+
+6. ANCHOR — String touches the tip of the nose and the centre of the chin; index knuckle in the same facial hollow every shot. Verify on video weekly — anchor drift is invisible from the inside.
+
+7. AIM & EXPANSION — Let the sight ring settle around the gold rather than forcing it still. Keep expanding through the clicker: the shot continues moving, only the sight picture is still.
+
+8. RELEASE & FOLLOW-THROUGH — The fingers relax and the string leaves; the drawing hand finishes beside the neck, the bow arm stays on target until the arrow lands. If your hand ends up away from your neck, you plucked.
+
+Train the cycle at a blank bale, 20–30 arrows a day, saying the step names silently. When the sequence runs without conscious thought, scores follow.`},
+ {t:'How to Choose Your First Recurve Bow',cat:'Equipment',meta:'12 min · Beginner',body:
+`Buying your first recurve is about fit, not brand. Get these four things right:
+
+DRAW WEIGHT — Beginners: 16–22 lbs (juniors 12–18 lbs). You should be able to draw and hold for 10 seconds, five times in a row, without shaking. Too heavy destroys form and shoulders; you can buy heavier limbs later — most risers accept new limbs.
+
+DRAW LENGTH — Measure your wingspan fingertip-to-fingertip and divide by 2.5. That's your approximate draw length in inches. It decides your bow length: draw under 26" → 64–66" bow; 26–28" → 66–68"; over 28" → 68–70".
+
+RISER — A 25" aluminium ILF riser is the standard first buy. ILF (International Limb Fitting) matters more than the logo: it means limbs from almost any maker will fit when you upgrade. Check the grip feels neutral in your hand and the riser has bushings for a plunger, rest, sight and long rod.
+
+LIMBS — Wood/fibreglass limbs are perfectly good to 30m and cost a fraction of carbon. Buy cheap limbs and a good riser: you will outgrow limbs in 6–12 months, the riser can last a decade.
+
+BUDGET SPLIT (first full setup) — Riser 40%, limbs 15%, arrows 20% (never skimp — mismatched arrows will not group no matter how well you shoot), tab/armguard/quiver 10%, rest+plunger+sight 15%.
+
+WHAT TO SKIP — Stabiliser weights, clicker and expensive sights can wait until your groups at 18m are fist-sized. Buy them when they solve a problem you actually have.
+
+Finally: buy from a shop (or seller) that lets you draw the bow before paying, and get your club coach to check the fit in the first week.`},
+ {t:'WA 70m Outdoor Scoring System — Full Guide',cat:'Rules',meta:'6 min · All Levels',body:
+`The 70m round is the Olympic format for recurve. Here is how scoring actually works.
+
+THE TARGET — 122cm face, ten concentric rings. Gold scores 10 (inner) and 9, red 8 and 7, blue 6 and 5, black 4 and 3, white 2 and 1. The innermost "X" ring counts 10 and is used to break ties on total 10s.
+
+RANKING ROUND — 72 arrows in 12 ends of 6 (4 minutes per end). Maximum score 720. This seeds the elimination brackets.
+
+LINE CUTTERS — An arrow touching the line between two zones scores the HIGHER value. If athletes dispute a call, a judge decides; the arrow must not be touched before the call.
+
+ELIMINATION MATCHES (SET SYSTEM) — Head-to-head matches are shot in sets of 3 arrows. Win a set: 2 set points. Draw: 1 each. First to 6 set points wins the match. This is why a match can be won by an archer with a lower total score — sets reset every 3 arrows.
+
+SHOOT-OFF — At 5–5, each archer shoots a single arrow; closest to the centre wins. Judges measure if needed.
+
+TIMING — 20 seconds per arrow in alternating-shot matches, 120 seconds per 3-arrow end otherwise. Shooting after the signal costs your highest arrow of that end.
+
+EQUIPMENT CHECKS — Judges may inspect at any time. For recurve: no electronics, no magnifying sights, arrows marked with the athlete's name or initials, and identical arrows within an end (same fletch colour/pattern).
+
+BOUNCE-OUTS & PASS-THROUGHS — Score by the mark left on the face, confirmed by a judge, provided all arrow holes are properly marked from previous ends — mark your holes every end.`},
+ {t:'8-Week Training Block for Championship Prep',cat:'Training',meta:'14 min · Advanced',body:
+`A peaking block for a target event in week 9. Volume builds to week 5, then tapers while intensity holds. Arrows/week assumes a senior recurve athlete with a 250–350 base.
+
+WEEKS 1–2 (FOUNDATION, 300 arrows/wk) — Mon: blank bale 60, SPT holds 5×30s. Tue: 70m grouping 90 arrows, no scoring. Wed: rest / gym pull work. Thu: technique focus 60 (one cue only). Fri: 70m scoring 72 (record). Sat: 90 arrows mixed 50m/70m. Sun: rest.
+
+WEEKS 3–4 (LOADING, 350 arrows/wk) — Add a second scoring day. Introduce match simulation: 3-arrow ends against a training partner, set-point scoring. SPT rises to 5×45s holds. Video anchor and release once per week and compare against week 1.
+
+WEEK 5 (PEAK VOLUME, 380 arrows/wk) — Two full 72-arrow rounds plus one full elimination-day simulation (ranking round in the morning, 4 matches in the afternoon). This is the hardest week — protect sleep and protein.
+
+WEEK 6 (CONVERSION, 300 arrows/wk) — Cut volume 20%, keep every scoring session. All shooting now at competition pace with full pre-shot routine. Practise between-end routines: sit, breathe, plan the next end in one sentence.
+
+WEEK 7 (SHARPEN, 240 arrows/wk) — Shoot at the same time of day as your event schedule. One pressure session: every arrow below 8 restarts the end. Confirm equipment — this is the LAST week for any change, including new strings.
+
+WEEK 8 (TAPER, 150–180 arrows/wk) — Short, crisp sessions of 30–50 arrows ending on a strong end. No technique changes, no video analysis, no new ideas. Visualise the venue nightly: walk-in, warm-up, first end.
+
+EVENT WEEK — Arrive early enough to shoot official practice. Total arrows before qualification day: under 60. Trust the block — the work is already in the bank.`},
+];
+function kOpen(i){
+  const g=GUIDES[i];if(!g)return;
+  document.getElementById('kr-cat').textContent=g.cat;
+  document.getElementById('kr-title').textContent=g.t;
+  document.getElementById('kr-meta').textContent=g.meta;
+  document.getElementById('kr-body').textContent=g.body;
+  document.getElementById('k-reader').style.display='flex';
+  document.body.style.overflow='hidden';
+}
+function closeReader(){document.getElementById('k-reader').style.display='none';document.body.style.overflow='';}
+document.querySelectorAll('.article-card').forEach((c,i)=>{c.style.cursor='pointer';c.addEventListener('click',()=>kOpen(i));});
+
+// Live search across categories and articles
+function kSearch(){
+  const q=(document.getElementById('k-q').value||'').toLowerCase().trim();
+  document.querySelectorAll('.article-card').forEach(c=>{c.style.display=!q||c.textContent.toLowerCase().includes(q)?'':'none';});
+  document.querySelectorAll('.k-cat').forEach(c=>{c.style.display=!q||c.textContent.toLowerCase().includes(q)?'':'none';});
+  if(q)document.getElementById('articles').scrollIntoView({behavior:'smooth',block:'start'});
+}
+</script>
 </body></html>

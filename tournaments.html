@@ -141,10 +141,10 @@
 
 <div style="max-width:1440px;margin:0 auto;padding:0 var(--g) 20px;">
   <div class="t-tabs reveal">
-    <button class="t-tab active">Upcoming</button>
-    <button class="t-tab">Live Now</button>
-    <button class="t-tab">Results</button>
-    <button class="t-tab">My Events</button>
+    <button class="t-tab active" onclick="setTTab('upcoming',this)">Upcoming</button>
+    <button class="t-tab" onclick="setTTab('live',this)">Live Now</button>
+    <button class="t-tab" onclick="setTTab('done',this)">Results</button>
+    <button class="t-tab" onclick="setTTab('mine',this)">My Events</button>
   </div>
   <div class="live-banner reveal">
     <div style="display:flex;align-items:center;gap:14px;">
@@ -160,7 +160,7 @@
       <div class="ls"><div class="ls-name">A. Bora</div><div class="ls-score">672</div><div class="ls-pos">#2</div></div>
       <div class="ls"><div class="ls-name">P. Gogoi</div><div class="ls-score">668</div><div class="ls-pos">#3</div></div>
     </div>
-    <button class="btn-live">Watch Live Scores →</button>
+    <button class="btn-live" onclick="setTTab('live',document.querySelectorAll('.t-tab')[1])">Watch Live Scores →</button>
   </div>
 </div>
 
@@ -186,7 +186,7 @@
       <div style="width:48px;height:48px;background:rgba(212,168,71,.1);border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:12px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#D4A847" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg></div>
       <div style="font-family:'Oswald',sans-serif;font-size:16px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--ivory);margin-bottom:6px;">Digital Certificates</div>
       <p style="font-size:12px;color:var(--ivory-2);line-height:1.7;margin-bottom:14px;">Earn verifiable digital certificates for every tournament you participate in or win.</p>
-      <button class="btn-primary" style="width:100%;justify-content:center;font-size:11px;">View My Certificates</button>
+      <button class="btn-primary" style="width:100%;justify-content:center;font-size:11px;" onclick="myCertificates()">View My Certificates</button>
     </div>
   </aside>
 </div>
@@ -210,9 +210,9 @@ function renderTournaments(list){
     const pct=Math.round(t.registered/t.slots*100);
     const isDone=t.status==='done';
     const reg=t.status==='open'?`<button class="btn-reg" onclick="openModal(${t.id},'${t.name.replace(/'/g,"\\'")}','${mon} ${day} · ${t.location}')">Register Now</button>`
-              :t.status==='live'?`<button class="btn-reg">Watch Live</button>`
-              :t.status==='done'?`<button class="btn-det">View Results</button>`
-              :`<button class="btn-det">Set Reminder</button>`;
+              :t.status==='live'?`<button class="btn-reg" onclick="setTTab('live',document.querySelectorAll('.t-tab')[1])">Watch Live</button>`
+              :t.status==='done'?`<button class="btn-det" onclick="setTTab('done',document.querySelectorAll('.t-tab')[2])">View Results</button>`
+              :`<button class="btn-det" onclick="downloadICS(${t.id})">Set Reminder</button>`;
     return `<div class="t-card reveal" style="${isDone?'opacity:.7;':''}">
       <div class="t-card-head">
         <div style="display:flex;align-items:flex-start;gap:14px;">
@@ -232,13 +232,77 @@ function renderTournaments(list){
         <div class="t-discs">${(t.disciplines||[]).map(d=>`<span class="disc">${d}</span>`).join('')}</div>
         <div class="t-progress-label"><span>${t.registered} / ${t.slots} slots filled</span><span>${pct}%</span></div>
         <div class="t-track"><div class="t-fill" style="width:${pct}%;${isDone?'background:rgba(245,240,232,.15);':''}"></div></div>
-        <div class="t-footer"><div class="t-org">By <strong>${t.org}</strong></div><div class="t-btns"><button class="btn-det">Details</button>${reg}</div></div>
+        <div class="t-footer"><div class="t-org">By <strong>${t.org}</strong></div><div class="t-btns"><button class="btn-det" onclick="tDetails(${t.id})">Details</button>${reg}</div></div>
       </div>
     </div>`;
   }).join('');
   document.querySelectorAll('.reveal').forEach(r=>new IntersectionObserver(e=>e.forEach(x=>{if(x.isIntersecting)x.target.classList.add('visible');}),{threshold:.08}).observe(r));
 }
-fetch(API+'/tournaments').then(r=>r.json()).then(renderTournaments).catch(()=>renderTournaments(FALLBACK));
+let TOURNEYS=[];let tFilter='upcoming';
+function myRegs(){try{return JSON.parse(localStorage.getItem('my_regs')||'[]');}catch(e){return[];}}
+function applyTFilter(){
+  let list=TOURNEYS;
+  if(tFilter==='upcoming')list=TOURNEYS.filter(t=>t.status==='open'||t.status==='soon');
+  else if(tFilter==='live')list=TOURNEYS.filter(t=>t.status==='live');
+  else if(tFilter==='done')list=TOURNEYS.filter(t=>t.status==='done');
+  else if(tFilter==='mine')list=TOURNEYS.filter(t=>myRegs().includes(t.id));
+  renderTournaments(list);
+  if(!list.length){
+    const msg=tFilter==='mine'?"You haven't registered for any events yet — register from the Upcoming tab and they will appear here."
+      :tFilter==='live'?'No events are live right now — check back on event day.':'Nothing here yet.';
+    document.getElementById('t-list').innerHTML='<div style="padding:40px;text-align:center;color:var(--ivory-3);">'+msg+'</div>';
+  }
+}
+function setTTab(f,btn){tFilter=f;document.querySelectorAll('.t-tab').forEach(b=>b.classList.remove('active'));if(btn)btn.classList.add('active');applyTFilter();}
+fetch(API+'/tournaments').then(r=>r.json()).then(d=>{TOURNEYS=(Array.isArray(d)&&d.length)?d:FALLBACK;applyTFilter();}).catch(()=>{TOURNEYS=FALLBACK;applyTFilter();});
+
+// Real calendar reminder — downloads an .ics your phone/PC calendar opens
+function downloadICS(id){
+  const t=TOURNEYS.find(x=>x.id===id);if(!t)return;
+  const dt=new Date(t.date),y=dt.getFullYear(),m=String(dt.getMonth()+1).padStart(2,'0'),da=String(dt.getDate()).padStart(2,'0');
+  const ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Archery.Services//EN','BEGIN:VEVENT','UID:'+t.id+'@archery.services','DTSTART;VALUE=DATE:'+y+m+da,'SUMMARY:'+t.name,'LOCATION:'+t.location,'DESCRIPTION:Registration and event details on Archery.Services','END:VEVENT','END:VCALENDAR'].join('\r\n');
+  const a=document.createElement('a');
+  a.href='data:text/calendar;charset=utf-8,'+encodeURIComponent(ics);
+  a.download=t.name.replace(/[^a-z0-9]+/gi,'-').toLowerCase()+'.ics';
+  document.body.appendChild(a);a.click();a.remove();
+}
+
+// Full event details modal
+function tDetails(id){
+  const t=TOURNEYS.find(x=>x.id===id);if(!t)return;
+  let ov=document.getElementById('td-ov');
+  if(!ov){
+    ov=document.createElement('div');ov.id='td-ov';
+    ov.style.cssText='position:fixed;inset:0;z-index:9996;background:rgba(0,0,0,.72);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:20px;';
+    ov.innerHTML='<div id="td-box" style="background:var(--forest-2);border:1px solid rgba(245,240,232,.12);border-radius:16px;width:100%;max-width:480px;padding:26px;"></div>';
+    document.body.appendChild(ov);
+    ov.addEventListener('click',e=>{if(e.target===ov)ov.style.display='none';});
+  }
+  const esc=v=>String(v==null?'':v).replace(/</g,'&lt;');
+  const regBtn=t.status==='open'
+    ? '<button id="td-reg" style="margin-top:18px;width:100%;padding:12px;background:var(--ember);color:#fff;border:none;border-radius:6px;font-family:Oswald,sans-serif;font-size:13px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;">Register Now</button>'
+    : '';
+  document.getElementById('td-box').innerHTML=
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;"><div style="font-family:Oswald,sans-serif;font-size:18px;text-transform:uppercase;letter-spacing:.03em;color:var(--ivory);line-height:1.3;">'+esc(t.name)+'</div><button id="td-x" style="background:none;border:none;color:var(--ivory-3);font-size:24px;line-height:1;cursor:pointer;">&times;</button></div>'
+    +'<div style="font-size:12px;color:var(--ivory-3);margin:6px 0 16px;">Organised by '+esc(t.org)+'</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:13px;color:var(--ivory-2);">'
+    +'<div><strong style="color:var(--ivory);">Date</strong><br>'+esc(t.date)+'</div><div><strong style="color:var(--ivory);">Location</strong><br>'+esc(t.location)+'</div>'
+    +'<div><strong style="color:var(--ivory);">Prize Pool</strong><br>₹'+Number(t.prize).toLocaleString('en-IN')+'</div><div><strong style="color:var(--ivory);">Entry Fee</strong><br>'+(t.fee?'₹'+t.fee.toLocaleString('en-IN'):'—')+'</div>'
+    +'<div><strong style="color:var(--ivory);">Slots</strong><br>'+t.registered+' / '+t.slots+' filled</div><div><strong style="color:var(--ivory);">Status</strong><br>'+esc(t.status)+'</div></div>'
+    +'<div style="margin-top:14px;font-size:12px;color:var(--ivory-3);">Disciplines: '+(t.disciplines||[]).map(esc).join(', ')+'</div>'
+    +regBtn;
+  document.getElementById('td-x').onclick=()=>ov.style.display='none';
+  const rb=document.getElementById('td-reg');
+  if(rb)rb.onclick=()=>{ov.style.display='none';const d=new Date(t.date);openModal(t.id,t.name,d.toLocaleDateString('en-IN',{day:'numeric',month:'short'})+' · '+t.location);};
+  ov.style.display='flex';
+}
+
+function myCertificates(){
+  const done=TOURNEYS.filter(t=>myRegs().includes(t.id)&&t.status==='done');
+  alert(done.length
+    ? 'Certificates ready for: '+done.map(t=>t.name).join(', ')+'. Download from your profile after result verification.'
+    : 'No certificates yet — certificates are issued after you compete in a completed event. Register from the Upcoming tab to get started.');
+}
 let regT={id:null,name:''};
 function openModal(id,name,meta){regT={id,name};document.getElementById('modal-name').textContent=name;document.getElementById('modal-meta').textContent=meta;document.getElementById('reg-modal').classList.add('open');}
 function closeModal(){document.getElementById('reg-modal').classList.remove('open');}
@@ -254,7 +318,8 @@ async function submitReg(){
   b.textContent=orig;b.style.opacity='1';b.disabled=false;
   if(res&&res.ok){
     closeModal();
-    alert('Registration submitted! Our team will review your entry and confirm by email.');
+    try{const r=JSON.parse(localStorage.getItem('my_regs')||'[]');if(regT.id&&!r.includes(regT.id)){r.push(regT.id);localStorage.setItem('my_regs',JSON.stringify(r));}}catch(e){}
+    alert('Registration submitted! Our team will review your entry and confirm by email. Find it under the My Events tab.');
     ['rf-first','rf-last','rf-dob','rf-fed','rf-club'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   }else{
     alert((res&&res.error)||'Could not submit your registration. Please try again.');

@@ -72,6 +72,7 @@ body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;margin
 .gen-btn:hover{background:#DDB42A;}
 .gen-output{background:var(--bg);border-radius:8px;padding:16px;margin-top:16px;display:none;}
 .gen-output h3{font-family:'Oswald',sans-serif;font-size:15px;color:var(--ink);margin:0 0 12px;}
+@media print{body.print-bracket *{visibility:hidden;}body.print-bracket #tab-bracket,body.print-bracket #tab-bracket *{visibility:visible;}body.print-bracket #tab-bracket{position:absolute;top:0;left:0;width:100%;}}
 </style>
 </head>
 <body>
@@ -166,7 +167,7 @@ body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;margin
           <div id="gen-result"></div>
           <div style="margin-top:12px;display:flex;gap:8px;">
             <button class="da-btn da-view" style="flex:none;padding:9px 20px;" onclick="setTab('bracket',document.querySelectorAll('.tab-btn')[1]);renderBracket(genAthletes)">View Bracket</button>
-            <button class="da-btn da-export" style="flex:none;padding:9px 20px;">Export PDF</button>
+            <button class="da-btn da-export" style="flex:none;padding:9px 20px;" onclick="setTab('bracket',document.querySelectorAll('.tab-btn')[1]);renderBracket(genAthletes);setTimeout(printBracket,350)">Export PDF</button>
           </div>
         </div>
       </div>
@@ -213,8 +214,8 @@ function renderDraws(){
         </div>
         <div class="draw-hash"># ${d.hash} · ${d.category}</div>
         <div class="draw-actions">
-          <button class="da-btn da-view">View Bracket</button>
-          <button class="da-btn da-export">Export</button>
+          <button class="da-btn da-view" onclick="viewDraw('${d.id}')">View Bracket</button>
+          <button class="da-btn da-export" onclick="viewDraw('${d.id}');setTimeout(printBracket,350)">Export</button>
         </div>
       </div>
     </div>`).join('');
@@ -225,6 +226,25 @@ const SAMPLE_ATHLETES=[
   'Simranjeet Kaur','Priya Sharma','Bhajan Kaur','L. Bombayla Devi',
 ];
 let genAthletes=[];
+
+// Archived draws don't publish athlete names on this demo board — show the
+// seeded bracket structure (Seed 1 … Seed N), exactly as draw software does
+// before names are attached.
+function viewDraw(id){
+  const d=DRAWS.find(x=>x.id===id); if(!d)return;
+  genAthletes=Array.from({length:d.entries},(_,i)=>'Seed '+(i+1));
+  setTab('bracket',document.querySelectorAll('.tab-btn')[1]);
+  renderBracket(genAthletes);
+  const disp=document.getElementById('bracket-display');
+  if(disp)disp.insertAdjacentHTML('afterbegin',`<div style="font-family:'Oswald',sans-serif;font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:#C9A227;margin-bottom:12px;">${d.tournament} — ${d.category} · #${d.hash}</div>`);
+}
+
+// Export = print-to-PDF of the bracket panel (browser's Save as PDF)
+function printBracket(){
+  document.body.classList.add('print-bracket');
+  window.print();
+  setTimeout(()=>document.body.classList.remove('print-bracket'),400);
+}
 
 function renderBracket(athletes){
   const n=athletes.length;
@@ -284,7 +304,7 @@ function renderHistory(){
         <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);">Winner</div>
         <div style="font-family:'Oswald',sans-serif;font-size:15px;font-weight:700;color:#C9A227;">${h.winner} 🏆</div>
       </div>
-      <button class="da-btn da-export" style="padding:8px 16px;border:1.5px solid var(--line);border-radius:6px;background:var(--bg);cursor:pointer;">View Archive</button>
+      <button class="da-btn da-export" style="padding:8px 16px;border:1.5px solid var(--line);border-radius:6px;background:var(--bg);cursor:pointer;" onclick="setTab('history',document.querySelectorAll('.tab-btn')[3])">View Archive</button>
     </div>`).join('');
 }
 

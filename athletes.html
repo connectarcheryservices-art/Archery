@@ -76,7 +76,7 @@
         <li><div class="af-marker"></div><div><strong style="color:var(--ivory);">Scouting visibility</strong> — Open your profile to national coaches and selectors across India.</div></li>
       </ul>
       <div style="display:flex;gap:12px;flex-wrap:wrap;">
-        <button class="btn-primary">Create Athlete Profile →</button>
+        <button class="btn-primary" onclick="location.href='signup.html'">Create Athlete Profile →</button>
         <a href="#rankings" class="btn-outline">View Rankings</a>
       </div>
     </div>
@@ -134,16 +134,16 @@
 <script src="shared.js"></script>
 <script>
 const ATHLETES=[
-  {rank:1,init:'DS',name:'Deepika Singh',state:'Jharkhand',club:'SAI Ranchi',avg:672,pb:687,events:18,trend:'eq',color:'#C8601A',bg:'rgba(200,96,26,.15)'},
-  {rank:2,init:'AB',name:'Atanu Bora',state:'Assam',club:'SSAC Guwahati',avg:668,pb:679,events:14,trend:'up',color:'#3B82F6',bg:'rgba(59,130,246,.15)'},
-  {rank:3,init:'PD',name:'Priya Das',state:'West Bengal',club:'ATA Kolkata',avg:661,pb:674,events:16,trend:'up',color:'#A855F7',bg:'rgba(168,85,247,.15)'},
-  {rank:4,init:'RK',name:'Rohit Krishnan',state:'Tamil Nadu',club:'Archery TN',avg:658,pb:669,events:12,trend:'dn',color:'#22C55E',bg:'rgba(46,94,53,.2)'},
-  {rank:5,init:'NK',name:'Neha Kumari',state:'Bihar',club:'Bihar Arch.',avg:654,pb:665,events:20,trend:'up',color:'#F97316',bg:'rgba(249,115,22,.15)'},
-  {rank:6,init:'AK',name:'Arjun Kumar',state:'Delhi',club:'DDA Archery',avg:651,pb:662,events:15,trend:'eq',color:'#EC4899',bg:'rgba(236,72,153,.15)'},
-  {rank:7,init:'SM',name:'Sunil Mahato',state:'Jharkhand',club:'SAI Ranchi',avg:648,pb:659,events:11,trend:'up',color:'#14B8A6',bg:'rgba(20,184,166,.15)'},
-  {rank:8,init:'RV',name:'Ritu Verma',state:'Haryana',club:'Haryana Arch.',avg:645,pb:656,events:17,trend:'dn',color:'#EF4444',bg:'rgba(239,68,68,.15)'},
-  {rank:9,init:'MG',name:'Manish Gogoi',state:'Assam',club:'SSAC Guwahati',avg:642,pb:654,events:13,trend:'up',color:'#C9A227',bg:'rgba(201,162,39,.15)'},
-  {rank:10,init:'SB',name:'Sneha Bhatt',state:'Gujarat',club:'GAS Ahmedabad',avg:639,pb:651,events:9,trend:'eq',color:'#3B82F6',bg:'rgba(59,130,246,.15)'},
+  {rank:1,disc:'Recurve Open',init:'DS',name:'Deepika Singh',state:'Jharkhand',club:'SAI Ranchi',avg:672,pb:687,events:18,trend:'eq',color:'#C8601A',bg:'rgba(200,96,26,.15)'},
+  {rank:2,disc:'Recurve Open',init:'AB',name:'Atanu Bora',state:'Assam',club:'SSAC Guwahati',avg:668,pb:679,events:14,trend:'up',color:'#3B82F6',bg:'rgba(59,130,246,.15)'},
+  {rank:3,disc:'Recurve Open',init:'PD',name:'Priya Das',state:'West Bengal',club:'ATA Kolkata',avg:661,pb:674,events:16,trend:'up',color:'#A855F7',bg:'rgba(168,85,247,.15)'},
+  {rank:4,disc:'Compound Open',init:'RK',name:'Rohit Krishnan',state:'Tamil Nadu',club:'Archery TN',avg:658,pb:669,events:12,trend:'dn',color:'#22C55E',bg:'rgba(46,94,53,.2)'},
+  {rank:5,disc:'Recurve Open',init:'NK',name:'Neha Kumari',state:'Bihar',club:'Bihar Arch.',avg:654,pb:665,events:20,trend:'up',color:'#F97316',bg:'rgba(249,115,22,.15)'},
+  {rank:6,disc:'Compound Open',init:'AK',name:'Arjun Kumar',state:'Delhi',club:'DDA Archery',avg:651,pb:662,events:15,trend:'eq',color:'#EC4899',bg:'rgba(236,72,153,.15)'},
+  {rank:7,disc:'Recurve Open',init:'SM',name:'Sunil Mahato',state:'Jharkhand',club:'SAI Ranchi',avg:648,pb:659,events:11,trend:'up',color:'#14B8A6',bg:'rgba(20,184,166,.15)'},
+  {rank:8,disc:'U-21',init:'RV',name:'Ritu Verma',state:'Haryana',club:'Haryana Arch.',avg:645,pb:656,events:17,trend:'dn',color:'#EF4444',bg:'rgba(239,68,68,.15)'},
+  {rank:9,disc:'U-21',init:'MG',name:'Manish Gogoi',state:'Assam',club:'SSAC Guwahati',avg:642,pb:654,events:13,trend:'up',color:'#C9A227',bg:'rgba(201,162,39,.15)'},
+  {rank:10,disc:'Para',init:'SB',name:'Sneha Bhatt',state:'Gujarat',club:'GAS Ahmedabad',avg:639,pb:651,events:9,trend:'eq',color:'#3B82F6',bg:'rgba(59,130,246,.15)'},
 ];
 function renderRankings(list){
   document.getElementById('rankings-body').innerHTML=list.map(a=>{
@@ -156,20 +156,38 @@ function renderRankings(list){
       <div class="rt-cell">${a.state}</div>
       <div class="rt-cell score">${a.avg}</div>
       <div class="rt-cell pb">${a.pb}</div>
-      <div><button class="view-btn">Profile</button></div>
+      <div><button class="view-btn" onclick="location.href='profile.html'">Profile</button></div>
     </div>`;
   }).join('');
 }
-function filterAthletes(q){renderRankings(q?ATHLETES.filter(a=>a.name.toLowerCase().includes(q.toLowerCase())||a.state.toLowerCase().includes(q.toLowerCase())||a.club.toLowerCase().includes(q.toLowerCase())):ATHLETES);}
-document.querySelectorAll('.r-tab').forEach(b=>b.addEventListener('click',function(){document.querySelectorAll('.r-tab').forEach(x=>x.classList.remove('active'));this.classList.add('active');}));
+// Discipline tabs are real filters; ranks renumber within the selected discipline.
+let activeDisc='Recurve Open';
+function currentList(){
+  const key=activeDisc.toLowerCase();
+  let list=ATHLETES.filter(a=>((a.disc||'')+' '+(a.club||'')).toLowerCase().includes(key)||((a.disc||'').toLowerCase().includes(key.replace(' open',''))));
+  return list.slice().sort((a,b)=>a.rank-b.rank).map((a,i)=>({...a,rank:i+1}));
+}
+function filterAthletes(q){
+  const base=currentList();
+  const list=q?base.filter(a=>a.name.toLowerCase().includes(q.toLowerCase())||a.state.toLowerCase().includes(q.toLowerCase())||a.club.toLowerCase().includes(q.toLowerCase())):base;
+  renderRankings(list);
+  if(!list.length)document.getElementById('rankings-body').innerHTML='<div style="padding:26px;color:var(--ivory-3);font-size:13px;">No ranked athletes in this discipline yet.</div>';
+}
+document.querySelectorAll('.r-tab').forEach(b=>b.addEventListener('click',function(){
+  document.querySelectorAll('.r-tab').forEach(x=>x.classList.remove('active'));
+  this.classList.add('active');
+  activeDisc=this.textContent.trim();
+  const q=document.querySelector('.ath-search');
+  filterAthletes(q?q.value.trim():'');
+}));
 fetch('/api/athletes')
   .then(r=>r.json())
   .then(data=>{if(data&&data.length){
     // merge API data with display data
-    data.forEach(a=>{const local=ATHLETES.find(x=>x.name===a.name);if(!local)ATHLETES.push({rank:a.rank,init:a.name.split(' ').map(w=>w[0]).join('').slice(0,2),name:a.name,state:a.state,club:a.discipline||'',avg:a.pb-10,pb:a.pb,events:12,trend:'eq',color:'#C9A227',bg:'rgba(201,162,39,.15)'});});
+    data.forEach(a=>{const local=ATHLETES.find(x=>x.name===a.name);if(!local)ATHLETES.push({rank:a.rank,disc:a.discipline||'Recurve Open',init:a.name.split(' ').map(w=>w[0]).join('').slice(0,2),name:a.name,state:a.state,club:a.discipline||'',avg:a.pb-10,pb:a.pb,events:12,trend:'eq',color:'#C9A227',bg:'rgba(201,162,39,.15)'});});
     ATHLETES.sort((a,b)=>a.rank-b.rank);
-  }renderRankings(ATHLETES);})
-  .catch(()=>renderRankings(ATHLETES));
+  }filterAthletes('');})
+  .catch(()=>filterAthletes(''));
 // Animate bars when in view
 const barObs=new IntersectionObserver(e=>e.forEach(x=>{if(x.isIntersecting){setTimeout(()=>{document.getElementById('b1').style.width='91.4%';document.getElementById('b2').style.width='88.7%';document.getElementById('b3').style.width='94.1%';},200);barObs.disconnect();}}),{threshold:.3});
 const pc=document.querySelector('.profile-card');if(pc)barObs.observe(pc);

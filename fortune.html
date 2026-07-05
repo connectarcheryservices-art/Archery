@@ -89,7 +89,7 @@ const CAT_COLORS={Accuracy:'#1A3A8C',Patience:'#22C55E',Competition:'#CC2222',Mi
     <div class="draw-section">
       <div class="fortune-card" id="fortune-display"></div>
       <button class="draw-btn" onclick="drawFortune()">🎯 Draw New Wisdom</button>
-      <button class="share-btn">Share</button>
+      <button class="share-btn" onclick="shareFortune()">Share</button>
     </div>
   </div>
 
@@ -174,6 +174,18 @@ function setTab(id,btn){
 }
 
 renderFortune(FORTUNES[0]);renderArchive();renderWisdom();
+
+// Share the current wisdom — native share sheet on phones, clipboard on desktop
+async function shareFortune(){
+  const f=FORTUNES[drawSeed]||FORTUNES[0];
+  const text='"'+f.quote+'" — '+f.source+' · via Archery.Services';
+  const btn=document.querySelector('.share-btn');
+  try{
+    if(navigator.share){await navigator.share({title:'Archery Wisdom',text,url:location.href});return;}
+    await navigator.clipboard.writeText(text+' '+location.href);
+    if(btn){const o=btn.textContent;btn.textContent='Copied ✓';setTimeout(()=>btn.textContent=o,1800);}
+  }catch(e){/* user cancelled the share sheet */}
+}
 </script>
 <script src="shared.js"></script>
 </body>
