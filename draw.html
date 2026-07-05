@@ -7,17 +7,17 @@
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <style>
-:root{--tw:#FFFFFF;--tb:#1A1A1A;--tbl:#0F5FA8;--tr:#E4002B;--ty:#FFC72C;--bg:#F5F7FA;--bg2:#FFFFFF;--ink:#0D1B2E;--dim:#334155;--faint:#8899AA;--line:rgba(15,95,168,.1);}
+:root{--tw:#FFFFFF;--tb:#1A1A1A;--tbl:#0F5FA8;--tr:#D22730;--ty:#C9A227;--bg:#F5F7FA;--bg2:#FFFFFF;--ink:#0D1B2E;--dim:#334155;--faint:#8899AA;--line:rgba(15,95,168,.1);}
 body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;margin:0;}
 [data-theme="night"]{--bg:#0D1117;--bg2:#161B22;--ink:#E6EDF3;--dim:#8B949E;--faint:#4A5568;--line:rgba(255,255,255,.08);}
-.page-hero{background:linear-gradient(135deg,#0E2552,#0F5FA8);padding:52px 24px 40px;text-align:center;color:#fff;}
+.page-hero{background:linear-gradient(135deg,#131316,#0F5FA8);padding:52px 24px 40px;text-align:center;color:#fff;}
 .page-hero h1{font-family:'Oswald',sans-serif;font-size:clamp(28px,5vw,48px);font-weight:700;text-transform:uppercase;margin:0 0 10px;}
-.page-hero h1 em{color:#FFC72C;font-style:normal;}
+.page-hero h1 em{color:#C9A227;font-style:normal;}
 .page-hero p{font-size:15px;color:rgba(255,255,255,.75);max-width:520px;margin:0 auto;line-height:1.6;}
 .wrap{max-width:1140px;margin:0 auto;padding:36px 24px;}
 .tab-bar{display:flex;gap:0;border-bottom:2px solid var(--line);margin-bottom:32px;overflow-x:auto;}
 .tab-btn{padding:12px 24px;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;border:none;background:none;cursor:pointer;color:var(--faint);border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .2s;white-space:nowrap;}
-.tab-btn.active{color:#FFC72C;border-bottom-color:#FFC72C;}
+.tab-btn.active{color:#C9A227;border-bottom-color:#C9A227;}
 .tab-panel{display:none;}.tab-panel.active{display:block;}
 
 /* ACTIVE DRAWS */
@@ -29,8 +29,8 @@ body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;margin
 .draw-meta{font-size:12px;color:rgba(255,255,255,.65);margin-top:4px;}
 .draw-status{position:absolute;top:16px;right:16px;padding:4px 10px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;}
 .s-published{background:#22C55E;color:#fff;}
-.s-draft{background:#FFC72C;color:#1A1A1A;}
-.s-progress{background:#E4002B;color:#fff;}
+.s-draft{background:#C9A227;color:#1A1A1A;}
+.s-progress{background:#D22730;color:#fff;}
 .s-complete{background:rgba(255,255,255,.2);color:#fff;}
 .draw-body{padding:18px 20px;}
 .draw-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;}
@@ -54,7 +54,7 @@ body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;margin
 .bracket-athlete.winner{font-weight:700;color:#0F5FA8;}
 .bracket-athlete.winner::after{content:'✓';color:#22C55E;font-size:11px;}
 .bracket-bye{padding:8px 12px;font-size:12px;color:var(--faint);font-style:italic;}
-.ba-score{font-family:'Oswald',sans-serif;font-weight:700;color:#FFC72C;}
+.ba-score{font-family:'Oswald',sans-serif;font-weight:700;color:#C9A227;}
 .connector{width:24px;display:flex;align-items:center;}
 
 /* GENERATOR */
@@ -68,8 +68,8 @@ body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;margin
 .field-input:focus{border-color:#0F5FA8;}
 .field-row-full{margin-bottom:16px;}
 .athletes-box{min-height:140px;padding:10px 14px;border:1.5px solid var(--line);border-radius:6px;font-size:13px;font-family:monospace;background:var(--bg);color:var(--ink);resize:vertical;outline:none;width:100%;box-sizing:border-box;}
-.gen-btn{width:100%;padding:14px;background:#FFC72C;color:#1A1A1A;border:none;border-radius:6px;font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:background .2s;margin-top:8px;}
-.gen-btn:hover{background:#FFD45E;}
+.gen-btn{width:100%;padding:14px;background:#C9A227;color:#1A1A1A;border:none;border-radius:6px;font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:background .2s;margin-top:8px;}
+.gen-btn:hover{background:#D9B33A;}
 .gen-output{background:var(--bg);border-radius:8px;padding:16px;margin-top:16px;display:none;}
 .gen-output h3{font-family:'Oswald',sans-serif;font-size:15px;color:var(--ink);margin:0 0 12px;}
 @media print{body.print-bracket *{visibility:hidden;}body.print-bracket #tab-bracket,body.print-bracket #tab-bracket *{visibility:visible;}body.print-bracket #tab-bracket{position:absolute;top:0;left:0;width:100%;}}
@@ -78,11 +78,11 @@ body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;margin
 <body>
 
 <nav style="position:sticky;top:0;z-index:300;background:#fff;border-bottom:1px solid rgba(15,95,168,.1);display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:68px;">
-  <a href="/" style="font-family:'Oswald',sans-serif;font-size:20px;font-weight:700;color:#0F5FA8;text-decoration:none;">Archery<span style="color:#FFC72C">.</span>Services</a>
+  <a href="/" style="font-family:'Oswald',sans-serif;font-size:20px;font-weight:700;color:#0F5FA8;text-decoration:none;">Archery<span style="color:#C9A227">.</span>Services</a>
   <div style="display:flex;gap:24px;align-items:center;">
     <a href="tournaments.html" style="font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#334155;text-decoration:none;">Tournaments</a>
     <a href="admin.html" style="font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#334155;text-decoration:none;">Admin</a>
-    <a href="pricing.html" style="padding:9px 20px;background:#FFC72C;color:#1A1A1A;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;border-radius:4px;">Join Free</a>
+    <a href="pricing.html" style="padding:9px 20px;background:#C9A227;color:#1A1A1A;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;border-radius:4px;">Join Free</a>
   </div>
 </nav>
 
@@ -236,7 +236,7 @@ function viewDraw(id){
   setTab('bracket',document.querySelectorAll('.tab-btn')[1]);
   renderBracket(genAthletes);
   const disp=document.getElementById('bracket-display');
-  if(disp)disp.insertAdjacentHTML('afterbegin',`<div style="font-family:'Oswald',sans-serif;font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:#FFC72C;margin-bottom:12px;">${d.tournament} — ${d.category} · #${d.hash}</div>`);
+  if(disp)disp.insertAdjacentHTML('afterbegin',`<div style="font-family:'Oswald',sans-serif;font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:#C9A227;margin-bottom:12px;">${d.tournament} — ${d.category} · #${d.hash}</div>`);
 }
 
 // Export = print-to-PDF of the bracket panel (browser's Save as PDF)
@@ -274,7 +274,7 @@ function renderBracket(athletes){
     html+='</div></div><div class="connector"></div>';
     currentRound=matches.map(m=>m.b?(Math.random()>.5?m.a:m.b):m.a);
   }
-  html+=`<div class="bracket-round"><div class="bracket-round-label">🥇 Winner</div><div class="bracket-matches"><div class="bracket-match"><div class="bracket-athlete winner" style="background:#FFC72C22;">${currentRound[0]?.a||'TBD'} 🏆</div></div></div></div>`;
+  html+=`<div class="bracket-round"><div class="bracket-round-label">🥇 Winner</div><div class="bracket-matches"><div class="bracket-match"><div class="bracket-athlete winner" style="background:#C9A22722;">${currentRound[0]?.a||'TBD'} 🏆</div></div></div></div>`;
   bracket.innerHTML=html;
 }
 
@@ -302,7 +302,7 @@ function renderHistory(){
       </div>
       <div style="text-align:center;min-width:120px;">
         <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);">Winner</div>
-        <div style="font-family:'Oswald',sans-serif;font-size:15px;font-weight:700;color:#FFC72C;">${h.winner} 🏆</div>
+        <div style="font-family:'Oswald',sans-serif;font-size:15px;font-weight:700;color:#C9A227;">${h.winner} 🏆</div>
       </div>
       <button class="da-btn da-export" style="padding:8px 16px;border:1.5px solid var(--line);border-radius:6px;background:var(--bg);cursor:pointer;" onclick="setTab('history',document.querySelectorAll('.tab-btn')[3])">View Archive</button>
     </div>`).join('');

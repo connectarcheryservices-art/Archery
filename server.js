@@ -469,7 +469,7 @@ const server = http.createServer((req, res) => {
   fs.readFile(filePath, (err, content) => {
     if (err) {
       fs.readFile(filePath + '.html', (e2, c2) => {
-        if (e2) { res.writeHead(404, {'Content-Type':'text/html'}); return res.end('<h1 style="font-family:sans-serif;padding:40px;color:#F5F8FF;background:#0A1730;min-height:100vh;">404 — Page not found<br><br><a href="/" style="color:#FFC72C;">← Back to Home</a></h1>'); }
+        if (e2) { res.writeHead(404, {'Content-Type':'text/html'}); return res.end('<h1 style="font-family:sans-serif;padding:40px;color:#F5F6F8;background:#101116;min-height:100vh;">404 — Page not found<br><br><a href="/" style="color:#C9A227;">← Back to Home</a></h1>'); }
         res.writeHead(200, {'Content-Type':'text/html','Cache-Control':'no-cache'});
         res.end(c2);
       });

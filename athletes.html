@@ -142,7 +142,7 @@ const ATHLETES=[
   {rank:6,disc:'Compound Open',init:'AK',name:'Arjun Kumar',state:'Delhi',club:'DDA Archery',avg:651,pb:662,events:15,trend:'eq',color:'#EC4899',bg:'rgba(236,72,153,.15)'},
   {rank:7,disc:'Recurve Open',init:'SM',name:'Sunil Mahato',state:'Jharkhand',club:'SAI Ranchi',avg:648,pb:659,events:11,trend:'up',color:'#14B8A6',bg:'rgba(20,184,166,.15)'},
   {rank:8,disc:'U-21',init:'RV',name:'Ritu Verma',state:'Haryana',club:'Haryana Arch.',avg:645,pb:656,events:17,trend:'dn',color:'#EF4444',bg:'rgba(239,68,68,.15)'},
-  {rank:9,disc:'U-21',init:'MG',name:'Manish Gogoi',state:'Assam',club:'SSAC Guwahati',avg:642,pb:654,events:13,trend:'up',color:'#FFC72C',bg:'rgba(255,199,44,.15)'},
+  {rank:9,disc:'U-21',init:'MG',name:'Manish Gogoi',state:'Assam',club:'SSAC Guwahati',avg:642,pb:654,events:13,trend:'up',color:'#C9A227',bg:'rgba(201,162,39,.15)'},
   {rank:10,disc:'Para',init:'SB',name:'Sneha Bhatt',state:'Gujarat',club:'GAS Ahmedabad',avg:639,pb:651,events:9,trend:'eq',color:'#3B82F6',bg:'rgba(59,130,246,.15)'},
 ];
 function renderRankings(list){
@@ -184,7 +184,7 @@ fetch('/api/athletes')
   .then(r=>r.json())
   .then(data=>{if(data&&data.length){
     // merge API data with display data
-    data.forEach(a=>{const local=ATHLETES.find(x=>x.name===a.name);if(!local)ATHLETES.push({rank:a.rank,disc:a.discipline||'Recurve Open',init:a.name.split(' ').map(w=>w[0]).join('').slice(0,2),name:a.name,state:a.state,club:a.discipline||'',avg:a.pb-10,pb:a.pb,events:12,trend:'eq',color:'#FFC72C',bg:'rgba(255,199,44,.15)'});});
+    data.forEach(a=>{const local=ATHLETES.find(x=>x.name===a.name);if(!local)ATHLETES.push({rank:a.rank,disc:a.discipline||'Recurve Open',init:a.name.split(' ').map(w=>w[0]).join('').slice(0,2),name:a.name,state:a.state,club:a.discipline||'',avg:a.pb-10,pb:a.pb,events:12,trend:'eq',color:'#C9A227',bg:'rgba(201,162,39,.15)'});});
     ATHLETES.sort((a,b)=>a.rank-b.rank);
   }filterAthletes('');})
   .catch(()=>filterAthletes(''));

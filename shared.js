@@ -5,47 +5,53 @@
   const API = '/api';   // relative so it works on Vercel and locally alike
   const page = location.pathname.split('/').pop() || 'index.html';
 
-  // ── ARCHERY TARGET-COLOUR THEME + ENHANCEMENTS ──
-  // World Archery target-face palette — gold(yellow) · red · blue · black · white.
+  // ── VIDEO-FAITHFUL THEME (approved homepage standard) ──
+  // Flat bands: royal blue · gold #C9A227 · red #D22730 · black · white, Oswald type.
   // Injected last on every page so it overrides each page's own inline tokens.
   (function injectTheme(){
     if (document.getElementById('archery-theme-css')) return;
+    // Oswald display font (same as the homepage) on every page.
+    if (!document.querySelector('link[href*="Oswald"]')) {
+      var fl = document.createElement('link');
+      fl.rel = 'stylesheet';
+      fl.href = 'https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&display=swap';
+      (document.head || document.documentElement).appendChild(fl);
+    }
     const css = `
     :root{
-      --tgt-gold:#FFC72C;--tgt-red:#E4002B;--tgt-blue:#009BDE;--tgt-black:#141414;--tgt-white:#F5F7FA;
-      --gold:#FFC72C;--gold-light:#FFD45E;--gold-dark:#C9971A;--gold-ring:#FFC72C;
-      --ember:#E4002B;--ember-light:#FF3B53;--ember-dark:#B00020;
-      --ink:#0A1730;--ink-2:#102444;--ink-3:#173159;
-      --surface:#102444;--surface-2:#173159;
-      --muted:#7E8AA0;--muted-2:#9AA6BD;
-      --text:#F5F8FF;--text-2:#B9C3D8;
-      --forest:#0A1730;--forest-2:#102444;--forest-3:#173159;--forest-4:#1F3D6B;
-      --ivory:#F5F7FA;--ivory-2:#B7BECA;--ivory-3:#7A828F;
+      --tgt-gold:#C9A227;--tgt-red:#D22730;--tgt-blue:#1F3E9C;--tgt-black:#131316;--tgt-white:#F5F6F8;
+      --gold:#C9A227;--gold-light:#D9B33A;--gold-dark:#A8871F;--gold-ring:#C9A227;
+      --ember:#D22730;--ember-light:#E04653;--ember-dark:#A81D28;
+      --blue:#1F3E9C;--blue-2:#1A3690;
+      --ink:#101116;--ink-2:#17181D;--ink-3:#1D1E24;
+      --surface:#17181D;--surface-2:#1D1E24;
+      --muted:#7E8290;--muted-2:#9CA1AD;
+      --text:#F5F6F8;--text-2:#B9BEC9;
+      --forest:#101116;--forest-2:#17181D;--forest-3:#1D1E24;--forest-4:#26272E;
+      --ivory:#F5F6F8;--ivory-2:#B9BEC9;--ivory-3:#838792;
       --ease:cubic-bezier(.22,1,.36,1);
-      --shadow-neu:10px 10px 30px rgba(0,0,0,.55),-8px -8px 22px rgba(255,255,255,.025);
-      --glow-gold:0 14px 44px rgba(255,199,44,.30);
+      --shadow-neu:0 10px 30px rgba(0,0,0,.35);
+      --glow-gold:0 10px 30px rgba(201,162,39,.22);
     }
-    body{
-      background-image:
-        radial-gradient(1100px 700px at 84% -10%,rgba(228,0,43,.12),transparent 56%),
-        radial-gradient(1000px 720px at 2% 2%,rgba(0,133,222,.28),transparent 56%),
-        radial-gradient(900px 900px at 50% 124%,rgba(255,199,44,.08),transparent 60%),
-        linear-gradient(180deg,#0E2552,#0A1730 52%,#070F22);
-      background-attachment:fixed;
+    html:not(.day):not([data-theme="day"]) body{
+      background:#101116!important;
+      background-image:none!important;
+      background-attachment:scroll!important;
     }
-    a,button,.card,.stat-card,.product-card,.t-card,.job-card,.post-card,.article-card{transition:transform .35s var(--ease),box-shadow .35s var(--ease),border-color .35s var(--ease);}
-    .card,.stat-card{box-shadow:var(--shadow-neu);transform-style:preserve-3d;}
-    .card:hover,.stat-card:hover{transform:perspective(1100px) translateY(-6px) rotateX(2.4deg);border-color:rgba(255,199,44,.38);box-shadow:16px 20px 50px rgba(0,0,0,.6),var(--glow-gold);}
-    .btn-action,.btn-primary-nav{background:var(--tgt-gold)!important;color:#141414!important;position:relative;overflow:hidden;}
-    .btn-primary,.btn-reg,.cart-d-checkout,.new-post-btn{position:relative;overflow:hidden;}
-    .btn-action::after,.btn-primary-nav::after,.btn-primary::after{content:'';position:absolute;inset:0;transform:translateX(-130%);pointer-events:none;background:linear-gradient(120deg,transparent 22%,rgba(255,255,255,.5),transparent 78%);transition:transform .7s var(--ease);}
-    .btn-action:hover::after,.btn-primary-nav:hover::after,.btn-primary:hover::after{transform:translateX(130%);}
-    .section-title em,.sec-title em,.hero-title em,.nav-logo-main span,.footer-logo span,.footer-brand-name span{background:linear-gradient(110deg,var(--tgt-gold) 0%,var(--tgt-red) 55%,var(--tgt-blue) 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
-    .nav-links a:hover,.nav-links a.active{color:var(--tgt-gold)!important;}
+    body{cursor:auto!important;}
+    #cursor-dot,#cursor-ring{display:none!important;}
+    a,button,.card,.stat-card,.product-card,.t-card,.job-card,.post-card,.article-card{transition:transform .3s var(--ease),box-shadow .3s var(--ease),border-color .3s var(--ease);}
+    .card:hover,.stat-card:hover{transform:translateY(-3px);border-color:rgba(201,162,39,.45);}
+    .btn-action,.btn-primary-nav{background:var(--gold)!important;color:#131316!important;}
+    .section-title,.sec-title,.hero-title,.page-hero h1{font-family:'Oswald',sans-serif;}
+    .section-title em,.sec-title em,.hero-title em,.nav-logo-main span,.footer-logo span,.footer-brand-name span{background:none;-webkit-background-clip:initial;background-clip:initial;-webkit-text-fill-color:currentColor;color:var(--gold);}
+    .nav-links a:hover,.nav-links a.active{color:var(--gold)!important;}
+    nav#main-nav{background:#131316!important;border-bottom:1px solid rgba(255,255,255,.08);backdrop-filter:none!important;}
+    nav#main-nav.scrolled{background:#131316!important;border-bottom:1px solid rgba(201,162,39,.35)!important;}
     *::-webkit-scrollbar{width:11px;height:11px;}
-    *::-webkit-scrollbar-track{background:#0A0B0E;}
-    *::-webkit-scrollbar-thumb{background:linear-gradient(var(--tgt-red),var(--tgt-gold));border-radius:8px;border:2px solid #0A0B0E;}
-    *::-webkit-scrollbar-thumb:hover{background:linear-gradient(var(--tgt-blue),var(--tgt-gold));}
+    *::-webkit-scrollbar-track{background:#101116;}
+    *::-webkit-scrollbar-thumb{background:#26272E;border-radius:8px;border:2px solid #101116;}
+    *::-webkit-scrollbar-thumb:hover{background:var(--gold-dark);}
     `;
     const el = document.createElement('style');
     el.id = 'archery-theme-css';
@@ -100,22 +106,22 @@
       var css = document.createElement('style');
       css.id = 'nav-mobile-css';
       css.textContent =
-        '#nav-burger{display:none;background:none;border:1px solid rgba(255,199,44,.35);color:#FFC72C;border-radius:8px;width:40px;height:38px;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}' +
-        '#nav-mobile{display:none;background:rgba(10,23,48,.98);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,199,44,.2);padding:10px 18px 18px;}' +
+        '#nav-burger{display:none;background:none;border:1px solid rgba(201,162,39,.35);color:#C9A227;border-radius:8px;width:40px;height:38px;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}' +
+        '#nav-mobile{display:none;background:rgba(16,17,22,.98);backdrop-filter:blur(20px);border-bottom:1px solid rgba(201,162,39,.2);padding:10px 18px 18px;}' +
         '#nav-mobile ul{list-style:none;margin:0;padding:0;}' +
         '#nav-mobile li{border-bottom:1px solid rgba(255,255,255,.06);}' +
-        '#nav-mobile a{display:block;padding:13px 4px;color:#E8ECF5;text-decoration:none;font-size:15px;}' +
-        '#nav-mobile a.active{color:#FFC72C;}' +
+        '#nav-mobile a{display:block;padding:13px 4px;color:#E6E8EE;text-decoration:none;font-size:15px;}' +
+        '#nav-mobile a.active{color:#C9A227;}' +
         '#nav-mobile .nm-actions{display:flex;gap:10px;margin-top:14px;}' +
-        '#nav-mobile .nm-actions a{flex:1;text-align:center;border:1px solid rgba(255,199,44,.4);border-radius:9px;padding:11px;color:#FFC72C;font-weight:600;font-size:14px;}' +
-        '#nav-mobile .nm-actions a.nm-join{background:#FFC72C;color:#141414;border-color:#FFC72C;}' +
+        '#nav-mobile .nm-actions a{flex:1;text-align:center;border:1px solid rgba(201,162,39,.4);border-radius:9px;padding:11px;color:#C9A227;font-weight:600;font-size:14px;}' +
+        '#nav-mobile .nm-actions a.nm-join{background:#C9A227;color:#131316;border-color:#C9A227;}' +
         'nav.nav-open #nav-mobile{display:block;}' +
         '@media(max-width:900px){' +
           '#main-nav .nav-links{display:none!important;}' +
           '#nav-burger{display:inline-flex;}' +
           '#main-nav .nav-right>.btn-ghost,#main-nav .nav-right>a.btn-ghost{display:none!important;}' +
           '#main-nav .nav-logo-sub{display:none;}' +
-          '#main-nav:not(.scrolled){background:rgba(10,23,48,.9);backdrop-filter:blur(14px);}' +
+          '#main-nav:not(.scrolled){background:rgba(16,17,22,.9);backdrop-filter:blur(14px);}' +
         '}';
       document.head.appendChild(css);
     }
@@ -138,7 +144,7 @@
     var right = document.querySelector('#main-nav .nav-right');
     if (right) {
       var hi = document.createElement('span');
-      hi.style.cssText = 'color:#FFC72C;font-size:13px;font-weight:600;white-space:nowrap;';
+      hi.style.cssText = 'color:#C9A227;font-size:13px;font-weight:600;white-space:nowrap;';
       hi.textContent = 'Hi, ' + String(user.name).split(' ')[0];
       var out = document.createElement('button');
       out.className = 'btn-primary-nav';
@@ -227,28 +233,4 @@
     del:  (r,id) => fetch(`${API}/${r}/${id}`,{method:'DELETE'}).then(x=>x.json()),
   };
 
-  // ── 3D POINTER TILT (desktop, motion-safe) ──
-  // Gives cards real depth: they lean toward the cursor with a parallax feel.
-  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const isTouch = window.matchMedia('(hover:none),(pointer:coarse)').matches;
-  if (!reduceMotion && !isTouch && !page.includes('admin')) {
-    const TILT_SEL = '.card,.stat-card,.product-card,.t-card,.job-card,.k-cat,.article-card,.post-card,.sidebar-card,.feature-card';
-    let raf = 0;
-    document.addEventListener('pointermove', e => {
-      const el = e.target.closest(TILT_SEL);
-      if (!el) return;
-      if (raf) cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => {
-        const r = el.getBoundingClientRect();
-        const px = (e.clientX - r.left) / r.width - 0.5;
-        const py = (e.clientY - r.top) / r.height - 0.5;
-        el.style.transform = `perspective(1000px) translateY(-6px) rotateX(${(-py*5).toFixed(2)}deg) rotateY(${(px*6).toFixed(2)}deg)`;
-        el.style.transition = 'transform .08s linear';
-      });
-    }, { passive: true });
-    document.addEventListener('pointerout', e => {
-      const el = e.target.closest(TILT_SEL);
-      if (el) { el.style.transform = ''; el.style.transition = 'transform .4s var(--ease,ease)'; }
-    }, { passive: true });
-  }
 })();

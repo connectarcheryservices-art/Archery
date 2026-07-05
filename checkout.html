@@ -9,16 +9,16 @@
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <style>
   :root{
-    --ink:#0A1730; --ink-2:#102444; --ink-3:#173159;
-    --gold:#FFC72C; --gold-light:#FFD45E; --red:#E4002B; --blue:#009BDE;
-    --text:#F5F8FF; --text-2:#B9C3D8; --muted:#7E8AA0;
+    --ink:#101116; --ink-2:#17181D; --ink-3:#1D1E24;
+    --gold:#C9A227; --gold-light:#D9B33A; --red:#D22730; --blue:#1F3E9C;
+    --text:#F5F6F8; --text-2:#B9BEC9; --muted:#7E8290;
     --line:rgba(255,255,255,.10); --r:12px;
   }
   *{box-sizing:border-box;margin:0;padding:0;}
   body{font-family:'Inter',sans-serif;color:var(--text);background:var(--ink);
-    background-image:radial-gradient(1000px 700px at 100% -10%,rgba(228,0,43,.10),transparent 55%),
-      radial-gradient(900px 700px at 0% 0%,rgba(0,133,222,.22),transparent 55%),
-      linear-gradient(180deg,#0E2552,#0A1730 55%,#070F22);
+    background-image:radial-gradient(1000px 700px at 100% -10%,rgba(210,39,48,.10),transparent 55%),
+      radial-gradient(900px 700px at 0% 0%,rgba(31,62,156,.22),transparent 55%),
+      linear-gradient(180deg,#131316,#101116 55%,#0C0D10);
     background-attachment:fixed;min-height:100vh;-webkit-font-smoothing:antialiased;}
   a{color:var(--gold);text-decoration:none;}
   .wrap{max-width:1100px;margin:0 auto;padding:18px clamp(14px,4vw,32px) 60px;}
@@ -30,20 +30,20 @@
   .sub{color:var(--text-2);font-size:13px;margin-bottom:22px;}
   .grid{display:grid;grid-template-columns:1fr;gap:18px;}
   @media(min-width:900px){.grid{grid-template-columns:1.3fr .9fr;align-items:start;}}
-  .card{background:linear-gradient(160deg,rgba(23,49,89,.55),rgba(16,36,68,.92));border:1px solid var(--line);border-radius:16px;padding:clamp(16px,3.5vw,24px);}
+  .card{background:linear-gradient(160deg,rgba(29,30,36,.55),rgba(23,24,29,.92));border:1px solid var(--line);border-radius:16px;padding:clamp(16px,3.5vw,24px);}
   .card + .card{margin-top:16px;}
   .card-title{font-family:'Oswald',sans-serif;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:16px;}
   label{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 6px;}
   input,select{width:100%;background:var(--ink);border:1px solid var(--line);border-radius:10px;padding:13px 14px;color:var(--text);font-size:15px;outline:none;font-family:inherit;}
-  input:focus,select:focus{border-color:rgba(255,199,44,.55);}
+  input:focus,select:focus{border-color:rgba(201,162,39,.55);}
   .row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
   .fg{margin-bottom:14px;}
   .req::after{content:' *';color:var(--red);}
-  .loc-btn{display:inline-flex;align-items:center;gap:8px;background:rgba(0,133,222,.12);border:1px solid rgba(0,133,222,.4);color:#7Fd0ff;border-radius:10px;padding:11px 14px;font-size:13px;font-weight:600;cursor:pointer;width:100%;justify-content:center;}
+  .loc-btn{display:inline-flex;align-items:center;gap:8px;background:rgba(31,62,156,.12);border:1px solid rgba(31,62,156,.4);color:#7Fd0ff;border-radius:10px;padding:11px 14px;font-size:13px;font-weight:600;cursor:pointer;width:100%;justify-content:center;}
   .loc-btn.ok{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.45);color:#7BE08A;}
   .deliv{display:grid;gap:10px;}
   .deliv label{display:flex;align-items:flex-start;gap:12px;border:1px solid var(--line);border-radius:12px;padding:14px;cursor:pointer;text-transform:none;letter-spacing:0;color:var(--text);font-size:14px;margin:0;transition:border-color .2s,background .2s;}
-  .deliv label.sel{border-color:var(--gold);background:rgba(255,199,44,.06);}
+  .deliv label.sel{border-color:var(--gold);background:rgba(201,162,39,.06);}
   .deliv input{width:auto;margin-top:3px;accent-color:var(--gold);}
   .deliv .d-main{font-weight:600;}
   .deliv .d-sub{font-size:12px;color:var(--text-2);margin-top:2px;}
@@ -60,15 +60,15 @@
   .brk-row{display:flex;justify-content:space-between;font-size:13.5px;color:var(--text-2);}
   .brk-row.total{margin-top:8px;padding-top:12px;border-top:1px solid var(--line);font-size:18px;font-weight:800;color:#fff;}
   .brk-row.total .amt{color:var(--gold);}
-  .pay{width:100%;margin-top:18px;background:var(--gold);color:#141414;border:none;border-radius:12px;padding:16px;font-family:'Oswald',sans-serif;font-size:16px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:transform .15s,box-shadow .2s;box-shadow:0 10px 30px rgba(255,199,44,.25);}
-  .pay:hover{transform:translateY(-2px);box-shadow:0 16px 38px rgba(255,199,44,.4);}
+  .pay{width:100%;margin-top:18px;background:var(--gold);color:#131316;border:none;border-radius:12px;padding:16px;font-family:'Oswald',sans-serif;font-size:16px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:transform .15s,box-shadow .2s;box-shadow:0 10px 30px rgba(201,162,39,.25);}
+  .pay:hover{transform:translateY(-2px);box-shadow:0 16px 38px rgba(201,162,39,.4);}
   .pay:disabled{opacity:.55;cursor:not-allowed;transform:none;box-shadow:none;}
   .secure{text-align:center;font-size:11px;color:var(--muted);margin-top:10px;}
-  .err{background:rgba(228,0,43,.12);border:1px solid rgba(228,0,43,.4);color:#ff8a98;border-radius:10px;padding:11px 14px;font-size:13px;margin-bottom:14px;display:none;}
+  .err{background:rgba(210,39,48,.12);border:1px solid rgba(210,39,48,.4);color:#ff8a98;border-radius:10px;padding:11px 14px;font-size:13px;margin-bottom:14px;display:none;}
   .empty{text-align:center;padding:70px 20px;}
   .empty h2{font-family:'Oswald',sans-serif;font-size:22px;margin-bottom:8px;}
   .empty p{color:var(--text-2);margin-bottom:20px;}
-  .empty a{display:inline-block;background:var(--gold);color:#141414;padding:13px 26px;border-radius:10px;font-weight:700;}
+  .empty a{display:inline-block;background:var(--gold);color:#131316;padding:13px 26px;border-radius:10px;font-weight:700;}
   /* Success */
   #done{display:none;text-align:center;padding:60px 16px;}
   #done .tick{width:84px;height:84px;border-radius:50%;background:rgba(34,197,94,.14);border:2px solid #34C759;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;}
@@ -184,14 +184,14 @@ function localQuote(items, deliv){
 
 function svgFor(it){
   // simple ring glyph fallback; uses item colour if present
-  const c = it.color || '#FFC72C';
+  const c = it.color || '#C9A227';
   return `<svg viewBox="0 0 40 40" fill="none" stroke="${c}" stroke-width="1.6"><circle cx="20" cy="20" r="13"/><circle cx="20" cy="20" r="7"/><circle cx="20" cy="20" r="2.5" fill="${c}"/></svg>`;
 }
 
 function renderItems(){
   document.getElementById('items').innerHTML = cart.map(it=>`
     <div class="it">
-      <div class="it-ic" style="background:${it.bg||'rgba(255,199,44,.08)'};">${svgFor(it)}</div>
+      <div class="it-ic" style="background:${it.bg||'rgba(201,162,39,.08)'};">${svgFor(it)}</div>
       <div><div class="it-name">${esc(it.name)}</div><div class="it-meta">Qty ${it.qty} · ${INR(it.price)} each</div></div>
       <div class="it-price">${INR(it.price*it.qty)}</div>
     </div>`).join('');
@@ -285,7 +285,7 @@ async function payNow(){
     order_id: data.razorpay.orderId,
     prefill: { name: cust.name, email: cust.email, contact: cust.phone },
     notes: { order_no: data.orderNo },
-    theme: { color: '#FFC72C' },
+    theme: { color: '#C9A227' },
     handler: async (resp)=>{
       pay.textContent='Confirming payment…';
       const v = await fetch('/api/razorpay/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({

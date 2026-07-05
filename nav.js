@@ -15,7 +15,7 @@
 
   var navHTML = '<nav id="main-nav"><div class="nav-inner">'
     + '<a href="index.html" class="nav-logo">'
-    + '<svg viewBox="0 0 42 42" fill="none"><circle cx="21" cy="21" r="20" stroke="#FFC72C" stroke-width="1"/><circle cx="21" cy="21" r="14" stroke="#FFC72C" stroke-width=".5" stroke-dasharray="2 3"/><circle cx="21" cy="21" r="7" stroke="#FFC72C" stroke-width="1"/><circle cx="21" cy="21" r="2.5" fill="#FFC72C"/><line x1="4" y1="21" x2="19" y2="21" stroke="#FFC72C" stroke-width="1.2" stroke-linecap="round"/><polygon points="16,18.5 19,21 16,23.5" fill="#FFC72C"/></svg>'
+    + '<svg viewBox="0 0 42 42" fill="none"><circle cx="21" cy="21" r="20" stroke="#C9A227" stroke-width="1"/><circle cx="21" cy="21" r="14" stroke="#C9A227" stroke-width=".5" stroke-dasharray="2 3"/><circle cx="21" cy="21" r="7" stroke="#C9A227" stroke-width="1"/><circle cx="21" cy="21" r="2.5" fill="#C9A227"/><line x1="4" y1="21" x2="19" y2="21" stroke="#C9A227" stroke-width="1.2" stroke-linecap="round"/><polygon points="16,18.5 19,21 16,23.5" fill="#C9A227"/></svg>'
     + '<div><div class="nav-logo-main">Archery<span>.</span>Services</div><div class="nav-logo-sub">Global Archery Infrastructure</div></div>'
     + '</a>'
     + '<ul class="nav-links">' + linkHTML + '</ul>'
@@ -37,15 +37,15 @@
   var css = document.createElement('style');
   css.id = 'nav-mobile-css';
   css.textContent =
-    '#nav-burger{display:none;background:none;border:1px solid rgba(255,199,44,.35);color:#FFC72C;border-radius:8px;width:40px;height:38px;align-items:center;justify-content:center;cursor:pointer;}' +
-    '#nav-mobile{display:none;background:rgba(10,23,48,.98);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,199,44,.2);padding:10px 18px 18px;}' +
+    '#nav-burger{display:none;background:none;border:1px solid rgba(201,162,39,.35);color:#C9A227;border-radius:8px;width:40px;height:38px;align-items:center;justify-content:center;cursor:pointer;}' +
+    '#nav-mobile{display:none;background:rgba(16,17,22,.98);backdrop-filter:blur(20px);border-bottom:1px solid rgba(201,162,39,.2);padding:10px 18px 18px;}' +
     '#nav-mobile ul{list-style:none;margin:0;padding:0;}' +
     '#nav-mobile li{border-bottom:1px solid rgba(255,255,255,.06);}' +
-    '#nav-mobile a{display:block;padding:13px 4px;color:#E8ECF5;text-decoration:none;font-size:15px;}' +
-    '#nav-mobile a.active{color:#FFC72C;}' +
+    '#nav-mobile a{display:block;padding:13px 4px;color:#E6E8EE;text-decoration:none;font-size:15px;}' +
+    '#nav-mobile a.active{color:#C9A227;}' +
     '#nav-mobile .nm-actions{display:flex;gap:10px;margin-top:14px;}' +
-    '#nav-mobile .nm-actions a{flex:1;text-align:center;border:1px solid rgba(255,199,44,.4);border-radius:9px;padding:11px;color:#FFC72C;font-weight:600;font-size:14px;}' +
-    '#nav-mobile .nm-actions a.nm-join{background:#FFC72C;color:#141414;border-color:#FFC72C;}' +
+    '#nav-mobile .nm-actions a{flex:1;text-align:center;border:1px solid rgba(201,162,39,.4);border-radius:9px;padding:11px;color:#C9A227;font-weight:600;font-size:14px;}' +
+    '#nav-mobile .nm-actions a.nm-join{background:#C9A227;color:#131316;border-color:#C9A227;}' +
     'nav.nav-open #nav-mobile{display:block;}' +
     '@media(max-width:900px){' +
       '.nav-links{display:none!important;}' +
@@ -53,7 +53,7 @@
       'nav .nav-right .btn-ghost{display:none!important;}' +
       'nav #main-nav, nav .nav-inner{flex-wrap:nowrap;}' +
       'nav .nav-logo-sub{display:none;}' +
-      'nav:not(.scrolled){background:rgba(10,23,48,.88);backdrop-filter:blur(14px);}' +
+      'nav:not(.scrolled){background:rgba(16,17,22,.88);backdrop-filter:blur(14px);}' +
     '}';
   document.head.appendChild(css);
 

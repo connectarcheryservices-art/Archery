@@ -7,27 +7,27 @@
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <style>
-:root{--tw:#FFFFFF;--tb:#1A1A1A;--tbl:#0F5FA8;--tr:#E4002B;--ty:#FFC72C;--bg:#F5F7FA;--bg2:#FFFFFF;--ink:#0D1B2E;--dim:#334155;--faint:#8899AA;--line:rgba(15,95,168,.1);}
+:root{--tw:#FFFFFF;--tb:#1A1A1A;--tbl:#0F5FA8;--tr:#D22730;--ty:#C9A227;--bg:#F5F7FA;--bg2:#FFFFFF;--ink:#0D1B2E;--dim:#334155;--faint:#8899AA;--line:rgba(15,95,168,.1);}
 body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;margin:0;}
 [data-theme="night"]{--bg:#0D1117;--bg2:#161B22;--ink:#E6EDF3;--dim:#8B949E;--faint:#4A5568;--line:rgba(255,255,255,.08);}
-.urgent-bar{background:#E4002B;color:#fff;text-align:center;padding:10px;font-size:12.5px;font-weight:700;}
+.urgent-bar{background:#D22730;color:#fff;text-align:center;padding:10px;font-size:12.5px;font-weight:700;}
 .urgent-bar a{color:#fff;}
 .page-hero{background:linear-gradient(135deg,#1A1A1A,#2D2D2D);padding:52px 24px 40px;text-align:center;color:#fff;}
 .page-hero h1{font-family:'Oswald',sans-serif;font-size:clamp(28px,5vw,48px);font-weight:700;text-transform:uppercase;margin:0 0 10px;}
-.page-hero h1 em{color:#FFC72C;font-style:normal;}
+.page-hero h1 em{color:#C9A227;font-style:normal;}
 .page-hero p{font-size:15px;color:rgba(255,255,255,.7);max-width:560px;margin:0 auto;line-height:1.6;}
 .wrap{max-width:1080px;margin:0 auto;padding:36px 24px;}
 .tab-bar{display:flex;gap:0;border-bottom:2px solid var(--line);margin-bottom:32px;overflow-x:auto;}
 .tab-btn{padding:12px 24px;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;border:none;background:none;cursor:pointer;color:var(--faint);border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .2s;white-space:nowrap;}
-.tab-btn.active{color:#FFC72C;border-bottom-color:#FFC72C;}
+.tab-btn.active{color:#C9A227;border-bottom-color:#C9A227;}
 .tab-panel{display:none;}.tab-panel.active{display:block;}
 
 .protocol-card{background:var(--bg2);border-radius:10px;border:1px solid var(--line);margin-bottom:14px;overflow:hidden;transition:box-shadow .2s;}
 .protocol-card:hover{box-shadow:0 4px 20px rgba(0,0,0,.08);}
 .proto-head{display:flex;align-items:center;gap:16px;padding:18px 20px;cursor:pointer;}
 .proto-priority{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
-.p-critical{background:#E4002B;}
-.p-high{background:#FFC72C;}
+.p-critical{background:#D22730;}
+.p-high{background:#C9A227;}
 .p-medium{background:#0F5FA8;}
 .proto-title{font-family:'Oswald',sans-serif;font-size:16px;font-weight:700;color:var(--ink);flex:1;}
 .proto-scope{font-size:11.5px;color:var(--faint);}
@@ -47,22 +47,22 @@ body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;margin
 .officer-qual{display:inline-block;margin-top:10px;padding:3px 10px;background:rgba(15,95,168,.07);border-radius:4px;font-size:11px;color:#0F5FA8;font-weight:600;}
 
 .report-form{background:var(--bg2);border-radius:12px;border:1px solid var(--line);overflow:hidden;max-width:640px;}
-.report-head{background:#E4002B;color:#fff;padding:20px 24px;}
+.report-head{background:#D22730;color:#fff;padding:20px 24px;}
 .report-head h2{font-family:'Oswald',sans-serif;font-size:20px;font-weight:700;margin:0 0 4px;}
 .report-head p{font-size:12px;color:rgba(255,255,255,.8);margin:0;}
 .report-body{padding:24px;}
 .field-group{margin-bottom:16px;}
 .field-label{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);display:block;margin-bottom:5px;}
 .field-input,.field-select,.field-textarea{width:100%;padding:10px 14px;border:1.5px solid var(--line);border-radius:6px;font-size:13.5px;font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);outline:none;box-sizing:border-box;}
-.field-input:focus,.field-select:focus,.field-textarea:focus{border-color:#E4002B;}
+.field-input:focus,.field-select:focus,.field-textarea:focus{border-color:#D22730;}
 .field-textarea{min-height:100px;resize:vertical;}
-.submit-btn{width:100%;padding:14px;background:#E4002B;color:#fff;border:none;border-radius:6px;font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;margin-top:8px;}
+.submit-btn{width:100%;padding:14px;background:#D22730;color:#fff;border:none;border-radius:6px;font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;margin-top:8px;}
 .anon-note{font-size:12px;color:var(--faint);margin-top:10px;text-align:center;}
 
 .resource-list{display:flex;flex-direction:column;gap:10px;}
 .res-row{background:var(--bg2);border-radius:8px;border:1px solid var(--line);padding:16px 20px;display:flex;align-items:center;gap:14px;}
 .res-icon{font-size:22px;flex-shrink:0;}
-.res-type{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#E4002B;margin-bottom:3px;}
+.res-type{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#D22730;margin-bottom:3px;}
 .res-title{font-size:14px;font-weight:600;color:var(--ink);}
 .res-desc{font-size:12px;color:var(--faint);margin-top:2px;}
 .res-link{margin-left:auto;padding:7px 16px;border:1.5px solid var(--line);border-radius:6px;font-size:11px;font-weight:700;color:var(--dim);text-decoration:none;white-space:nowrap;}
@@ -73,11 +73,11 @@ body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;margin
 <div class="urgent-bar">🚨 Immediate safeguarding concern? Call the 24-hour welfare line: <strong>+41 800 100 200</strong> — or <a href="#report">submit a confidential report below</a></div>
 
 <nav style="position:sticky;top:0;z-index:300;background:#fff;border-bottom:1px solid rgba(15,95,168,.1);display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:68px;">
-  <a href="/" style="font-family:'Oswald',sans-serif;font-size:20px;font-weight:700;color:#0F5FA8;text-decoration:none;">Archery<span style="color:#FFC72C">.</span>Services</a>
+  <a href="/" style="font-family:'Oswald',sans-serif;font-size:20px;font-weight:700;color:#0F5FA8;text-decoration:none;">Archery<span style="color:#C9A227">.</span>Services</a>
   <div style="display:flex;gap:24px;align-items:center;">
     <a href="federation.html" style="font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#334155;text-decoration:none;">Federation</a>
     <a href="anti-doping.html" style="font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#334155;text-decoration:none;">Anti-Doping</a>
-    <a href="pricing.html" style="padding:9px 20px;background:#FFC72C;color:#1A1A1A;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;border-radius:4px;">Join Free</a>
+    <a href="pricing.html" style="padding:9px 20px;background:#C9A227;color:#1A1A1A;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;border-radius:4px;">Join Free</a>
   </div>
 </nav>
 
