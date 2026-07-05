@@ -53,6 +53,22 @@
     (document.head || document.documentElement).appendChild(el);
   })();
 
+  // ── FAVICON (every page, one place) ──
+  if (!document.querySelector('link[rel="icon"]')) {
+    var fav = document.createElement('link');
+    fav.rel = 'icon'; fav.type = 'image/svg+xml'; fav.href = '/favicon.svg';
+    document.head.appendChild(fav);
+  }
+
+  // ── PAGEVIEW ANALYTICS (best-effort; powers the admin dashboard) ──
+  if (!page.includes('admin')) {
+    try {
+      var pv = JSON.stringify({ type: 'pageview', path: location.pathname, referrer: document.referrer || '' });
+      if (navigator.sendBeacon) navigator.sendBeacon(API + '/analytics', new Blob([pv], { type: 'application/json' }));
+      else fetch(API + '/analytics', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: pv, keepalive: true }).catch(function(){});
+    } catch (e) {}
+  }
+
   // ── UNIVERSAL MOBILE NAV (hamburger) ──
   // Works for pages with their own inline <nav> AND pages using nav.js.
   // Harvests the page's existing .nav-links so the menu always matches.

@@ -53,6 +53,20 @@ Then **Deployments → … → Redeploy** so the new vars take effect.
 
 ---
 
+## 4b. Razorpay KYC / website verification
+
+Razorpay reviews your website before enabling live payments. This repo already includes everything they check — verify each is reachable on your live domain:
+
+- [ ] Products/services with prices → `/shop.html`
+- [ ] **Terms & Conditions** → `/terms.html`
+- [ ] **Privacy Policy** → `/privacy.html`
+- [ ] **Refund & Cancellation Policy** → `/refund-policy.html`
+- [ ] **Shipping & Delivery Policy** → `/shipping-policy.html`
+- [ ] **Contact Us** (email + form) → `/contact.html`
+- [ ] Business name shown on the site matches your Razorpay KYC business name
+
+> If your final domain is different from `archery.services`, do a find-and-replace of `https://archery.services` in `sitemap.xml`, `robots.txt`, and `index.html` (canonical/OG tags).
+
 ## 5. Go-live checklist
 
 - [ ] Schema run in Supabase; `select * from products;` returns rows.
