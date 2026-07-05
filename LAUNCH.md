@@ -92,4 +92,4 @@ Razorpay reviews your website before enabling live payments. This repo already i
 | `GET /api/razorpay/config` | publishable key id for the browser |
 | `POST /api/admin/login` | exchange `ADMIN_PASSWORD` for an admin token |
 
-> Local dev: `npm i -g vercel` then `vercel dev` (loads `.env`). The old `node server.js` is not used in production.
+> Local dev: `npm i -g vercel` then `vercel dev` (loads `.env`). The old `node local-server.js` is not used in production.

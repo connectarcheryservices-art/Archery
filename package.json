@@ -5,8 +5,8 @@
   "type": "commonjs",
   "scripts": {
     "dev": "vercel dev",
-    "start": "node server.js",
-    "test": "node api/_lib/pricing.test.js"
+    "test": "node api/_lib/pricing.test.js",
+    "local": "node local-server.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.88.0",

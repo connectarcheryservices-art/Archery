@@ -1,0 +1,4 @@
+# Local development server — never deploy (Vercel must treat this repo as static + api/ functions)
+local-server.js
+data.json
+data.old.json

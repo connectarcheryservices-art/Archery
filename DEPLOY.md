@@ -4,7 +4,7 @@
 
 1. Push this folder to a GitHub repository (private is fine).
 2. Go to https://railway.app → New Project → Deploy from GitHub Repo.
-3. Select the repo. Railway auto-detects Node.js and runs `node server.js`.
+3. Select the repo. Railway auto-detects Node.js and runs `node local-server.js`.
 4. Go to **Variables** tab and add:
    - `ADMIN_PASSWORD` = your chosen password (e.g. `ArcheryAdmin2025!`)
    - `PORT` is set automatically by Railway — do NOT set it yourself.
@@ -23,7 +23,7 @@
 1. Push to GitHub.
 2. https://render.com → New → Web Service → Connect repo.
 3. Build command: (leave blank or `npm install` if you later add packages)
-4. Start command: `node server.js`
+4. Start command: `node local-server.js`
 5. Add environment variable: `ADMIN_PASSWORD` = your password.
 6. Render gives you a `.onrender.com` URL. Custom domain setup is the same as above.
 
@@ -38,11 +38,11 @@ git clone https://github.com/YOUR/repo.git archery
 cd archery
 npm install       # only needed if you add packages
 export ADMIN_PASSWORD="ArcheryAdmin2025!"
-node server.js &  # runs in background
+node local-server.js &  # runs in background
 
 # For auto-restart on crash, use PM2:
 npm install -g pm2
-ADMIN_PASSWORD="ArcheryAdmin2025!" pm2 start server.js --name archery
+ADMIN_PASSWORD="ArcheryAdmin2025!" pm2 start local-server.js --name archery
 pm2 save && pm2 startup
 ```
 

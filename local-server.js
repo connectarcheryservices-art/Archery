@@ -2,7 +2,7 @@
 // Implements the SAME /api surface as the Vercel serverless functions (api/*),
 // backed by data.json, so every feature works locally with zero configuration.
 // Production uses Vercel + Supabase; this file is for local development only.
-//   Run:   node server.js     →  http://localhost:3000  (admin pass: archery2025)
+//   Run:   node local-server.js     →  http://localhost:3000  (admin pass: archery2025)
 
 'use strict';
 const http = require('http');
