@@ -657,7 +657,7 @@ function renderProducts(list) {
       <div class="product-card list-view" data-id="${p.id}">
         <div class="product-img" style="background:${p.bg};">
           ${badgeHTML}
-          <svg viewBox="0 0 80 80" fill="none" stroke="${p.color}" stroke-width="1.2" stroke-linecap="round">${getProductSVG(p.icon, p.color)}</svg>
+          ${p.img?`<img src="${p.img}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;">`:`<svg viewBox="0 0 80 80" fill="none" stroke="${p.color}" stroke-width="1.2" stroke-linecap="round">${getProductSVG(p.icon, p.color)}</svg>`}
         </div>
         <div class="product-info">
           <div class="p-brand">${p.brand}</div>
@@ -678,7 +678,7 @@ function renderProducts(list) {
         <div class="product-img" style="background:${p.bg};">
           ${badgeHTML}
           <button class="wishlist-btn ${p.wished ? 'active' : ''}" onclick="toggleWish(${p.id})"><svg viewBox="0 0 24 24" fill="${p.wished ? '#EF4444' : 'none'}" stroke="${p.wished ? '#EF4444' : 'currentColor'}" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg></button>
-          <svg viewBox="0 0 80 80" fill="none" stroke="${p.color}" stroke-width="1.2" stroke-linecap="round">${getProductSVG(p.icon, p.color)}</svg>
+          ${p.img?`<img src="${p.img}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;">`:`<svg viewBox="0 0 80 80" fill="none" stroke="${p.color}" stroke-width="1.2" stroke-linecap="round">${getProductSVG(p.icon, p.color)}</svg>`}
         </div>
         <div class="product-info">
           <div class="p-brand">${p.brand}</div>

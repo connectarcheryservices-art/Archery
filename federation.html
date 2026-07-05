@@ -80,6 +80,42 @@ h1 em{font-style:normal;color:var(--gold);}
 <script>
 const ro=new IntersectionObserver(e=>e.forEach(x=>{if(x.isIntersecting)x.target.classList.add('visible');}),{threshold:.1});
 document.querySelectorAll('.reveal').forEach(r=>ro.observe(r));
+
+// ── FEDERATION ACCESS APPLICATION (POSTs to /api/applications → admin panel) ──
+(function(){
+  const ov=document.createElement('div');
+  ov.id='fed-apply-ov';
+  ov.style.cssText='position:fixed;inset:0;z-index:9996;background:rgba(7,15,34,.78);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;padding:20px;';
+  ov.innerHTML='<div style="background:#102444;border:1px solid rgba(255,255,255,.1);border-radius:16px;width:100%;max-width:460px;padding:26px;">'
+    +'<div style="display:flex;justify-content:space-between;align-items:flex-start;"><div style="font-family:Oswald,sans-serif;font-size:17px;color:#F5F8FF;text-transform:uppercase;letter-spacing:.05em;">Federation Access Application</div><button onclick="closeFedApply()" style="background:none;border:none;color:#7E8AA0;font-size:24px;line-height:1;cursor:pointer;">&times;</button></div>'
+    +'<p style="font-size:12px;color:#9AA6BD;margin:6px 0 18px;">Applications are reviewed within 14 working days. Open to federations and associations.</p>'
+    +'<input id="fa-org" placeholder="Organisation name *" style="width:100%;background:#0A1730;border:1px solid rgba(255,255,255,.13);border-radius:9px;padding:12px 13px;color:#F5F8FF;font-size:14px;outline:none;box-sizing:border-box;margin-bottom:10px;">'
+    +'<select id="fa-type" style="width:100%;background:#0A1730;border:1px solid rgba(255,255,255,.13);border-radius:9px;padding:12px 13px;color:#F5F8FF;font-size:14px;outline:none;box-sizing:border-box;margin-bottom:10px;"><option>National Federation</option><option>State Association</option><option>District Body</option><option>Institutional Affiliate</option></select>'
+    +'<input id="fa-contact" placeholder="Contact name & designation" style="width:100%;background:#0A1730;border:1px solid rgba(255,255,255,.13);border-radius:9px;padding:12px 13px;color:#F5F8FF;font-size:14px;outline:none;box-sizing:border-box;margin-bottom:10px;">'
+    +'<input id="fa-email" type="email" placeholder="Official email *" style="width:100%;background:#0A1730;border:1px solid rgba(255,255,255,.13);border-radius:9px;padding:12px 13px;color:#F5F8FF;font-size:14px;outline:none;box-sizing:border-box;margin-bottom:10px;">'
+    +'<input id="fa-phone" type="tel" placeholder="Phone number" style="width:100%;background:#0A1730;border:1px solid rgba(255,255,255,.13);border-radius:9px;padding:12px 13px;color:#F5F8FF;font-size:14px;outline:none;box-sizing:border-box;margin-bottom:16px;">'
+    +'<button id="fa-submit" onclick="submitFedApply()" style="width:100%;background:#FFC72C;color:#141414;border:none;border-radius:9px;padding:13px;font-family:Oswald,sans-serif;font-size:14px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;">Submit Application</button></div>';
+  document.body.appendChild(ov);
+  ov.addEventListener('click',e=>{if(e.target===ov)closeFedApply();});
+
+  window.openFedApply=function(){ov.style.display='flex';};
+  window.closeFedApply=function(){ov.style.display='none';};
+  window.submitFedApply=async function(){
+    const v=id=>document.getElementById(id).value.trim();
+    if(!v('fa-org')){alert('Please enter your organisation name.');return;}
+    if(!v('fa-email')){alert('Please enter an official email.');return;}
+    const btn=document.getElementById('fa-submit');const o=btn.textContent;btn.textContent='Submitting…';btn.disabled=true;
+    const res=await fetch('/api/applications',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({orgName:v('fa-org'),orgType:v('fa-type'),contactName:v('fa-contact'),email:v('fa-email'),phone:v('fa-phone')})}).then(r=>r.json()).catch(()=>null);
+    btn.textContent=o;btn.disabled=false;
+    if(res&&res.ok){closeFedApply();alert('Application received! Our federation team will respond within 14 working days.');['fa-org','fa-contact','fa-email','fa-phone'].forEach(id=>document.getElementById(id).value='');}
+    else alert((res&&res.error)||'Could not submit right now. Please try again.');
+  };
+
+  // Wire every Apply button on the page to the modal
+  document.querySelectorAll('button').forEach(b=>{
+    if(/apply/i.test(b.textContent)) b.addEventListener('click',openFedApply);
+  });
+})();
 </script>
 </body>
 </html>

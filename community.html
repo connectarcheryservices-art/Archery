@@ -3,39 +3,77 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Community — Archery.Services</title>
+<title>Community Forum — Archery.Services</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Bebas+Neue&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-:root{--gold:#C9A227;--gold-light:#F0D060;--gold-dark:#8B6F1A;--ink:#0A0A0F;--ink-2:#13131C;--ink-3:#1E1E2E;--muted:#4A4A60;--muted-2:#6A6A80;--text:#E8E8F0;--text-2:#A8A8C0;--green:#22C55E;--red:#EF4444;--blue:#3B82F6;--purple:#A855F7;--r:10px;--r-lg:16px;--r-xl:24px;--g:clamp(16px,4vw,56px);}
+:root{--gold:#FFC72C;--gold-light:#FFD45E;--gold-dark:#C9971A;--ink:#0A1730;--ink-2:#102444;--ink-3:#173159;--muted:#7E8AA0;--muted-2:#9AA6BD;--text:#F5F8FF;--text-2:#B9C3D8;--green:#22C55E;--red:#E4002B;--blue:#009BDE;--purple:#A855F7;--r:10px;--r-lg:16px;--r-xl:24px;--g:clamp(16px,4vw,56px);}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Inter',sans-serif;background:var(--ink);color:var(--text);cursor:none;}
-#cursor-dot{width:8px;height:8px;background:var(--gold);border-radius:50%;position:fixed;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);}
-#cursor-ring{width:34px;height:34px;border:1.5px solid var(--gold);border-radius:50%;position:fixed;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);opacity:.6;transition:width .2s,height .2s;}
+body{font-family:'Inter',sans-serif;background:var(--ink);color:var(--text);}
 #scroll-bar{position:fixed;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--gold-dark),var(--gold),var(--gold-light));width:0%;z-index:9997;}
 nav{position:fixed;top:0;left:0;right:0;z-index:200;padding:0 var(--g);transition:background .4s,backdrop-filter .4s;}
-nav.scrolled{background:rgba(10,10,15,.9);backdrop-filter:blur(24px);border-bottom:.5px solid rgba(201,162,39,.18);}
+nav.scrolled{background:rgba(10,23,48,.9);backdrop-filter:blur(24px);border-bottom:.5px solid rgba(255,199,44,.18);}
 .nav-inner{display:flex;align-items:center;justify-content:space-between;height:68px;max-width:1440px;margin:0 auto;}
 .nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none;}
 .nav-logo svg{width:38px;height:38px;}
 .logo-text{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:.08em;color:var(--text);}
 .logo-text span{color:var(--gold);}
 .nav-links{display:flex;align-items:center;gap:2px;list-style:none;}
-.nav-links a{text-decoration:none;color:var(--text-2);font-size:13px;padding:6px 12px;border-radius:7px;transition:color .2s,background .2s;}
+.nav-links a{text-decoration:none;color:var(--text-2);font-size:13px;padding:6px 12px;border-radius:7px;transition:color .2s;}
 .nav-links a:hover,.nav-links a.active{color:var(--gold);}
 .nav-right{display:flex;align-items:center;gap:10px;}
-.btn-ghost{background:transparent;border:1px solid rgba(201,162,39,.3);color:var(--gold);padding:7px 18px;border-radius:8px;font-size:13px;font-weight:500;cursor:none;}
-.btn-gold{background:var(--gold);border:none;color:var(--ink);padding:7px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:none;}
+.btn-ghost{background:transparent;border:1px solid rgba(255,199,44,.3);color:var(--gold);padding:7px 18px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;}
+.btn-gold{background:var(--gold);border:none;color:#141414;padding:7px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;}
 .reveal{opacity:0;transform:translateY(20px);transition:opacity .6s cubic-bezier(.23,1,.32,1),transform .6s cubic-bezier(.23,1,.32,1);}
 .reveal.visible{opacity:1;transform:none;}
+/* forum */
+.wrap{max-width:980px;margin:0 auto;padding:110px var(--g) 80px;}
+h1{font-family:'Space Grotesk',sans-serif;font-size:clamp(28px,4.5vw,44px);font-weight:600;}
+h1 em{font-style:normal;color:var(--gold);}
+.sub{color:var(--text-2);font-size:14px;margin:8px 0 26px;}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px;}
+.tabs{display:flex;gap:6px;background:var(--ink-2);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:4px;flex-wrap:wrap;}
+.tab{padding:7px 16px;border-radius:7px;border:none;background:transparent;color:var(--text-2);font-size:12px;font-weight:600;cursor:pointer;}
+.tab.active{background:var(--gold);color:#141414;}
+.new-btn{display:inline-flex;align-items:center;gap:8px;background:var(--gold);color:#141414;border:none;padding:11px 20px;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;}
+.np{background:var(--ink-2);border:1px solid rgba(255,199,44,.25);border-radius:14px;padding:20px;margin-bottom:16px;display:none;}
+.np.open{display:block;}
+.np input,.np select,.np textarea{width:100%;background:var(--ink);border:1px solid rgba(255,255,255,.12);border-radius:9px;padding:11px 13px;color:var(--text);font-size:14px;outline:none;margin-bottom:12px;font-family:inherit;}
+.np textarea{min-height:100px;resize:vertical;}
+.np .row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.post{background:var(--ink-2);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:20px;margin-bottom:12px;cursor:pointer;transition:border-color .25s,transform .2s;}
+.post:hover{border-color:rgba(255,199,44,.3);transform:translateX(4px);}
+.pm{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.av{width:36px;height:36px;border-radius:50%;background:rgba(255,199,44,.14);color:var(--gold);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;}
+.who{font-size:13px;font-weight:600;}
+.when{font-size:11px;color:var(--muted);}
+.cat{margin-left:auto;font-size:9px;padding:3px 9px;border-radius:3px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;background:rgba(0,155,222,.14);color:#6FCBFF;}
+.pin{font-size:9px;padding:3px 9px;border-radius:3px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;background:rgba(255,199,44,.16);color:var(--gold);margin-left:6px;}
+.pt{font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;margin-bottom:6px;}
+.px{font-size:13px;color:var(--text-2);line-height:1.65;margin-bottom:12px;}
+.acts{display:flex;gap:16px;}
+.act{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted-2);background:none;border:none;cursor:pointer;font-family:inherit;}
+.act:hover{color:var(--gold);}
+.act svg{width:14px;height:14px;}
+/* modal */
+.mov{position:fixed;inset:0;z-index:9995;background:rgba(7,15,34,.8);backdrop-filter:blur(4px);display:none;align-items:flex-start;justify-content:center;padding:48px 14px;overflow-y:auto;}
+.mov.open{display:flex;}
+.mbox{background:var(--ink-2);border:1px solid rgba(255,255,255,.1);border-radius:16px;width:100%;max-width:640px;padding:24px;}
+.mbody{font-size:14.5px;line-height:1.8;white-space:pre-wrap;margin:12px 0 18px;}
+.reply{background:var(--ink);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:11px 13px;margin-bottom:9px;}
+.rwho{font-size:12px;color:var(--gold);font-weight:600;margin-bottom:3px;}
+.rtxt{font-size:13px;color:var(--text-2);line-height:1.6;white-space:pre-wrap;}
+.rform{display:flex;gap:8px;margin-top:12px;}
+.rform input{flex:1;background:var(--ink);border:1px solid rgba(255,255,255,.12);border-radius:9px;padding:11px 13px;color:var(--text);font-size:14px;outline:none;}
+@media(max-width:640px){.np .row{grid-template-columns:1fr;}}
 </style>
 </head>
 <body>
-<div id="cursor-dot"></div><div id="cursor-ring"></div><div id="scroll-bar"></div>
+<div id="scroll-bar"></div>
 <nav id="main-nav">
   <div class="nav-inner">
     <a href="index.html" class="nav-logo">
-      <svg viewBox="0 0 38 38" fill="none"><circle cx="19" cy="19" r="18" stroke="#C9A227" stroke-width=".8"/><circle cx="19" cy="19" r="12" stroke="#C9A227" stroke-width=".5" stroke-dasharray="2 2.5"/><circle cx="19" cy="19" r="6" stroke="#C9A227" stroke-width=".8"/><circle cx="19" cy="19" r="2.2" fill="#C9A227"/><line x1="3" y1="19" x2="17" y2="19" stroke="#C9A227" stroke-width="1.2" stroke-linecap="round"/><polygon points="14,17 17,19 14,21" fill="#C9A227"/></svg>
+      <svg viewBox="0 0 38 38" fill="none"><circle cx="19" cy="19" r="18" stroke="#FFC72C" stroke-width=".8"/><circle cx="19" cy="19" r="12" stroke="#FFC72C" stroke-width=".5" stroke-dasharray="2 2.5"/><circle cx="19" cy="19" r="6" stroke="#FFC72C" stroke-width=".8"/><circle cx="19" cy="19" r="2.2" fill="#FFC72C"/><line x1="3" y1="19" x2="17" y2="19" stroke="#FFC72C" stroke-width="1.2" stroke-linecap="round"/><polygon points="14,17 17,19 14,21" fill="#FFC72C"/></svg>
       <span class="logo-text">Archery<span>.</span>Services</span>
     </a>
     <ul class="nav-links">
@@ -46,20 +84,132 @@ nav.scrolled{background:rgba(10,10,15,.9);backdrop-filter:blur(24px);border-bott
       <li><a href="athletes.html">Athletes</a></li>
       <li><a href="federation.html">Federation</a></li>
     </ul>
-    <div class="nav-right"><button class="btn-ghost">Sign in</button><button class="btn-gold">Join Free</button></div>
+    <div class="nav-right"><a class="btn-ghost" href="signin.html" style="text-decoration:none;">Sign in</a><a class="btn-gold" href="signup.html" style="text-decoration:none;">Join Free</a></div>
   </div>
 </nav>
-<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:24px;padding:40px;text-align:center;">
-  <div style="width:80px;height:80px;background:rgba(168,85,247,.1);border:1px solid rgba(168,85,247,.2);border-radius:50%;display:flex;align-items:center;justify-content:center;">
-    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#A855F7" stroke-width="1.5" stroke-linecap="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+
+<div class="wrap">
+  <h1 class="reveal visible">Discuss. Learn. <em>Connect.</em></h1>
+  <p class="sub">Techniques, gear, training and tournaments — discussed by coaches, athletes and enthusiasts.</p>
+
+  <div class="bar">
+    <div class="tabs" id="tabs">
+      <button class="tab active" data-f="latest">Latest</button>
+      <button class="tab" data-f="hot">Hot</button>
+      <button class="tab" data-f="Technique">Technique</button>
+      <button class="tab" data-f="Equipment">Equipment</button>
+      <button class="tab" data-f="Training">Training</button>
+      <button class="tab" data-f="Tournaments">Tournaments</button>
+    </div>
+    <button class="new-btn" onclick="document.getElementById('np').classList.toggle('open')">+ New Post</button>
   </div>
-  <h1 style="font-family:'Space Grotesk',sans-serif;font-size:clamp(32px,5vw,56px);font-weight:600;color:var(--text);">Community <span style="color:#A855F7;">Coming Soon</span></h1>
-  <p style="font-size:16px;color:var(--text-2);max-width:500px;line-height:1.8;font-weight:300;">The Archery.Services community forum is being built — discussion boards, Q&A, training threads, and event planning. Launching with the full platform.</p>
-  <div style="display:flex;gap:16px;flex-wrap:wrap;justify-content:center;">
-    <a href="index.html" style="display:inline-flex;align-items:center;gap:8px;background:var(--gold);color:var(--ink);border:none;padding:12px 24px;border-radius:10px;font-size:14px;font-weight:600;text-decoration:none;">← Back to Home</a>
-    <a href="tournaments.html" style="display:inline-flex;align-items:center;gap:8px;background:transparent;color:var(--text-2);border:1px solid rgba(255,255,255,.12);padding:12px 24px;border-radius:10px;font-size:14px;text-decoration:none;">View Tournaments →</a>
+
+  <div class="np" id="np">
+    <div class="row">
+      <input id="np-author" placeholder="Your name" maxlength="80">
+      <select id="np-cat"><option>Technique</option><option>Equipment</option><option>Training</option><option>Tournaments</option><option>Para Archery</option><option>General</option></select>
+    </div>
+    <input id="np-title" placeholder="A clear, specific question or topic" maxlength="200">
+    <textarea id="np-body" placeholder="Share the detail — setup, what you tried, what feedback you want…" maxlength="8000"></textarea>
+    <button class="new-btn" onclick="submitPost()">Post Discussion</button>
+  </div>
+
+  <div id="feed"><div style="padding:40px;text-align:center;color:var(--muted);">Loading discussions…</div></div>
+</div>
+
+<!-- POST MODAL -->
+<div class="mov" id="mov" onclick="if(event.target===this)closePost()">
+  <div class="mbox">
+    <div style="display:flex;justify-content:flex-end;"><button onclick="closePost()" style="background:none;border:none;color:var(--muted);font-size:24px;cursor:pointer;line-height:1;">&times;</button></div>
+    <div class="pm"><div class="av" id="m-av"></div><div><div class="who" id="m-who"></div><div class="when" id="m-when"></div></div><span class="cat" id="m-cat"></span></div>
+    <div class="pt" id="m-title" style="font-size:20px;"></div>
+    <div class="mbody" id="m-body"></div>
+    <div class="acts" style="border-top:1px solid rgba(255,255,255,.08);padding-top:12px;">
+      <button class="act" id="m-like"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3z"/></svg><span id="m-likes">0</span></button>
+      <span class="act"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg><span id="m-rc">0</span> replies</span>
+    </div>
+    <div id="m-replies" style="margin-top:14px;"></div>
+    <form class="rform" onsubmit="return submitReply(event)">
+      <input id="m-reply" placeholder="Write a reply…" maxlength="4000" autocomplete="off">
+      <button class="new-btn" type="submit">Reply</button>
+    </form>
   </div>
 </div>
+
 <script src="shared.js"></script>
+<script>
+let POSTS=[],FILTER='latest',OPEN=null;
+const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const initials=n=>(n||'?').trim().split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase()||'?';
+function ago(ts){if(!ts)return'';const s=(Date.now()-ts)/1000;if(s<60)return'just now';const m=s/60|0;if(m<60)return m+'m ago';const h=m/60|0;if(h<24)return h+'h ago';const d=h/24|0;if(d<30)return d+'d ago';return new Date(ts).toLocaleDateString('en-IN');}
+function me(){try{const u=JSON.parse(localStorage.getItem('archery_user')||'null');return u?u.name:'';}catch(e){return'';}}
+
+function view(){
+  if(FILTER==='latest')return POSTS.slice().sort((a,b)=>(b.pinned?1:0)-(a.pinned?1:0)||(b.createdAt||0)-(a.createdAt||0));
+  if(FILTER==='hot')return POSTS.slice().sort((a,b)=>((b.likes||0)+(b.replies||[]).length*2)-((a.likes||0)+(a.replies||[]).length*2));
+  return POSTS.filter(p=>(p.category||'').toLowerCase()===FILTER.toLowerCase());
+}
+function render(){
+  const list=view(),feed=document.getElementById('feed');
+  if(!list.length){feed.innerHTML='<div style="padding:40px;text-align:center;color:var(--muted);">No discussions here yet — start one!</div>';return;}
+  feed.innerHTML=list.map(p=>{
+    const r=(p.replies||[]).length,ex=(p.body||'').slice(0,170)+((p.body||'').length>170?'…':'');
+    return `<div class="post" onclick="openPost(${p.id})">
+      <div class="pm"><div class="av">${initials(p.author)}</div><div><div class="who">${esc(p.author)}</div><div class="when">${ago(p.createdAt)}</div></div>${p.pinned?'<span class="pin">Pinned</span>':''}<span class="cat">${esc(p.category||'General')}</span></div>
+      <div class="pt">${esc(p.title)}</div><div class="px">${esc(ex)}</div>
+      <div class="acts">
+        <button class="act" onclick="event.stopPropagation();like(${p.id})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3z"/></svg>${p.likes||0}</button>
+        <span class="act"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>${r} ${r===1?'reply':'replies'}</span>
+      </div></div>`;
+  }).join('');
+}
+async function load(){
+  try{POSTS=await fetch('/api/posts').then(r=>r.json());}catch(e){POSTS=[];}
+  if(!Array.isArray(POSTS))POSTS=[];
+  render();
+  if(OPEN!=null){const p=POSTS.find(x=>x.id===OPEN);if(p)fill(p);}
+}
+document.getElementById('tabs').addEventListener('click',e=>{
+  const b=e.target.closest('.tab');if(!b)return;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  b.classList.add('active');FILTER=b.dataset.f;render();
+});
+async function submitPost(){
+  const g=id=>document.getElementById(id).value.trim();
+  const author=g('np-author')||me()||'Guest',title=g('np-title'),body=g('np-body');
+  if(!title||!body){alert('Please add both a title and a message.');return;}
+  const r=await fetch('/api/posts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({author,category:document.getElementById('np-cat').value,title,body})}).then(x=>x.json()).catch(()=>null);
+  if(r&&r.ok){document.getElementById('np-title').value='';document.getElementById('np-body').value='';document.getElementById('np').classList.remove('open');FILTER='latest';document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.f==='latest'));load();}
+  else alert((r&&r.error)||'Could not post right now.');
+}
+async function like(id){
+  const p=POSTS.find(x=>x.id===id);if(p)p.likes=(p.likes||0)+1;
+  render();if(OPEN===id&&p)document.getElementById('m-likes').textContent=p.likes;
+  fetch('/api/posts/'+id+'/like',{method:'POST'}).catch(()=>{});
+}
+function fill(p){
+  document.getElementById('m-av').textContent=initials(p.author);
+  document.getElementById('m-who').textContent=p.author;
+  document.getElementById('m-when').textContent=ago(p.createdAt);
+  document.getElementById('m-cat').textContent=p.category||'General';
+  document.getElementById('m-title').textContent=p.title;
+  document.getElementById('m-body').textContent=p.body;
+  document.getElementById('m-likes').textContent=p.likes||0;
+  const reps=p.replies||[];
+  document.getElementById('m-rc').textContent=reps.length;
+  document.getElementById('m-replies').innerHTML=reps.length?reps.map(r=>`<div class="reply"><div class="rwho">${esc(r.author||'Guest')} <span style="color:var(--muted);font-weight:400;">· ${ago(r.ts)}</span></div><div class="rtxt">${esc(r.text)}</div></div>`).join(''):'<div style="font-size:12px;color:var(--muted);padding:4px 0;">No replies yet — start the conversation.</div>';
+  document.getElementById('m-like').onclick=()=>like(p.id);
+}
+function openPost(id){const p=POSTS.find(x=>x.id===id);if(!p)return;OPEN=id;fill(p);document.getElementById('mov').classList.add('open');document.body.style.overflow='hidden';}
+function closePost(){OPEN=null;document.getElementById('mov').classList.remove('open');document.body.style.overflow='';}
+async function submitReply(e){
+  e.preventDefault();
+  const inp=document.getElementById('m-reply'),text=inp.value.trim();
+  if(!text||OPEN==null)return false;inp.value='';
+  await fetch('/api/posts/'+OPEN+'/reply',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({author:me()||'Guest',text})}).catch(()=>{});
+  load();return false;
+}
+load();
+</script>
 </body>
 </html>

@@ -388,8 +388,14 @@ async function api(parts, method, body, req, res){
 const MIME = {'.html':'text/html','.css':'text/css','.js':'application/javascript','.json':'application/json','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.svg':'image/svg+xml','.ico':'image/x-icon','.webp':'image/webp','.woff2':'font/woff2','.mp4':'video/mp4'};
 
 const server = http.createServer((req, res) => {
-  const u = new URL(req.url, 'http://localhost');
-  let pathname = decodeURIComponent(u.pathname);
+  let pathname = '/';
+  try {
+    const u = new URL(req.url.replace(/^\/{2,}/, '/'), 'http://localhost');
+    pathname = decodeURIComponent(u.pathname);
+  } catch (e) {
+    res.writeHead(400, {'Content-Type':'text/plain'});
+    return res.end('Bad request');
+  }
 
   if (req.method === 'OPTIONS') {
     res.writeHead(204, {'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,POST,PUT,DELETE,OPTIONS','Access-Control-Allow-Headers':'Content-Type,Authorization'});
