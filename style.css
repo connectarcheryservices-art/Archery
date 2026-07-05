@@ -112,6 +112,19 @@ a,button,.card,.stat-card,.btn-action,.btn-outline,.btn-ghost,.btn-primary-nav{t
 *::-webkit-scrollbar-thumb:hover{background:var(--gold-dark);}
 :root{scrollbar-color:#26272E #101116;scrollbar-width:thin;}
 
+/* ── PAGE HERO — pricing-page blue band, sitewide ── */
+.page-hero{position:relative;max-width:none;margin:0;padding:112px max(var(--g),calc((100vw - 1200px)/2)) 52px;background:var(--blue);overflow:hidden;}
+.page-hero::before{content:'';position:absolute;inset:0;opacity:.05;pointer-events:none;background:repeating-linear-gradient(45deg,#fff,#fff 1px,transparent 1px,transparent 60px),repeating-linear-gradient(-45deg,#fff,#fff 1px,transparent 1px,transparent 60px);}
+.page-hero>*{position:relative;z-index:1;}
+.page-hero .sec-label,.page-hero .eyebrow,.page-hero .section-eyebrow{color:var(--gold);}
+.page-hero h1,.page-hero .sec-title,.page-hero .section-title{font-family:'Oswald',sans-serif;text-transform:uppercase;color:#fff;}
+.page-hero h1 em,.page-hero .sec-title em,.page-hero .section-title em{font-style:normal;color:var(--gold);}
+.page-hero .sec-desc,.page-hero .section-desc{color:rgba(255,255,255,.8);}
+.page-hero .stat-card{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.18);}
+.page-hero .stat-val{color:#fff;}
+.page-hero .stat-val em,.page-hero .stat-val span{color:var(--gold);font-style:normal;}
+.page-hero .stat-label{color:rgba(255,255,255,.62);}
+
 /* ── Light "day" theme — paper white bands, same accents ── */
 [data-theme="day"]{
   --forest:#F5F6F8; --forest-2:#FFFFFF; --forest-3:#ECEDF1; --forest-4:#DFE1E7;

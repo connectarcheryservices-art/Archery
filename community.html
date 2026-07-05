@@ -27,7 +27,17 @@ nav.scrolled{background:rgba(16,17,22,.9);backdrop-filter:blur(24px);border-bott
 .reveal{opacity:0;transform:translateY(20px);transition:opacity .6s cubic-bezier(.23,1,.32,1),transform .6s cubic-bezier(.23,1,.32,1);}
 .reveal.visible{opacity:1;transform:none;}
 /* forum */
-.wrap{max-width:980px;margin:0 auto;padding:110px var(--g) 80px;}
+.wrap{max-width:980px;margin:0 auto;padding:36px var(--g) 80px;}
+/* pricing-style blue hero band */
+.page-hero{position:relative;padding:112px max(var(--g,24px),calc((100vw - 1200px)/2)) 48px;background:#1F3E9C;overflow:hidden;}
+.page-hero::before{content:'';position:absolute;inset:0;opacity:.05;pointer-events:none;background:repeating-linear-gradient(45deg,#fff,#fff 1px,transparent 1px,transparent 60px),repeating-linear-gradient(-45deg,#fff,#fff 1px,transparent 1px,transparent 60px);}
+.page-hero>*{position:relative;z-index:1;}
+.page-hero .eyebrow,.page-hero .ph-eyebrow{font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#C9A227;margin-bottom:12px;display:flex;align-items:center;gap:10px;}
+.page-hero .ph-eyebrow::before{content:'';position:static;display:block;width:24px;height:2px;background:#C9A227;opacity:1;inset:auto;}
+.page-hero h1{color:#fff;text-transform:uppercase;letter-spacing:.02em;}
+.page-hero h1 em{color:#C9A227;font-style:normal;}
+.page-hero .desc,.page-hero .sub{color:rgba(255,255,255,.8);}
+
 h1{font-family:'Oswald',sans-serif;font-size:clamp(28px,4.5vw,44px);font-weight:600;}
 h1 em{font-style:normal;color:var(--gold);}
 .sub{color:var(--text-2);font-size:14px;margin:8px 0 26px;}
@@ -88,9 +98,12 @@ h1 em{font-style:normal;color:var(--gold);}
   </div>
 </nav>
 
-<div class="wrap">
+<div class="page-hero">
+  <div class="ph-eyebrow">Community Forum</div>
   <h1 class="reveal visible">Discuss. Learn. <em>Connect.</em></h1>
-  <p class="sub">Techniques, gear, training and tournaments — discussed by coaches, athletes and enthusiasts.</p>
+  <p class="sub" style="margin-bottom:0;">Techniques, gear, training and tournaments — discussed by coaches, athletes and enthusiasts.</p>
+</div>
+<div class="wrap">
 
   <div class="bar">
     <div class="tabs" id="tabs">
