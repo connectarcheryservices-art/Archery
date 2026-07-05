@@ -113,6 +113,37 @@
     });
   })();
 
+  // ── LOGGED-IN NAV STATE ──
+  // Swaps "Sign In / Join Free" for "Hi, <name> · Sign out" on every page.
+  (function authNav(){
+    var user = null;
+    try { user = JSON.parse(localStorage.getItem('archery_user') || 'null'); } catch(e){}
+    if (!user || !user.name) return;
+    var right = document.querySelector('#main-nav .nav-right');
+    if (right) {
+      var hi = document.createElement('span');
+      hi.style.cssText = 'color:#FFC72C;font-size:13px;font-weight:600;white-space:nowrap;';
+      hi.textContent = 'Hi, ' + String(user.name).split(' ')[0];
+      var out = document.createElement('button');
+      out.className = 'btn-primary-nav';
+      out.textContent = 'Sign out';
+      out.style.cursor = 'pointer';
+      out.addEventListener('click', function(){
+        localStorage.removeItem('archery_user');
+        localStorage.removeItem('archery_user_token');
+        location.reload();
+      });
+      right.querySelectorAll('a.btn-ghost,button.btn-ghost,a.btn-primary-nav,button.btn-primary-nav,a.btn-gold,button.btn-gold').forEach(function(el){
+        if (/sign in|join free/i.test(el.textContent)) el.remove();
+      });
+      right.insertBefore(out, right.querySelector('#nav-burger'));
+      right.insertBefore(hi, out);
+    }
+    var nm = document.querySelector('#nav-mobile .nm-actions');
+    if (nm) nm.innerHTML = '<a href="profile.html">Hi, ' + String(user.name).split(' ')[0] + '</a>'
+      + '<a href="#" class="nm-join" onclick="localStorage.removeItem(\'archery_user\');localStorage.removeItem(\'archery_user_token\');location.reload();return false;">Sign out</a>';
+  })();
+
   // ── ACTIVE NAV LINKS ──
   document.querySelectorAll('.nav-links a').forEach(a => {
     const href = a.getAttribute('href');

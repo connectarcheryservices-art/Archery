@@ -204,22 +204,61 @@ const AI_RESPONSES = {
   'equipment':'Equipment tuning starts with arrow spine. Use the Easton spine chart for your draw weight and arrow length. Then: nocking point at exactly 90° to the arrow rest (use a T-square). Plunger button at centre-shot for recurve. Then paper tune at 6m — perfect bullet hole = spine is matched. If tearing right the arrow is too stiff, tearing left is too weak (right-handed archer). Brace height at manufacturer spec ±3mm.',
 };
 
-function sendMsg(){
+// Extra built-in coaching topics (used when the live AI service is unavailable)
+Object.assign(AI_RESPONSES,{
+  'release':'A clean release is a surprise release. Work on back tension: at full draw, keep pulling through the clicker with the back muscles while the fingers simply relax — never "open" the hand. Drill: blank bale at 5m, eyes closed, 20 arrows a day focusing only on the feeling of the string leaving on its own. If the string slaps your arm, check stance opening and elbow rotation before blaming the release.',
+  'stance':'Set your stance first, everything else follows. Feet shoulder-width, weight 60/40 toward the balls of the feet, hips and shoulders stacked. For a slightly open stance, rotate the front foot 20–30° toward the target — it clears string path and stabilises the core. Mark your foot position with tape during practice so every arrow starts identically.',
+  'spine':'Arrow spine must match draw weight and arrow length. For recurve: measure your actual draw weight on the fingers (not the limb rating), use the manufacturer spine chart, then paper-tune at 6m to confirm. Tear right (RH archer) = too stiff, tear left = too weak. If between spines, choose the weaker and trim length or adjust point weight.',
+  'distance':'Move back only when you earn it: hold a 20cm group at 18m before 30m, 40cm at 30m before 50m, and so on. At each new distance spend the first two sessions on grouping only — ignore score. Wind reading starts mattering at 50m+: watch the flag mid-way to the target, not at the target.',
+  'mental':'Pressure is trained like a muscle. Build one fixed pre-shot routine (same breath count, same anchor checkpoints, same timing) and never shoot outside it. Simulation: in practice, give yourself one arrow to hit a 9 or restart the end — this teaches execution on demand. On the line, think process words ("strong bow arm, through the clicker"), never outcome ("I need a 10").',
+  'warmup':'Warm up the rotator cuff before every session: band pull-aparts ×15, external rotations ×12 each arm, scapular push-ups ×10, then 10 draws with the band before touching the bow. Cold shoulders are how archers get injured — 8 minutes of prep protects years of shooting.',
+});
+
+async function sendMsg(){
   const input=document.getElementById('chat-input');
   const text=input.value.trim();
   if(!text)return;
   addMsg('user',text,null);
   input.value='';
-  setTimeout(()=>{
-    const lower=text.toLowerCase();
-    let resp='That\'s a great question. Based on your recent training data, I recommend focusing on your blank bale practice for the next 2 weeks to isolate the specific variable you\'re working on. Keep sessions to 30-40 arrows maximum to maintain quality. Would you like me to build a targeted drill sequence for this specific issue?';
-    if(lower.includes('anchor'))resp=AI_RESPONSES.anchor;
-    else if(lower.includes('group'))resp=AI_RESPONSES.group;
-    else if(lower.includes('competition')||lower.includes('comp'))resp=AI_RESPONSES.competition;
-    else if(lower.includes('plan')||lower.includes('training'))resp=AI_RESPONSES.training;
-    else if(lower.includes('equip')||lower.includes('tun'))resp=AI_RESPONSES.equipment;
-    addMsg('ai',resp,Math.floor(Math.random()*12)+86);
-  },900);
+
+  // Rolling history for the live AI coach
+  window.__coachHistory=window.__coachHistory||[];
+  window.__coachHistory.push({role:'user',text});
+  if(window.__coachHistory.length>8)window.__coachHistory=window.__coachHistory.slice(-8);
+
+  // Try the live AI coach first (active when the server is configured with an API key)
+  let replied=false;
+  try{
+    const r=await fetch('/api/coach',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({message:text,history:window.__coachHistory.slice(0,-1)})});
+    const d=await r.json();
+    if(d&&d.ok&&d.reply){
+      addMsg('ai',d.reply,Math.floor(Math.random()*8)+90);
+      window.__coachHistory.push({role:'assistant',text:d.reply});
+      replied=true;
+    }
+  }catch(e){}
+
+  // Built-in coaching knowledge fallback — the coach always answers
+  if(!replied){
+    setTimeout(()=>{
+      const lower=text.toLowerCase();
+      let resp='Good question. To give precise advice I look at three things: grouping pattern, anchor consistency, and training volume. Isolate one variable at a time with blank-bale work (30–40 quality arrows), then confirm the change at scoring distance. You can also ask me about: anchor, release, stance, grouping, arrow spine, training plan, competition prep, distance progression, mental game, or warm-up.';
+      if(lower.includes('anchor'))resp=AI_RESPONSES.anchor;
+      else if(lower.includes('release')||lower.includes('back tension'))resp=AI_RESPONSES['release'];
+      else if(lower.includes('stance')||lower.includes('posture')||lower.includes('feet'))resp=AI_RESPONSES['stance'];
+      else if(lower.includes('spine')||lower.includes('arrow'))resp=AI_RESPONSES['spine'];
+      else if(lower.includes('group'))resp=AI_RESPONSES.group;
+      else if(lower.includes('competition')||lower.includes('comp'))resp=AI_RESPONSES.competition;
+      else if(lower.includes('plan')||lower.includes('training'))resp=AI_RESPONSES.training;
+      else if(lower.includes('equip')||lower.includes('tun'))resp=AI_RESPONSES.equipment;
+      else if(lower.includes('distance')||lower.includes('50m')||lower.includes('70m')||lower.includes('30m'))resp=AI_RESPONSES['distance'];
+      else if(lower.includes('mental')||lower.includes('pressure')||lower.includes('nervous'))resp=AI_RESPONSES['mental'];
+      else if(lower.includes('warm')||lower.includes('injur')||lower.includes('shoulder'))resp=AI_RESPONSES['warmup'];
+      addMsg('ai',resp,Math.floor(Math.random()*12)+86);
+      window.__coachHistory.push({role:'assistant',text:resp});
+    },700);
+  }
 }
 
 function sendQuick(btn){

@@ -26,6 +26,7 @@ Vercel → your project → **Settings → Environment Variables**. Add these fo
 | `RAZORPAY_KEY_ID` | from Razorpay → API Keys |
 | `RAZORPAY_KEY_SECRET` | from Razorpay → API Keys (**secret — never share**) |
 | `PUBLIC_RAZORPAY_KEY_ID` | same as `RAZORPAY_KEY_ID` |
+| `ANTHROPIC_API_KEY` | *(optional)* enables the live AI Coach; without it the coach uses its built-in knowledge base |
 
 Then **Deployments → … → Redeploy** so the new vars take effect.
 

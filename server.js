@@ -287,6 +287,57 @@ async function api(parts, method, body, req, res){
     return send(res, {error:'Not handled'}, 405);
   }
 
+  // AI coach — local dev always uses the page's built-in knowledge base.
+  // (The live Claude-powered path runs in the Vercel function api/coach.js.)
+  if (resource === 'coach') return send(res, { ok: false, fallback: true });
+
+  // User accounts (register / login / me) — same contract as the serverless API
+  if (resource === 'users') {
+    if (!STORE.users) STORE.users = [];
+    const action = parts[2];
+    const b = data;
+    const usecret = 'archery-users-v1:' + ADMIN_PASSWORD;
+    const usign = u => {
+      const p = Buffer.from(JSON.stringify({id:u.id,name:u.name,email:u.email})).toString('base64url');
+      return p + '.' + crypto.createHmac('sha256', usecret).update(p).digest('base64url');
+    };
+    if (action === 'register' && method === 'POST') {
+      const name = String(b.name||'').trim().slice(0,80);
+      const email = String(b.email||'').trim().toLowerCase().slice(0,160);
+      const password = String(b.password||'');
+      if (!name || !email || !password) return send(res, {ok:false,error:'Name, email and password are required.'}, 400);
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return send(res, {ok:false,error:'Please enter a valid email address.'}, 400);
+      if (password.length < 8) return send(res, {ok:false,error:'Password must be at least 8 characters.'}, 400);
+      if (STORE.users.find(u=>u.email===email)) return send(res, {ok:false,error:'An account with this email already exists.'}, 409);
+      const salt = crypto.randomBytes(16).toString('hex');
+      const pass = salt + ':' + crypto.scryptSync(password, salt, 64).toString('hex');
+      const user = { id: nextId(STORE.users), name, email, pass, createdAt: Date.now() };
+      STORE.users.push(user); save();
+      return send(res, {ok:true, token:usign(user), user:{id:user.id,name,email}});
+    }
+    if (action === 'login' && method === 'POST') {
+      const email = String(b.email||'').trim().toLowerCase();
+      const u = STORE.users.find(x=>x.email===email);
+      let valid = false;
+      if (u && u.pass && u.pass.includes(':')) {
+        const [salt, hash] = u.pass.split(':');
+        valid = crypto.scryptSync(String(b.password||''), salt, 64).toString('hex') === hash;
+      }
+      if (!valid) return send(res, {ok:false,error:'Incorrect email or password.'}, 401);
+      return send(res, {ok:true, token:usign(u), user:{id:u.id,name:u.name,email:u.email}});
+    }
+    if (action === 'me' && method === 'GET') {
+      const h = req.headers['authorization'] || '';
+      const t = h.startsWith('Bearer ') ? h.slice(7) : '';
+      const [p, sig] = t.split('.');
+      if (p && sig && crypto.createHmac('sha256', usecret).update(p).digest('base64url') === sig) {
+        try { return send(res, {ok:true, user: JSON.parse(Buffer.from(p,'base64url').toString())}); } catch(e){}
+      }
+      return send(res, {ok:false}, 401);
+    }
+    return send(res, {ok:false,error:'Not found'}, 404);
+  }
+
   // Forum posts
   if (resource === 'posts') {
     if (method === 'GET' && id === null) {

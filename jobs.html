@@ -63,7 +63,7 @@ h1 em{font-style:normal;color:var(--gold);}
       <li><a href="athletes.html">Athletes</a></li>
       <li><a href="jobs.html" class="active">Jobs</a></li>
     </ul>
-    <div class="nav-right"><button class="btn-ghost">Sign in</button><button class="btn-gold">Post a Job</button></div>
+    <div class="nav-right"><a class="btn-ghost" href="signin.html" style="text-decoration:none;display:inline-flex;align-items:center;">Sign in</a><a class="btn-gold" href="contact.html" style="text-decoration:none;display:inline-flex;align-items:center;">Post a Job</a></div>
   </div>
 </nav>
 <div class="main">
@@ -74,9 +74,11 @@ h1 em{font-style:normal;color:var(--gold);}
 </div>
 <script src="shared.js"></script>
 <script>
-const API='http://localhost:3000/api';
+const API='/api';
+let JOBS=[];
 fetch(API+'/jobs').then(r=>r.json()).then(jobs=>{
-  document.getElementById('jobs-list').innerHTML=jobs.filter(j=>j.active).map(j=>`
+  JOBS=jobs;
+  document.getElementById('jobs-list').innerHTML=jobs.filter(j=>j.active!==false).map(j=>`
     <div class="job-card reveal">
       <div class="job-left">
         <div class="job-title">${j.title}</div>
@@ -88,15 +90,51 @@ fetch(API+'/jobs').then(r=>r.json()).then(jobs=>{
       </div>
       <div class="job-right">
         <div class="job-salary">${j.salary}</div>
-        <button class="btn-apply">Apply Now</button>
+        <button class="btn-apply" onclick="applyJob(${j.id})">Apply Now</button>
       </div>
     </div>`).join('');
   document.querySelectorAll('.reveal').forEach(r=>{
     new IntersectionObserver(e=>e.forEach(x=>{if(x.isIntersecting)x.target.classList.add('visible');}),{threshold:.1}).observe(r);
   });
 }).catch(()=>{
-  document.getElementById('jobs-list').innerHTML='<p style="color:var(--text-2);text-align:center;padding:40px;">Start the server to load jobs: <code style="color:var(--gold);">node server.js</code></p>';
+  document.getElementById('jobs-list').innerHTML='<p style="color:var(--text-2);text-align:center;padding:40px;">Could not load jobs right now — please refresh.</p>';
 });
+
+// ── JOB APPLICATION (delivered to the admin Live Chat inbox) ──
+let applyJobRef=null;
+function applyJob(id){
+  applyJobRef=JOBS.find(j=>j.id===id)||null;
+  let ov=document.getElementById('apply-ov');
+  if(!ov){
+    ov=document.createElement('div');ov.id='apply-ov';
+    ov.style.cssText='position:fixed;inset:0;z-index:9996;background:rgba(7,15,34,.78);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:20px;';
+    ov.innerHTML='<div style="background:#102444;border:1px solid rgba(255,255,255,.1);border-radius:16px;width:100%;max-width:440px;padding:24px;">'
+      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;"><div id="apply-title" style="font-family:Oswald,Space Grotesk,sans-serif;font-size:16px;color:#F5F8FF;font-weight:600;"></div><button onclick="document.getElementById(\'apply-ov\').style.display=\'none\'" style="background:none;border:none;color:#7E8AA0;font-size:24px;cursor:pointer;line-height:1;">&times;</button></div>'
+      +'<div id="apply-org" style="font-size:12px;color:#9AA6BD;margin-bottom:16px;"></div>'
+      +'<input id="ap-name" placeholder="Full name *" style="width:100%;background:#0A1730;border:1px solid rgba(255,255,255,.13);border-radius:9px;padding:12px 13px;color:#F5F8FF;font-size:14px;outline:none;box-sizing:border-box;margin-bottom:10px;">'
+      +'<input id="ap-email" type="email" placeholder="Email *" style="width:100%;background:#0A1730;border:1px solid rgba(255,255,255,.13);border-radius:9px;padding:12px 13px;color:#F5F8FF;font-size:14px;outline:none;box-sizing:border-box;margin-bottom:10px;">'
+      +'<textarea id="ap-note" placeholder="Experience, certifications, availability…" style="width:100%;min-height:90px;background:#0A1730;border:1px solid rgba(255,255,255,.13);border-radius:9px;padding:12px 13px;color:#F5F8FF;font-size:14px;outline:none;box-sizing:border-box;resize:vertical;margin-bottom:14px;"></textarea>'
+      +'<button id="ap-send" onclick="submitApply()" style="width:100%;background:#FFC72C;color:#141414;border:none;border-radius:9px;padding:13px;font-weight:700;font-size:14px;cursor:pointer;">Submit Application</button></div>';
+    document.body.appendChild(ov);
+    ov.addEventListener('click',e=>{if(e.target===ov)ov.style.display='none';});
+  }
+  document.getElementById('apply-title').textContent='Apply — '+(applyJobRef?applyJobRef.title:'');
+  document.getElementById('apply-org').textContent=applyJobRef?applyJobRef.org+' · '+applyJobRef.location:'';
+  try{const u=JSON.parse(localStorage.getItem('archery_user')||'null');if(u){document.getElementById('ap-name').value=u.name||'';document.getElementById('ap-email').value=u.email||'';}}catch(e){}
+  ov.style.display='flex';
+}
+async function submitApply(){
+  const name=document.getElementById('ap-name').value.trim();
+  const email=document.getElementById('ap-email').value.trim();
+  const note=document.getElementById('ap-note').value.trim();
+  if(!name||!email){alert('Please enter your name and email.');return;}
+  const btn=document.getElementById('ap-send');const o=btn.textContent;btn.textContent='Submitting…';btn.disabled=true;
+  const text='JOB APPLICATION — '+(applyJobRef?applyJobRef.title+' @ '+applyJobRef.org:'')+'\n\n'+(note||'(no note)');
+  const res=await fetch(API+'/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,email,text})}).then(r=>r.json()).catch(()=>null);
+  btn.textContent=o;btn.disabled=false;
+  if(res&&res.ok){document.getElementById('apply-ov').style.display='none';document.getElementById('ap-note').value='';alert('Application submitted! Our team will reach out by email.');}
+  else alert('Could not submit right now — please try again.');
+}
 </script>
 </body>
 </html>

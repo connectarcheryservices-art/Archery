@@ -162,7 +162,7 @@ function renderRankings(list){
 }
 function filterAthletes(q){renderRankings(q?ATHLETES.filter(a=>a.name.toLowerCase().includes(q.toLowerCase())||a.state.toLowerCase().includes(q.toLowerCase())||a.club.toLowerCase().includes(q.toLowerCase())):ATHLETES);}
 document.querySelectorAll('.r-tab').forEach(b=>b.addEventListener('click',function(){document.querySelectorAll('.r-tab').forEach(x=>x.classList.remove('active'));this.classList.add('active');}));
-fetch('http://localhost:3000/api/athletes')
+fetch('/api/athletes')
   .then(r=>r.json())
   .then(data=>{if(data&&data.length){
     // merge API data with display data
