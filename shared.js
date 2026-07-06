@@ -46,6 +46,7 @@
     .section-title,.sec-title,.hero-title,.page-hero h1{font-family:'Oswald',sans-serif;}
     .section-title em,.sec-title em,.hero-title em,.nav-logo-main span,.footer-logo span,.footer-brand-name span{background:none;-webkit-background-clip:initial;background-clip:initial;-webkit-text-fill-color:currentColor;color:var(--gold);}
     .nav-links a:hover,.nav-links a.active{color:var(--gold)!important;}
+    #main-nav .nav-links a{font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.1em;font-size:12.5px;}
     nav#main-nav{background:#131316!important;border-bottom:1px solid rgba(255,255,255,.08);backdrop-filter:none!important;}
     nav#main-nav.scrolled{background:#131316!important;border-bottom:1px solid rgba(201,162,39,.35)!important;}
     *::-webkit-scrollbar{width:11px;height:11px;}

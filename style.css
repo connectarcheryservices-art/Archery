@@ -124,6 +124,7 @@ a,button,.card,.stat-card,.btn-action,.btn-outline,.btn-ghost,.btn-primary-nav{t
 .page-hero .stat-val{color:#fff;}
 .page-hero .stat-val em,.page-hero .stat-val span{color:var(--gold);font-style:normal;}
 .page-hero .stat-label{color:rgba(255,255,255,.62);}
+.page-hero-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-top:32px;}
 
 /* ── Light "day" theme — paper white bands, same accents ── */
 [data-theme="day"]{
