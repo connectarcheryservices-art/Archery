@@ -209,6 +209,51 @@ async function api(parts, method, body, req, res){
     } catch(e){ return send(res, {ok:false, error:'Could not reach Razorpay.'}, 502); }
   }
 
+  // Federation/brand registration fee — level priced server-side (parity with api/_handlers/checkout-fee.js)
+  if (resource === 'checkout' && parts[2] === 'fee' && method === 'POST') {
+    const FEES = {
+      club:{fee:7999,label:'Club / Range Licence'}, district:{fee:11999,label:'District Federation'},
+      state:{fee:39999,label:'State Federation'}, national:{fee:79999,label:'National Federation'},
+      international:{fee:899999,label:'International Federation'}, brand:{fee:119999,label:'Equipment Brand Listing'},
+    };
+    const tier = FEES[String(data.level||'').toLowerCase()];
+    if (!tier) return send(res, {ok:false, error:'Please choose a registration level.'}, 400);
+    if (!String(data.orgName||'').trim()) return send(res, {ok:false, error:'Organisation name is required.'}, 400);
+    if (!String(data.email||'').trim()) return send(res, {ok:false, error:'An official email is required.'}, 400);
+    const app = { id: nextId(STORE.applications), orgName:String(data.orgName).trim(), orgType:tier.label,
+      contactName:data.contactName||'', email:String(data.email).trim(), phone:data.phone||'', status:'awaiting-payment', createdAt: now };
+    STORE.applications.push(app);
+    const order = {
+      id: nextId(STORE.orders), orderNo: 'ARC-FED-'+now.toString(36).toUpperCase(),
+      customerName: data.contactName||app.orgName, customerEmail: app.email, customerPhone: app.phone,
+      addressLine1: app.orgName, pincode:'000000', country:'India', deliveryType:'registration',
+      items:[{name:tier.label+' — annual registration ('+app.orgName+')', price:tier.fee, qty:1, applicationId:app.id, level:String(data.level).toLowerCase()}],
+      goods:tier.fee, deliveryFee:0, tax:0, platformFee:0, total:tier.fee, currency:'INR',
+      paymentStatus:'pending', paymentMethod:'razorpay', status:'new', createdAt: now, updatedAt: now,
+    };
+    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+      order.paymentStatus='paid'; order.paymentMethod='test-mode'; order.status='confirmed';
+      app.status='paid-pending-review';
+      STORE.orders.push(order);
+      STORE.events.push({type:'purchase', value:order.total, orderId:order.id, ts:now});
+      save();
+      return send(res, {ok:true, testMode:true, applicationId:app.id, orderNo:order.orderNo, fee:tier.fee, level:String(data.level).toLowerCase(), label:tier.label});
+    }
+    try {
+      const auth = 'Basic ' + Buffer.from(`${process.env.RAZORPAY_KEY_ID}:${process.env.RAZORPAY_KEY_SECRET}`).toString('base64');
+      const r = await fetch('https://api.razorpay.com/v1/orders', {
+        method:'POST', headers:{'Content-Type':'application/json', Authorization:auth},
+        body: JSON.stringify({amount: tier.fee*100, currency:'INR', receipt: order.orderNo, payment_capture:1}),
+      });
+      const rp = await r.json();
+      if (!r.ok) return send(res, {ok:false, error: rp?.error?.description || 'Razorpay order failed'}, 502);
+      order.razorpayOrderId = rp.id;
+      STORE.orders.push(order); save();
+      return send(res, {ok:true, applicationId:app.id, orderNo:order.orderNo, fee:tier.fee, label:tier.label,
+        razorpay:{keyId: process.env.PUBLIC_RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID, orderId: rp.id, amount: tier.fee*100, currency:'INR'}});
+    } catch(e){ return send(res, {ok:false, error:'Could not reach Razorpay.'}, 502); }
+  }
+
   // Razorpay verify (real-key path)
   if (resource === 'razorpay' && parts[2] === 'verify' && method === 'POST') {
     const secret = process.env.RAZORPAY_KEY_SECRET;

@@ -93,40 +93,104 @@ h1 em{font-style:normal;color:var(--gold);}
 const ro=new IntersectionObserver(e=>e.forEach(x=>{if(x.isIntersecting)x.target.classList.add('visible');}),{threshold:.1});
 document.querySelectorAll('.reveal').forEach(r=>ro.observe(r));
 
-// ── FEDERATION ACCESS APPLICATION (POSTs to /api/applications → admin panel) ──
+// ── FEDERATION REGISTRATION — level-based licence fee + Razorpay ──
+// The server (/api/checkout/fee) prices from its own fee schedule; this table
+// is display-only. Payment verified via /api/razorpay/verify; the admin then
+// approves the application to activate access at the paid level.
 (function(){
+  const IN='width:100%;background:#101116;border:1px solid rgba(255,255,255,.13);border-radius:9px;padding:12px 13px;color:#F5F6F8;font-size:14px;outline:none;box-sizing:border-box;margin-bottom:10px;';
+  const LEVELS={
+    club:{fee:7999,label:'Club / Range Licence',access:'Member management, class scheduling, attendance, finance module, club analytics, public listing.'},
+    district:{fee:11999,label:'District Federation',access:'Up to 20 member clubs, district rankings, tournament draws, member sync, basic API.'},
+    state:{fee:39999,label:'State Federation',access:'Up to 100 clubs, state rankings, compliance dashboard, coach & judge licensing, full API.'},
+    national:{fee:79999,label:'National Federation',access:'Unlimited clubs, national rankings, anti-doping module, sovereign API, dedicated manager.'},
+    international:{fee:899999,label:'International Federation',access:'Multi-country management, premium SLA API, global tournament infrastructure.'},
+    brand:{fee:119999,label:'Equipment Brand Listing',access:'Marketplace storefront, unlimited SKUs, sales analytics, sponsored placements.'},
+  };
+  const inr=n=>'₹'+Number(n).toLocaleString('en-IN');
+
   const ov=document.createElement('div');
   ov.id='fed-apply-ov';
-  ov.style.cssText='position:fixed;inset:0;z-index:9996;background:rgba(7,15,34,.78);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;padding:20px;';
-  ov.innerHTML='<div style="background:#17181D;border:1px solid rgba(255,255,255,.1);border-radius:16px;width:100%;max-width:460px;padding:26px;">'
-    +'<div style="display:flex;justify-content:space-between;align-items:flex-start;"><div style="font-family:Oswald,sans-serif;font-size:17px;color:#F5F6F8;text-transform:uppercase;letter-spacing:.05em;">Federation Access Application</div><button onclick="closeFedApply()" style="background:none;border:none;color:#7E8290;font-size:24px;line-height:1;cursor:pointer;">&times;</button></div>'
-    +'<p style="font-size:12px;color:#9CA1AD;margin:6px 0 18px;">Applications are reviewed within 14 working days. Open to federations and associations.</p>'
-    +'<input id="fa-org" placeholder="Organisation name *" style="width:100%;background:#101116;border:1px solid rgba(255,255,255,.13);border-radius:9px;padding:12px 13px;color:#F5F6F8;font-size:14px;outline:none;box-sizing:border-box;margin-bottom:10px;">'
-    +'<select id="fa-type" style="width:100%;background:#101116;border:1px solid rgba(255,255,255,.13);border-radius:9px;padding:12px 13px;color:#F5F6F8;font-size:14px;outline:none;box-sizing:border-box;margin-bottom:10px;"><option>National Federation</option><option>State Association</option><option>District Body</option><option>Institutional Affiliate</option></select>'
-    +'<input id="fa-contact" placeholder="Contact name & designation" style="width:100%;background:#101116;border:1px solid rgba(255,255,255,.13);border-radius:9px;padding:12px 13px;color:#F5F6F8;font-size:14px;outline:none;box-sizing:border-box;margin-bottom:10px;">'
-    +'<input id="fa-email" type="email" placeholder="Official email *" style="width:100%;background:#101116;border:1px solid rgba(255,255,255,.13);border-radius:9px;padding:12px 13px;color:#F5F6F8;font-size:14px;outline:none;box-sizing:border-box;margin-bottom:10px;">'
-    +'<input id="fa-phone" type="tel" placeholder="Phone number" style="width:100%;background:#101116;border:1px solid rgba(255,255,255,.13);border-radius:9px;padding:12px 13px;color:#F5F6F8;font-size:14px;outline:none;box-sizing:border-box;margin-bottom:16px;">'
-    +'<button id="fa-submit" onclick="submitFedApply()" style="width:100%;background:#C9A227;color:#131316;border:none;border-radius:9px;padding:13px;font-family:Oswald,sans-serif;font-size:14px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;">Submit Application</button></div>';
+  ov.style.cssText='position:fixed;inset:0;z-index:9996;background:rgba(7,15,34,.78);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;padding:20px;overflow-y:auto;';
+  ov.innerHTML='<div style="background:#17181D;border:1px solid rgba(255,255,255,.1);border-radius:16px;width:100%;max-width:480px;padding:26px;margin:auto;">'
+    +'<div style="display:flex;justify-content:space-between;align-items:flex-start;"><div style="font-family:Oswald,sans-serif;font-size:17px;color:#F5F6F8;text-transform:uppercase;letter-spacing:.05em;">Federation Registration</div><button onclick="closeFedApply()" style="background:none;border:none;color:#7E8290;font-size:24px;line-height:1;cursor:pointer;">&times;</button></div>'
+    +'<p style="font-size:12px;color:#9CA1AD;margin:6px 0 16px;">Choose your level, pay the annual licence fee securely, and your access is activated on verification (within 14 working days).</p>'
+    +'<div id="fa-body">'
+    +'<label style="display:block;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#9CA1AD;margin-bottom:6px;">Registration level *</label>'
+    +'<select id="fa-level" onchange="fedFeeUpdate()" style="'+IN+'">'
+      +'<option value="district">District Federation — '+inr(LEVELS.district.fee)+'/year</option>'
+      +'<option value="state">State Federation — '+inr(LEVELS.state.fee)+'/year</option>'
+      +'<option value="national">National Federation — '+inr(LEVELS.national.fee)+'/year</option>'
+      +'<option value="international">International Federation — '+inr(LEVELS.international.fee)+'/year</option>'
+      +'<option value="club">Club / Range Licence — '+inr(LEVELS.club.fee)+'/year</option>'
+      +'<option value="brand">Equipment Brand Listing — '+inr(LEVELS.brand.fee)+'/year</option>'
+    +'</select>'
+    +'<div id="fa-feebox" style="background:rgba(201,162,39,.07);border:1px solid rgba(201,162,39,.25);border-radius:10px;padding:13px 14px;margin-bottom:12px;">'
+      +'<div style="display:flex;justify-content:space-between;align-items:baseline;"><span style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#9CA1AD;">Annual licence fee</span><span id="fa-fee" style="font-family:Oswald,sans-serif;font-size:22px;font-weight:700;color:#C9A227;"></span></div>'
+      +'<div id="fa-access" style="font-size:11.5px;color:#B9BEC9;line-height:1.6;margin-top:7px;"></div>'
+    +'</div>'
+    +'<input id="fa-org" placeholder="Organisation name *" style="'+IN+'">'
+    +'<input id="fa-contact" placeholder="Contact name &amp; designation" style="'+IN+'">'
+    +'<input id="fa-email" type="email" placeholder="Official email *" style="'+IN+'">'
+    +'<input id="fa-phone" type="tel" placeholder="Phone number" style="'+IN.replace('margin-bottom:10px','margin-bottom:16px')+'">'
+    +'<button id="fa-submit" onclick="submitFedApply()" style="width:100%;background:#C9A227;color:#131316;border:none;border-radius:9px;padding:13px;font-family:Oswald,sans-serif;font-size:14px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;">Proceed to Payment</button>'
+    +'<div style="font-size:10.5px;color:#7E8290;text-align:center;margin-top:10px;">🔒 Secured by Razorpay · fee is set server-side by level</div>'
+    +'</div>'
+    +'<div id="fa-done" style="display:none;text-align:center;padding:18px 4px;">'
+      +'<div style="width:64px;height:64px;border-radius:50%;background:rgba(34,197,94,.14);border:2px solid #34C759;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#34C759" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>'
+      +'<div id="fa-done-title" style="font-family:Oswald,sans-serif;font-size:18px;color:#F5F6F8;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px;"></div>'
+      +'<div id="fa-done-text" style="font-size:13px;color:#B9BEC9;line-height:1.7;"></div>'
+    +'</div></div>';
   document.body.appendChild(ov);
   ov.addEventListener('click',e=>{if(e.target===ov)closeFedApply();});
 
-  window.openFedApply=function(){ov.style.display='flex';};
+  window.fedFeeUpdate=function(){
+    const l=LEVELS[document.getElementById('fa-level').value];
+    document.getElementById('fa-fee').textContent=inr(l.fee)+'/yr';
+    document.getElementById('fa-access').innerHTML='<b style="color:#F5F6F8;">'+l.label+' access:</b> '+l.access;
+  };
+  window.openFedApply=function(){ov.style.display='flex';document.getElementById('fa-body').style.display='';document.getElementById('fa-done').style.display='none';fedFeeUpdate();};
   window.closeFedApply=function(){ov.style.display='none';};
+
+  function fedDone(title,text){document.getElementById('fa-body').style.display='none';const d=document.getElementById('fa-done');d.style.display='';document.getElementById('fa-done-title').textContent=title;document.getElementById('fa-done-text').innerHTML=text;}
+  function loadRazorpay(){return new Promise(ok=>{if(window.Razorpay)return ok(true);const s=document.createElement('script');s.src='https://checkout.razorpay.com/v1/checkout.js';s.onload=()=>ok(true);s.onerror=()=>ok(false);document.head.appendChild(s);});}
+
   window.submitFedApply=async function(){
     const v=id=>document.getElementById(id).value.trim();
     if(!v('fa-org')){alert('Please enter your organisation name.');return;}
     if(!v('fa-email')){alert('Please enter an official email.');return;}
-    const btn=document.getElementById('fa-submit');const o=btn.textContent;btn.textContent='Submitting…';btn.disabled=true;
-    const res=await fetch('/api/applications',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({orgName:v('fa-org'),orgType:v('fa-type'),contactName:v('fa-contact'),email:v('fa-email'),phone:v('fa-phone')})}).then(r=>r.json()).catch(()=>null);
-    btn.textContent=o;btn.disabled=false;
-    if(res&&res.ok){closeFedApply();alert('Application received! Our federation team will respond within 14 working days.');['fa-org','fa-contact','fa-email','fa-phone'].forEach(id=>document.getElementById(id).value='');}
-    else alert((res&&res.error)||'Could not submit right now. Please try again.');
+    const btn=document.getElementById('fa-submit');const orig=btn.textContent;btn.textContent='Starting secure payment…';btn.disabled=true;
+    const level=document.getElementById('fa-level').value;
+    const res=await fetch('/api/checkout/fee',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({level,orgName:v('fa-org'),contactName:v('fa-contact'),email:v('fa-email'),phone:v('fa-phone')})}).then(r=>r.json()).catch(()=>null);
+    btn.textContent=orig;btn.disabled=false;
+    if(!res||!res.ok){alert((res&&res.error)||'Could not start registration right now. Please try again.');return;}
+
+    if(res.testMode){fedDone('Registration complete','<b>'+(res.label||'Licence')+'</b> registered for <b>'+v('fa-org')+'</b> (test mode — no payment charged).<br>Reference: <b>'+res.orderNo+'</b>. Access activates on verification within 14 working days.');return;}
+    if(res.offline||!res.razorpay){fedDone('Application received','Your <b>'+(res.label||'registration')+'</b> application is logged (ref <b>'+(res.orderNo||res.applicationId)+'</b>).<br>A secure payment link for '+inr(res.fee)+' will be sent to your official email; access activates once the fee is verified.');return;}
+
+    const loaded=await loadRazorpay();
+    if(!loaded){fedDone('Application received','Payment window could not open (network blocked the gateway). Reference <b>'+res.orderNo+'</b> — a payment link will be emailed to you.');return;}
+    const rz=new Razorpay({
+      key:res.razorpay.keyId, order_id:res.razorpay.orderId, amount:res.razorpay.amount, currency:'INR',
+      name:'Archery.Services', description:res.label+' — annual registration',
+      prefill:{name:v('fa-contact')||v('fa-org'),email:v('fa-email'),contact:v('fa-phone')},
+      theme:{color:'#C9A227'},
+      handler:async function(resp){
+        const ver=await fetch('/api/razorpay/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(resp)}).then(r=>r.json()).catch(()=>null);
+        if(ver&&ver.ok){fedDone('Payment successful','<b>'+res.label+'</b> licence fee of '+inr(res.fee)+' received for <b>'+v('fa-org')+'</b>.<br>Order <b>'+(ver.orderNo||res.orderNo)+'</b> · Our team verifies your organisation and activates '+res.label+' access within 14 working days.');}
+        else{fedDone('Payment received — verifying','We are confirming your payment. Reference <b>'+res.orderNo+'</b>. If access is not activated within 24h, contact support with this reference.');}
+      },
+      modal:{ondismiss:function(){/* keep the form so they can retry */}},
+    });
+    rz.open();
   };
 
   // Wire every Apply button on the page to the modal
   document.querySelectorAll('button').forEach(b=>{
     if(/apply/i.test(b.textContent)) b.addEventListener('click',openFedApply);
   });
+  // Deep link: federation.html?apply=1 opens the registration directly
+  if(new URLSearchParams(location.search).get('apply')) openFedApply();
 })();
 </script>
 </body>

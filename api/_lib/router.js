@@ -11,7 +11,7 @@ module.exports = (req, res) => {
   const r0 = seg[0];
 
   try {
-    if (r0 === 'checkout' && n === 2 && (seg[1] === 'quote' || seg[1] === 'create')) return H('checkout-' + seg[1])(req, res);
+    if (r0 === 'checkout' && n === 2 && (seg[1] === 'quote' || seg[1] === 'create' || seg[1] === 'fee')) return H('checkout-' + seg[1])(req, res);
     if (r0 === 'razorpay' && n === 2 && (seg[1] === 'verify' || seg[1] === 'config')) return H('razorpay-' + seg[1])(req, res);
     if (r0 === 'admin' && n === 2 && seg[1] === 'login') return H('admin-login')(req, res);
     if (r0 === 'analytics' && n === 1) return H('analytics')(req, res);
