@@ -466,7 +466,7 @@ const P_FALLBACK=[
 ];
 function renderProds(list){
   document.getElementById('prod-grid').innerHTML=list.slice(0,4).map((p,i)=>`
-    <a class="prod" href="shop.html">
+    <a class="prod" href="product.html?id=${p.id}">
       <div class="prod-img">${p.imgUrl?`<img src="${p.imgUrl}" alt="${esc(p.name)}">`:RING}${p.was&&p.was>p.price?'<span class="prod-badge">Sale</span>':''}</div>
       <div class="prod-body">
         <div class="prod-brand" style="color:${BRAND_COL[i%4]};">${esc(p.brand||'Equipment')}</div>

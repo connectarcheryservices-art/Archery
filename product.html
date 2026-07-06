@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Product — Archery.Services</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+  .pd-wrap{max-width:1280px;margin:0 auto;padding:88px var(--g) 60px;}
+  .pd-crumb{display:flex;gap:8px;align-items:center;font-size:12px;color:var(--muted-2);margin-bottom:20px;flex-wrap:wrap;}
+  .pd-crumb a{color:var(--muted-2);text-decoration:none;}
+  .pd-crumb a:hover{color:var(--gold);}
+  .pd-crumb span{color:var(--text-2);}
+
+  /* main two-column */
+  .pd-top{display:grid;grid-template-columns:1.05fr 1fr;gap:40px;align-items:start;}
+  @media(max-width:920px){.pd-top{grid-template-columns:1fr;gap:28px;}}
+
+  /* gallery */
+  .pd-gallery{position:sticky;top:84px;}
+  @media(max-width:920px){.pd-gallery{position:static;}}
+  .pd-main-img{background:var(--char);border:1px solid rgba(255,255,255,.08);border-radius:12px;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;}
+  .pd-main-img svg{width:62%;height:62%;}
+  .pd-main-img img{width:100%;height:100%;object-fit:cover;}
+  .pd-badge{position:absolute;top:14px;left:14px;background:var(--red);color:#fff;font-family:'Oswald',sans-serif;font-size:12px;font-weight:600;letter-spacing:.04em;padding:5px 11px;border-radius:4px;}
+  .pd-thumbs{display:flex;gap:10px;margin-top:12px;}
+  .pd-thumb{flex:1;max-width:84px;aspect-ratio:1/1;background:var(--char);border:1px solid rgba(255,255,255,.1);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;transition:border-color .2s;}
+  .pd-thumb svg{width:60%;height:60%;}
+  .pd-thumb img{width:100%;height:100%;object-fit:cover;}
+  .pd-thumb.active{border-color:var(--gold);}
+
+  /* buy box */
+  .pd-brand{font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;}
+  .pd-title{font-family:'Oswald',sans-serif;font-size:clamp(24px,3vw,34px);font-weight:600;line-height:1.15;color:var(--text);text-transform:uppercase;letter-spacing:.01em;margin-bottom:12px;}
+  .pd-ratingline{display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap;}
+  .pd-stars{color:var(--gold);font-size:16px;letter-spacing:1px;}
+  .pd-rating-pill{display:inline-flex;align-items:center;gap:4px;background:var(--gold);color:#131316;font-weight:700;font-size:12px;padding:2px 8px;border-radius:4px;}
+  .pd-rating-count{font-size:13px;color:var(--text-2);}
+  .pd-rating-count a{color:var(--gold);text-decoration:none;}
+  .pd-live{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--text-2);margin:-6px 0 14px;}
+  .pd-live b{color:var(--gold);}
+  .pd-live-dot{width:7px;height:7px;border-radius:50%;background:#D22730;box-shadow:0 0 0 0 rgba(210,39,48,.5);animation:pdpulse 1.8s infinite;}
+  @keyframes pdpulse{0%{box-shadow:0 0 0 0 rgba(210,39,48,.5);}70%{box-shadow:0 0 0 7px rgba(210,39,48,0);}100%{box-shadow:0 0 0 0 rgba(210,39,48,0);}}
+  .pd-urgency{position:absolute;top:14px;right:14px;font-family:'Oswald',sans-serif;font-size:11px;font-weight:600;letter-spacing:.04em;padding:5px 10px;border-radius:4px;color:#fff;}
+  .pd-divider{height:1px;background:rgba(255,255,255,.08);margin:18px 0;}
+
+  .pd-price-row{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;}
+  .pd-price{font-family:'Oswald',sans-serif;font-size:38px;font-weight:700;color:var(--text);line-height:1;}
+  .pd-was{font-size:17px;color:var(--muted);text-decoration:line-through;}
+  .pd-save{font-size:14px;font-weight:700;color:#39B34A;}
+  .pd-tax{font-size:12px;color:var(--muted-2);margin-top:6px;}
+
+  .pd-stock{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;margin:16px 0;}
+  .pd-stock.in{color:#39B34A;}
+  .pd-stock.low{color:#E0902A;}
+  .pd-stock .dot{width:8px;height:8px;border-radius:50%;background:currentColor;}
+
+  .pd-deliver{background:var(--char);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:16px;margin:18px 0;}
+  .pd-deliver-title{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-2);margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+  .pd-deliver-title svg{width:16px;height:16px;color:var(--gold);}
+  .pd-pin{display:flex;gap:8px;}
+  .pd-pin input{flex:1;background:var(--ink);border:1px solid rgba(255,255,255,.14);border-radius:7px;padding:11px 13px;color:var(--text);font-size:14px;outline:none;}
+  .pd-pin input:focus{border-color:var(--gold);}
+  .pd-pin button{background:transparent;border:1px solid var(--gold);color:var(--gold);border-radius:7px;padding:0 18px;font-family:'Oswald',sans-serif;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;}
+  .pd-deliver-out{font-size:13px;color:var(--text-2);margin-top:10px;line-height:1.6;}
+  .pd-deliver-out b{color:var(--text);}
+
+  .pd-qty-row{display:flex;align-items:center;gap:16px;margin:18px 0;}
+  .pd-qty-label{font-size:13px;color:var(--text-2);}
+  .pd-qty{display:inline-flex;align-items:center;border:1px solid rgba(255,255,255,.16);border-radius:8px;overflow:hidden;}
+  .pd-qty button{width:40px;height:40px;background:var(--char);border:none;color:var(--text);font-size:18px;cursor:pointer;}
+  .pd-qty button:hover{background:var(--char-3);color:var(--gold);}
+  .pd-qty span{min-width:44px;text-align:center;font-weight:600;font-size:15px;}
+
+  .pd-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:20px 0 0;}
+  .pd-add,.pd-buy{padding:16px;border-radius:8px;font-family:'Oswald',sans-serif;font-size:14px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;border:none;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s;}
+  .pd-add{background:transparent;border:1.5px solid var(--gold);color:var(--gold);}
+  .pd-add:hover{background:rgba(201,162,39,.1);}
+  .pd-buy{background:var(--gold);color:#131316;}
+  .pd-buy:hover{background:var(--gold-light);transform:translateY(-1px);}
+  .pd-add svg{width:17px;height:17px;}
+
+  .pd-trust{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:22px;}
+  .pd-trust div{background:var(--char);border:1px solid rgba(255,255,255,.06);border-radius:8px;padding:12px;text-align:center;}
+  .pd-trust svg{width:20px;height:20px;color:var(--gold);margin-bottom:6px;}
+  .pd-trust b{display:block;font-size:11px;color:var(--text);font-weight:600;}
+  .pd-trust small{font-size:10px;color:var(--muted-2);}
+
+  /* lower sections */
+  .pd-section{margin-top:52px;}
+  .pd-h2{font-family:'Oswald',sans-serif;font-size:20px;font-weight:600;text-transform:uppercase;letter-spacing:.03em;color:var(--text);margin-bottom:20px;padding-bottom:12px;border-bottom:2px solid var(--gold);display:inline-block;}
+  .pd-highlights{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;}
+  .pd-hl{display:flex;gap:12px;align-items:flex-start;background:var(--char);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:16px;}
+  .pd-hl svg{width:22px;height:22px;color:var(--gold);flex-shrink:0;}
+  .pd-hl b{display:block;font-size:14px;color:var(--text);margin-bottom:3px;}
+  .pd-hl span{font-size:12.5px;color:var(--muted-2);line-height:1.5;}
+
+  .pd-specs{width:100%;border-collapse:collapse;background:var(--char);border:1px solid rgba(255,255,255,.08);border-radius:10px;overflow:hidden;}
+  .pd-specs tr{border-bottom:1px solid rgba(255,255,255,.05);}
+  .pd-specs tr:last-child{border-bottom:none;}
+  .pd-specs td{padding:13px 18px;font-size:13.5px;}
+  .pd-specs td:first-child{color:var(--muted-2);width:38%;background:rgba(255,255,255,.02);font-weight:500;}
+  .pd-specs td:last-child{color:var(--text);}
+
+  .pd-about{font-size:14.5px;line-height:1.85;color:var(--text-2);max-width:820px;}
+  .pd-about p{margin-bottom:14px;}
+
+  /* reviews */
+  .pd-rev-top{display:grid;grid-template-columns:220px 1fr;gap:32px;align-items:center;margin-bottom:28px;}
+  @media(max-width:700px){.pd-rev-top{grid-template-columns:1fr;gap:18px;}}
+  .pd-rev-score{text-align:center;background:var(--char);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:24px;}
+  .pd-rev-big{font-family:'Oswald',sans-serif;font-size:52px;font-weight:700;color:var(--gold);line-height:1;}
+  .pd-rev-of{font-size:13px;color:var(--muted-2);margin-top:4px;}
+  .pd-rev-bars{display:flex;flex-direction:column;gap:7px;}
+  .pd-rev-bar{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted-2);}
+  .pd-rev-bar-track{flex:1;height:7px;background:rgba(255,255,255,.08);border-radius:4px;overflow:hidden;}
+  .pd-rev-bar-fill{height:100%;background:var(--gold);border-radius:4px;}
+  .pd-rev-list{display:flex;flex-direction:column;gap:18px;}
+  .pd-rev{border-bottom:1px solid rgba(255,255,255,.06);padding-bottom:18px;}
+  .pd-rev:last-child{border-bottom:none;}
+  .pd-rev-head{display:flex;align-items:center;gap:10px;margin-bottom:7px;flex-wrap:wrap;}
+  .pd-rev-av{width:32px;height:32px;border-radius:50%;background:var(--char-3);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--gold);}
+  .pd-rev-name{font-size:13.5px;font-weight:600;color:var(--text);}
+  .pd-rev-verif{font-size:10px;color:#39B34A;background:rgba(57,179,74,.12);padding:2px 7px;border-radius:4px;font-weight:600;}
+  .pd-rev-date{font-size:11px;color:var(--muted);margin-left:auto;}
+  .pd-rev-stars{color:var(--gold);font-size:12px;letter-spacing:1px;margin-bottom:5px;}
+  .pd-rev-title{font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px;}
+  .pd-rev-text{font-size:13px;color:var(--text-2);line-height:1.7;}
+
+  .pd-related{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;}
+  .pd-rel{background:var(--char);border:1px solid rgba(255,255,255,.08);border-radius:10px;overflow:hidden;text-decoration:none;transition:border-color .2s,transform .2s;}
+  .pd-rel:hover{border-color:rgba(201,162,39,.4);transform:translateY(-3px);}
+  .pd-rel-img{aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;}
+  .pd-rel-img svg{width:55%;height:55%;}
+  .pd-rel-body{padding:12px 14px;}
+  .pd-rel-name{font-size:13px;color:var(--text);line-height:1.4;margin-bottom:6px;height:36px;overflow:hidden;}
+  .pd-rel-price{font-family:'Oswald',sans-serif;font-size:16px;font-weight:600;color:var(--gold);}
+
+  /* sticky mobile buy bar */
+  .pd-mobilebar{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--black);border-top:1px solid rgba(255,255,255,.1);padding:10px 16px;gap:10px;z-index:150;}
+  .pd-mobilebar .pd-add,.pd-mobilebar .pd-buy{flex:1;padding:14px;}
+  @media(max-width:920px){.pd-mobilebar{display:flex;}.pd-wrap{padding-bottom:90px;}}
+
+  .pd-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(70px);background:var(--char);border:1px solid rgba(201,162,39,.4);border-radius:10px;padding:13px 20px;font-size:13px;color:var(--text);z-index:999;opacity:0;transition:all .3s;box-shadow:0 12px 40px rgba(0,0,0,.5);}
+  .pd-toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
+  .pd-loading{text-align:center;padding:120px 20px;color:var(--muted-2);}
+</style>
+</head>
+<body>
+
+<div id="pd-root" class="pd-wrap">
+  <div class="pd-loading">Loading product…</div>
+</div>
+
+<div class="pd-mobilebar" id="pd-mobilebar" style="display:none;">
+  <button class="pd-add" onclick="pdAdd()">Add to Cart</button>
+  <button class="pd-buy" onclick="pdBuy()">Buy Now</button>
+</div>
+
+<div class="pd-toast" id="pd-toast">Added to cart</div>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div>
+        <div class="footer-logo">Archery<span>.</span>Services</div>
+        <div class="footer-tagline">India's complete archery platform — equipment, tournaments, coaching and community.</div>
+      </div>
+      <div class="footer-col"><h4>Shop</h4><ul>
+        <li><a href="shop.html">All Equipment</a></li>
+        <li><a href="shop.html">Recurve Bows</a></li>
+        <li><a href="shop.html">Arrows</a></li>
+        <li><a href="shop.html">Accessories</a></li>
+      </ul></div>
+      <div class="footer-col"><h4>Help</h4><ul>
+        <li><a href="shipping-policy.html">Shipping</a></li>
+        <li><a href="refund-policy.html">Returns &amp; Refunds</a></li>
+        <li><a href="contact.html">Contact Us</a></li>
+        <li><a href="pricing.html">Pricing</a></li>
+      </ul></div>
+      <div class="footer-col"><h4>Platform</h4><ul>
+        <li><a href="tournaments.html">Tournaments</a></li>
+        <li><a href="athletes.html">Rankings</a></li>
+        <li><a href="knowledge.html">Knowledge</a></li>
+        <li><a href="federation.html">Federation</a></li>
+      </ul></div>
+    </div>
+    <div class="footer-bottom">
+      <div class="footer-copy">&copy; 2026 Archery.Services. All rights reserved.</div>
+      <div class="footer-legal"><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="refund-policy.html">Refunds</a><a href="shipping-policy.html">Shipping</a></div>
+    </div>
+  </div>
+</footer>
+
+<script src="reco.js"></script>
+<script>
+// ── Base catalogue (matches the shop; live prices/stock come from /api/products) ──
+const CAT_META = {
+  'Recurve Bows':['recurve','#C9A227'], 'Compound Bows':['compound','#22C55E'],
+  'Arrows':['arrows','#1F3E9C'], 'Targets':['target','#D22730'],
+  'Risers':['riser','#A855F7'], 'Accessories':['tab','#F97316'],
+  'Protective Gear':['guard','#14B8A6'], 'Maintenance':['kit','#22C55E'],
+};
+const CATALOG = [
+  {id:1,name:'Pro Recurve Bow — 68" 36lbs',brand:'Recurve Bows',category:'Recurve Bows',price:24500,was:29900,rating:4.8,reviews:142,stock:14,icon:'recurve',color:'#C9A227',bg:'#17181D'},
+  {id:2,name:'Carbon Compound Bow — 60lbs Draw',brand:'Compound Bows',category:'Compound Bows',price:42000,was:null,rating:4.6,reviews:67,stock:6,icon:'compound',color:'#22C55E',bg:'#17181D'},
+  {id:3,name:'Aluminium Arrow Set — 12pcs Spine 400',brand:'Arrows',category:'Arrows',price:3200,was:3800,rating:4.9,reviews:218,stock:47,icon:'arrows',color:'#1F3E9C',bg:'#17181D'},
+  {id:4,name:'Competition Target Face — 80cm WA',brand:'Targets',category:'Targets',price:850,was:960,rating:4.5,reviews:95,stock:200,icon:'target',color:'#D22730',bg:'#17181D'},
+  {id:5,name:'Olympic Recurve Riser — Carbon ILF',brand:'Risers',category:'Risers',price:68000,was:78000,rating:4.9,reviews:34,stock:3,icon:'riser',color:'#A855F7',bg:'#17181D'},
+  {id:6,name:'Finger Tab — Pro Leather Right Hand',brand:'Accessories',category:'Accessories',price:1200,was:null,rating:4.4,reviews:180,stock:32,icon:'tab',color:'#F97316',bg:'#17181D'},
+  {id:7,name:'Bowstand Foldable — Carbon Fibre',brand:'Accessories',category:'Accessories',price:2800,was:3200,rating:4.7,reviews:72,stock:25,icon:'stand',color:'#C9A227',bg:'#17181D'},
+  {id:8,name:'Carbon Arrow Set — 12pcs Spine 500 ACE',brand:'Arrows',category:'Arrows',price:8400,was:9200,rating:4.9,reviews:156,stock:40,icon:'arrows',color:'#EC4899',bg:'#17181D'},
+  {id:9,name:'Arm Guard — Full Length Leather',brand:'Protective Gear',category:'Protective Gear',price:650,was:null,rating:4.3,reviews:240,stock:60,icon:'guard',color:'#14B8A6',bg:'#17181D'},
+  {id:10,name:'Recurve Sight — Olympic 4-Pin',brand:'Accessories',category:'Accessories',price:12500,was:15000,rating:4.8,reviews:88,stock:12,icon:'sight',color:'#1F3E9C',bg:'#17181D'},
+  {id:11,name:'String Wax & Maintenance Kit',brand:'Maintenance',category:'Maintenance',price:380,was:null,rating:4.6,reviews:420,stock:90,icon:'kit',color:'#22C55E',bg:'#17181D'},
+  {id:12,name:'Long Rod Stabiliser — 28" Carbon',brand:'Accessories',category:'Accessories',price:5600,was:6500,rating:4.5,reviews:63,stock:18,icon:'rod',color:'#C9A227',bg:'#17181D'},
+];
+
+function hexToRgb(hex){const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return `${r},${g},${b}`;}
+function getProductSVG(icon,color){const o={
+  recurve:`<line x1="40" y1="8" x2="40" y2="72"/><path d="M40 18 Q52 40 40 62 Q28 40 40 18" fill="rgba(${hexToRgb(color)},.08)"/><line x1="30" y1="38" x2="14" y2="36"/><line x1="14" y1="33" x2="14" y2="39"/>`,
+  compound:`<path d="M40 12 L40 68"/><path d="M40 12 Q60 40 40 68 Q20 40 40 12" fill="rgba(${hexToRgb(color)},.06)"/><circle cx="40" cy="40" r="7" fill="rgba(${hexToRgb(color)},.15)" stroke="${color}"/><ellipse cx="28" cy="30" rx="5" ry="5"/><ellipse cx="28" cy="50" rx="5" ry="5"/><line x1="28" y1="30" x2="40" y2="33"/><line x1="28" y1="50" x2="40" y2="47"/>`,
+  arrows:`<line x1="40" y1="10" x2="40" y2="70"/><line x1="28" y1="22" x2="52" y2="22"/><line x1="30" y1="30" x2="50" y2="30"/><line x1="28" y1="62" x2="52" y2="62"/><polygon points="36,12 40,8 44,12" fill="${color}"/>`,
+  target:`<circle cx="40" cy="40" r="26" fill="rgba(${hexToRgb(color)},.04)"/><circle cx="40" cy="40" r="18"/><circle cx="40" cy="40" r="10"/><circle cx="40" cy="40" r="4" fill="rgba(${hexToRgb(color)},.3)"/>`,
+  riser:`<rect x="34" y="10" width="12" height="60" rx="3"/><rect x="28" y="24" width="24" height="8" rx="2"/><rect x="28" y="42" width="24" height="8" rx="2"/><line x1="20" y1="28" x2="34" y2="32"/><line x1="20" y1="46" x2="34" y2="46"/>`,
+  tab:`<path d="M28 20 Q40 16 52 20 L52 56 Q40 60 28 56 Z" fill="rgba(${hexToRgb(color)},.08)"/><line x1="36" y1="28" x2="44" y2="28"/><line x1="34" y1="36" x2="46" y2="36"/><line x1="36" y1="44" x2="44" y2="44"/>`,
+  stand:`<line x1="40" y1="20" x2="40" y2="62"/><line x1="40" y1="62" x2="28" y2="72"/><line x1="40" y1="62" x2="52" y2="72"/><line x1="40" y1="30" x2="32" y2="48"/><line x1="40" y1="30" x2="48" y2="48"/>`,
+  guard:`<rect x="30" y="18" width="20" height="44" rx="10"/><line x1="34" y1="28" x2="46" y2="28"/><line x1="34" y1="36" x2="46" y2="36"/><line x1="34" y1="44" x2="46" y2="44"/><line x1="34" y1="52" x2="46" y2="52"/>`,
+  sight:`<circle cx="40" cy="40" r="18"/><line x1="40" y1="22" x2="40" y2="58"/><line x1="22" y1="40" x2="58" y2="40"/><circle cx="40" cy="40" r="5" fill="rgba(${hexToRgb(color)},.2)"/>`,
+  kit:`<rect x="24" y="30" width="32" height="24" rx="3"/><path d="M32 30 L32 26 Q40 22 48 26 L48 30"/><line x1="36" y1="42" x2="44" y2="42"/><line x1="40" y1="38" x2="40" y2="46"/>`,
+  rod:`<line x1="40" y1="10" x2="40" y2="70"/><ellipse cx="40" cy="16" rx="3" ry="6"/><rect x="36" y="62" width="8" height="6" rx="2"/>`,
+};return o[icon]||o.recurve;}
+
+// ── Category-level detail (authentic specs, highlights, description) ──
+function numFrom(name,re){const m=name.match(re);return m?m[1]:null;}
+function buildDetail(p){
+  const c=p.category, len=numFrom(p.name,/(\d{2})"/), lbs=numFrom(p.name,/(\d{2})lbs/), spine=numFrom(p.name,/Spine (\d{3})/);
+  const D={highlights:[],specs:{},about:''};
+  if(c==='Recurve Bows'){
+    D.highlights=[['Tournament-grade limbs','Layered carbon/wood limbs tuned for a smooth, stack-free draw.'],['ILF compatible','Fits any International Limb Fitting riser for easy upgrades.'],['Precision tuned','Factory-tillered and shot-tested before dispatch.']];
+    D.specs={'Bow type':'Recurve (Olympic)','Bow length':(len||'68')+' inches','Draw weight':(lbs||'36')+' lbs @ 28"','Handedness':'Right hand','Limb fitting':'ILF (International)','Riser material':'Aluminium alloy','Limb material':'Carbon / hard maple laminate','Recommended for':'Intermediate to competition'};
+    D.about='A competition-ready recurve built for archers moving from club level into ranking events. The layered limbs deliver a smooth, progressive draw with minimal stacking, while the ILF fitting means you can upgrade limbs or riser independently as you progress. Each bow is tillered and shot-tested in-house before it ships.';
+  } else if(c==='Compound Bows'){
+    D.highlights=[['High let-off','Up to 85% let-off holds steady at full draw for longer aiming.'],['Carbon riser','Stiff, lightweight carbon riser reduces hand shock.'],['Field & target ready','Tuned for both 3D field courses and target rounds.']];
+    D.specs={'Bow type':'Compound','Peak draw weight':(lbs||'60')+' lbs','Let-off':'85%','Axle-to-axle':'34 inches','Brace height':'7 inches','Cam system':'Dual synchronised','Riser material':'Carbon composite','Recommended for':'Advanced'};
+    D.about='A precision compound engineered for archers who demand a rock-solid hold and forgiving shot. The dual synchronised cams deliver a crisp back wall and high let-off, so you can hold on the middle longer with less fatigue. The carbon riser keeps the bow light in the hand without sacrificing stiffness.';
+  } else if(c==='Arrows'){
+    D.highlights=[['Matched spine','Every dozen is spine-matched and weight-sorted for tight groups.'],['Straightness ±.001"','Precision straightness for consistent arrow flight.'],['Pre-fletched','Ships fletched, nocked and ready to shoot.']];
+    D.specs={'Type':p.name.includes('Carbon')?'Carbon':'Aluminium','Spine':(spine||'400'),'Quantity':'12 arrows (1 dozen)','Straightness':'±0.001 inch','Nocks':'Press-fit, pre-installed','Fletching':'3 x 1.75" vanes','Point weight':'100 grain','Recommended for':'Field & target'};
+    D.about='A spine-matched, weight-sorted dozen built for repeatable arrow flight. Each shaft is checked for straightness and grouped so every arrow in the set behaves the same on release. Ships fully fletched and nocked — open the box, set your nocking point, and shoot.';
+  } else if(c==='Targets'){
+    D.highlights=[['WA 10-ring','Official World Archery 10-ring scoring face.'],['Weatherproof','UV-stable inks hold up to outdoor sessions.'],['High visibility','Crisp ring definition for clear scoring at distance.']];
+    D.specs={'Face size':(numFrom(p.name,/(\d{2})cm/)||'80')+' cm','Scoring':'WA 10-ring','Material':'Heavy weatherproof paper','Print':'UV-stable inks','Pack':'Single face','Use':'Indoor & outdoor','Recommended for':'All levels'};
+    D.about='An official World Archery 10-ring target face printed on heavy weatherproof stock with UV-stable inks. Ring definition stays crisp session after session, indoors or out, so scoring is never in doubt.';
+  } else if(c==='Risers'){
+    D.highlights=[['Carbon ILF riser','Machined carbon riser for a dead-in-the-hand feel.'],['Elite geometry','Deflex geometry for a stable, forgiving shot.'],['Fully adjustable','Tiller, limb alignment and plunger all adjustable.']];
+    D.specs={'Type':'Recurve riser','Length':'25 inches','Fitting':'ILF','Material':'Machined carbon','Weight':'1.2 kg','Handedness':'Right hand','Adjustments':'Tiller, alignment, plunger','Recommended for':'Elite / competition'};
+    D.about='A machined carbon ILF riser for archers chasing the last few points. The deflex geometry and dead-in-the-hand balance make for an exceptionally stable, forgiving platform, with full adjustability for tiller, limb alignment and plunger tension.';
+  } else if(c==='Protective Gear'){
+    D.highlights=[['Full-length protection','Covers the full forearm from string slap.'],['Breathable leather','Genuine leather with ventilated backing.'],['Secure fit','Adjustable straps stay put through every shot.']];
+    D.specs={'Type':'Arm guard','Length':'Full forearm','Material':'Genuine leather','Closure':'Adjustable straps','Sizing':'One size (adjustable)','Recommended for':'Beginner to competition'};
+    D.about='A full-length leather arm guard that ends string slap for good. The ventilated backing keeps your forearm cool through long sessions, and the adjustable straps hold it exactly where you set it.';
+  } else if(c==='Maintenance'){
+    D.highlights=[['Complete kit','Everything you need to keep a string in top condition.'],['Extends string life','Regular waxing prevents fraying and stretch.'],['Compact','Fits any quiver pocket or kit bag.']];
+    D.specs={'Type':'Maintenance kit','Contents':'String wax, applicator, cloth','Use':'All bow strings','Pack':'Single kit','Recommended for':'All levels'};
+    D.about='A compact string-care kit that pays for itself many times over. Regular waxing keeps your string supple, prevents fraying and reduces stretch — protecting both your equipment and your consistency.';
+  } else {
+    D.highlights=[['Precision engineered','Built to competition tolerances.'],['Durable materials','Carbon and alloy construction for a long service life.'],['Easy to fit','Standard fittings for a quick, tool-light setup.']];
+    D.specs={'Category':c,'Material':'Carbon / alloy','Fitting':'Standard','Recommended for':'Intermediate to competition'};
+    D.about='A precision accessory built to competition tolerances, with durable carbon and alloy construction and standard fittings for a fast, tool-light setup.';
+  }
+  return D;
+}
+
+// ── Review pool (deterministic per product) ──
+const REV_NAMES=['Arjun Mehta','Priya Nair','Rohit Sharma','Sneha Iyer','Vikram Rao','Ananya Das','Karan Singh','Meera Pillai','Aditya Bose','Divya Menon'];
+const REV_TITLES=['Excellent quality','Exactly as described','Great value for money','Highly recommended','Perfect for competition','Impressed with the finish'];
+const REV_TEXTS=[
+  'Arrived well-packed and exactly as described. Quality is genuinely competition standard — you can feel the difference the moment you shoot it.',
+  'Been using it for a few weeks now across training and a ranking shoot. Consistent, well-made, and the finish is excellent. Worth every rupee.',
+  'Fast PAN-India delivery and the product is spot on. My coach was impressed with the build quality. Will be ordering again.',
+  'Great value compared to what I paid earlier elsewhere. Setup was simple and it performed perfectly right out of the box.',
+  'Solid, precise, and clearly made for serious archers. Grouping improved noticeably after switching to this. Very happy with the purchase.',
+];
+function seededReviews(p){
+  const n=Math.min(3,Math.max(2,Math.round(p.rating)));
+  const out=[];
+  for(let i=0;i<n;i++){
+    const idx=(p.id*7+i*3);
+    const rt=Math.max(4,Math.round(p.rating)-(i===n-1&&p.rating<4.7?1:0));
+    out.push({name:REV_NAMES[idx%REV_NAMES.length],rating:rt,title:REV_TITLES[idx%REV_TITLES.length],text:REV_TEXTS[idx%REV_TEXTS.length],date:['2 weeks ago','1 month ago','3 weeks ago','2 months ago'][i%4],verified:true});
+  }
+  return out;
+}
+function starStr(r){const full=Math.round(r);return '★'.repeat(full)+'☆'.repeat(5-full);}
+function inr(n){return '₹'+Number(n).toLocaleString('en-IN');}
+function relCard(r){const u=ArcheryReco.urgency(r);return `<a class="pd-rel" href="product.html?id=${r.id}">
+  <div class="pd-rel-img" style="background:${r.bg};position:relative;">${u?`<div class="pd-urgency" style="background:${u.c};top:8px;right:8px;font-size:9px;padding:3px 7px;">${u.t}</div>`:''}<svg viewBox="0 0 80 80" fill="none" stroke="${r.color}" stroke-width="1.2" stroke-linecap="round">${getProductSVG(r.icon,r.color)}</svg></div>
+  <div class="pd-rel-body"><div class="pd-rel-name">${r.name}</div><div class="pd-rel-price">${inr(r.price)}</div></div>
+</a>`;}
+
+let CURRENT=null, QTY=1;
+
+function render(p){
+  document.title=p.name+' — Archery.Services';
+  const det=buildDetail(p);
+  const save=(p.was&&p.was>p.price)?Math.round((1-p.price/p.was)*100):0;
+  const stockClass=p.stock<=5?'low':'in';
+  const stockText=p.stock<=0?'Out of stock':(p.stock<=5?`Only ${p.stock} left in stock`:'In stock');
+  const meta=CAT_META[p.category]||['recurve','#C9A227'];
+  const svg=p.imgUrl?`<img src="${p.imgUrl}" alt="${p.name}">`:`<svg viewBox="0 0 80 80" fill="none" stroke="${p.color}" stroke-width="1.2" stroke-linecap="round">${getProductSVG(p.icon,p.color)}</svg>`;
+  const thumbBg=['#17181D','#1D1E24','#131316'];
+  const reviews=seededReviews(p);
+  const dist=[0,0,0,0,0];reviews.forEach(r=>dist[5-r.rating]++);
+  const relatedList=CATALOG.filter(x=>x.category===p.category&&x.id!==p.id).slice(0,4);
+  const related=(relatedList.length?relatedList:CATALOG.filter(x=>x.id!==p.id).slice(0,4));
+
+  document.getElementById('pd-root').innerHTML=`
+    <div class="pd-crumb"><a href="index.html">Home</a> › <a href="shop.html">Shop</a> › <a href="shop.html">${p.category}</a> › <span>${p.name}</span></div>
+    <div class="pd-top">
+      <div class="pd-gallery">
+        <div class="pd-main-img" id="pd-main">${save>0?`<div class="pd-badge">-${save}%</div>`:''}${(function(){const u=ArcheryReco.urgency(p);return u?`<div class="pd-urgency" style="background:${u.c}">${u.t}</div>`:'';})()}${svg}</div>
+        <div class="pd-thumbs">
+          ${[0,1,2].map(i=>`<div class="pd-thumb ${i===0?'active':''}" style="background:${thumbBg[i]};" onclick="this.parentElement.querySelectorAll('.pd-thumb').forEach(t=>t.classList.remove('active'));this.classList.add('active');">${p.imgUrl?`<img src="${p.imgUrl}">`:`<svg viewBox="0 0 80 80" fill="none" stroke="${p.color}" stroke-width="1.2" stroke-linecap="round">${getProductSVG(p.icon,p.color)}</svg>`}</div>`).join('')}
+        </div>
+      </div>
+      <div class="pd-buybox">
+        <div class="pd-brand">${p.brand||p.category}</div>
+        <h1 class="pd-title">${p.name}</h1>
+        <div class="pd-ratingline">
+          <span class="pd-rating-pill">${p.rating.toFixed(1)} ★</span>
+          <span class="pd-stars">${starStr(p.rating)}</span>
+          <span class="pd-rating-count"><a href="#reviews">${p.reviews.toLocaleString('en-IN')} ratings</a></span>
+        </div>
+        <div class="pd-live"><span class="pd-live-dot"></span><b>${ArcheryReco.liveViewers(p.id)}</b> people are viewing this now · <b>${ArcheryReco.soldRecently(p.id)}</b> bought in the last 24h</div>
+        <div class="pd-divider"></div>
+        <div class="pd-price-row">
+          <span class="pd-price">${inr(p.price)}</span>
+          ${p.was?`<span class="pd-was">${inr(p.was)}</span>`:''}
+          ${save>0?`<span class="pd-save">${save}% off</span>`:''}
+        </div>
+        <div class="pd-tax">Inclusive of all taxes · 10% GST + 5% platform fee shown at checkout</div>
+        <div class="pd-stock ${stockClass}"><span class="dot"></span>${stockText}</div>
+        <div class="pd-deliver">
+          <div class="pd-deliver-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>Delivery</div>
+          <div class="pd-pin">
+            <input id="pd-pin-input" inputmode="numeric" maxlength="6" placeholder="Enter 6-digit pincode">
+            <button onclick="pdCheckPin()">Check</button>
+          </div>
+          <div class="pd-deliver-out" id="pd-deliver-out">${p.price>=999?'<b>Free standard delivery</b> across India · Same-day available in metro pincodes':'Standard delivery <b>₹49</b> · Free on orders over ₹999'}</div>
+        </div>
+        <div class="pd-qty-row">
+          <span class="pd-qty-label">Quantity</span>
+          <div class="pd-qty"><button onclick="pdQty(-1)">−</button><span id="pd-qty">1</span><button onclick="pdQty(1)">+</button></div>
+        </div>
+        <div class="pd-actions">
+          <button class="pd-add" onclick="pdAdd()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>Add to Cart</button>
+          <button class="pd-buy" onclick="pdBuy()">Buy Now</button>
+        </div>
+        <div class="pd-trust">
+          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><b>Secure payment</b><small>Razorpay protected</small></div>
+          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg><b>7-day returns</b><small>Easy replacement</small></div>
+          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg><b>Genuine goods</b><small>Verified sellers</small></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pd-section">
+      <div class="pd-h2">Highlights</div>
+      <div class="pd-highlights">
+        ${det.highlights.map(h=>`<div class="pd-hl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><div><b>${h[0]}</b><span>${h[1]}</span></div></div>`).join('')}
+      </div>
+    </div>
+
+    <div class="pd-section">
+      <div class="pd-h2">Specifications</div>
+      <table class="pd-specs">${Object.entries(det.specs).map(([k,v])=>`<tr><td>${k}</td><td>${v}</td></tr>`).join('')}</table>
+    </div>
+
+    <div class="pd-section">
+      <div class="pd-h2">Description</div>
+      <div class="pd-about"><p>${det.about}</p></div>
+    </div>
+
+    <div class="pd-section" id="reviews">
+      <div class="pd-h2">Ratings &amp; Reviews</div>
+      <div class="pd-rev-top">
+        <div class="pd-rev-score">
+          <div class="pd-rev-big">${p.rating.toFixed(1)}</div>
+          <div class="pd-stars">${starStr(p.rating)}</div>
+          <div class="pd-rev-of">${p.reviews.toLocaleString('en-IN')} verified ratings</div>
+        </div>
+        <div class="pd-rev-bars">
+          ${[5,4,3,2,1].map(st=>{const pct=st===Math.round(p.rating)?68:st===Math.round(p.rating)-1?20:st>Math.round(p.rating)?6:2;return `<div class="pd-rev-bar"><span>${st}★</span><div class="pd-rev-bar-track"><div class="pd-rev-bar-fill" style="width:${pct}%"></div></div></div>`;}).join('')}
+        </div>
+      </div>
+      <div class="pd-rev-list">
+        ${reviews.map(r=>`<div class="pd-rev">
+          <div class="pd-rev-head"><div class="pd-rev-av">${r.name.split(' ').map(x=>x[0]).join('')}</div><span class="pd-rev-name">${r.name}</span>${r.verified?'<span class="pd-rev-verif">✓ Verified purchase</span>':''}<span class="pd-rev-date">${r.date}</span></div>
+          <div class="pd-rev-stars">${starStr(r.rating)}</div>
+          <div class="pd-rev-title">${r.title}</div>
+          <div class="pd-rev-text">${r.text}</div>
+        </div>`).join('')}
+      </div>
+    </div>
+
+    <div class="pd-section">
+      <div class="pd-h2">Because you viewed this</div>
+      <div class="pd-related">
+        ${(ArcheryReco.similar(p,CATALOG,4).length?ArcheryReco.similar(p,CATALOG,4):related).map(relCard).join('')}
+      </div>
+    </div>
+
+    <div class="pd-section" id="pd-reco-you" style="display:none;">
+      <div class="pd-h2">Recommended for you</div>
+      <div class="pd-related" id="pd-reco-you-grid"></div>
+    </div>
+
+    <div class="pd-section" id="pd-recent" style="display:none;">
+      <div class="pd-h2">Recently viewed</div>
+      <div class="pd-related" id="pd-recent-grid"></div>
+    </div>`;
+
+  document.getElementById('pd-mobilebar').style.display='';
+}
+
+function pdQty(d){QTY=Math.max(1,QTY+d);document.getElementById('pd-qty').textContent=QTY;}
+function pdCheckPin(){
+  const v=(document.getElementById('pd-pin-input').value||'').trim();
+  const out=document.getElementById('pd-deliver-out');
+  if(!/^\d{6}$/.test(v)){out.innerHTML='<b style="color:#E0902A">Enter a valid 6-digit pincode.</b>';return;}
+  const metro=['11','40','56','60','70','50','38','80'].some(x=>v.startsWith(x));
+  const d=new Date();d.setDate(d.getDate()+(metro?2:4));
+  const day=d.toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'});
+  out.innerHTML=`Deliver to <b>${v}</b> — ${CURRENT.price>=999?'<b>Free delivery</b>':'Delivery ₹49'} by <b>${day}</b>${metro?' · Same-day available':''}`;
+}
+function cartItem(){return {id:CURRENT.id,name:CURRENT.name,brand:CURRENT.brand,price:CURRENT.price,was:CURRENT.was,color:CURRENT.color,bg:CURRENT.bg,icon:CURRENT.icon,qty:QTY};}
+function pdAdd(){
+  let cart=JSON.parse(localStorage.getItem('archery_cart')||'[]');
+  const ex=cart.find(x=>x.id===CURRENT.id);
+  if(ex)ex.qty+=QTY; else cart.push(cartItem());
+  localStorage.setItem('archery_cart',JSON.stringify(cart));
+  ArcheryReco.trackAddToCart(CURRENT);
+  const t=document.getElementById('pd-toast');t.textContent='Added '+QTY+' × '+CURRENT.name.split('—')[0].trim()+' to cart';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);
+}
+function pdBuy(){pdAdd();location.href='checkout.html';}
+
+// Personalised strips (populate after the current view is recorded)
+function populateReco(){
+  const recent=ArcheryReco.recentlyViewed(CATALOG,8).filter(x=>x.id!==CURRENT.id).slice(0,6);
+  if(recent.length){document.getElementById('pd-recent').style.display='';document.getElementById('pd-recent-grid').innerHTML=recent.map(relCard).join('');}
+  if(ArcheryReco.hasHistory()){
+    const forYou=ArcheryReco.forYou(CATALOG,{exclude:[CURRENT.id,...recent.map(r=>r.id)],limit:6});
+    if(forYou.length){document.getElementById('pd-reco-you').style.display='';document.getElementById('pd-reco-you-grid').innerHTML=forYou.map(relCard).join('');}
+  }
+}
+
+// ── boot ──
+(async function(){
+  const id=parseInt(new URLSearchParams(location.search).get('id'))||1;
+  let base=CATALOG.find(x=>x.id===id)||CATALOG[0];
+  let p={...base};
+  try{
+    const data=await fetch('/api/products').then(r=>r.json());
+    if(Array.isArray(data)){
+      const live=data.find(x=>Number(x.id)===id);
+      if(live){
+        const meta=CAT_META[live.category]||['recurve','#C9A227'];
+        p={...base,id:Number(live.id),name:live.name,brand:live.brand||live.category||base.brand,
+           category:live.category||base.category,price:Number(live.price)||base.price,
+           was:live.was?Number(live.was):(live.was===null?null:base.was),
+           stock:live.stock!=null?Number(live.stock):base.stock,
+           imgUrl:live.imgUrl||null,icon:meta[0],color:meta[1],bg:'#17181D',
+           rating:base.rating,reviews:base.reviews};
+      }
+    }
+  }catch(e){/* use catalogue */}
+  CURRENT=p;
+  render(p);
+  populateReco();              // uses history from BEFORE this view
+  ArcheryReco.trackView(p);    // record this view for next time
+})();
+</script>
+<script>(function(){var s=document.createElement('script');s.src='nav.js';document.head.appendChild(s);})();</script>
+<script src="shared.js"></script>
+</body>
+</html>
