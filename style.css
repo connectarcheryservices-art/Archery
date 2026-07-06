@@ -65,8 +65,8 @@ nav.scrolled{background:#131316;border-bottom:1px solid rgba(201,162,39,.35);}
 .reveal-d1{transition-delay:.08s;}.reveal-d2{transition-delay:.16s;}.reveal-d3{transition-delay:.24s;}
 
 /* ── BUTTONS — solid gold / outline (flat, video style) ── */
-.btn-action{display:inline-flex;align-items:center;gap:8px;background:var(--gold);color:#131316;border:none;padding:13px 26px;border-radius:3px;font-family:'Oswald',sans-serif;font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;transition:all .2s;text-decoration:none;}
-.btn-action:hover{background:var(--gold-light);transform:translateY(-2px);}
+.btn-action,.btn-primary{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--gold);color:#131316;border:none;padding:13px 26px;border-radius:3px;font-family:'Oswald',sans-serif;font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;transition:all .2s;text-decoration:none;cursor:pointer;}
+.btn-action:hover,.btn-primary:hover{background:var(--gold-light);transform:translateY(-2px);}
 .btn-outline{display:inline-flex;align-items:center;gap:8px;background:transparent;color:#E6E8EE;border:1px solid rgba(255,255,255,.28);padding:13px 26px;border-radius:3px;font-family:'Oswald',sans-serif;font-size:13px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;transition:all .2s;text-decoration:none;}
 .btn-outline:hover{border-color:var(--gold);color:var(--gold);}
 

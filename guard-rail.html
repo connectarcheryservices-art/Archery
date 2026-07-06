@@ -70,7 +70,7 @@ body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;margin
 </head>
 <body>
 
-<div class="urgent-bar">🚨 Immediate safeguarding concern? Call the 24-hour welfare line: <strong>+41 800 100 200</strong> — or <a href="#report">submit a confidential report below</a></div>
+<div class="urgent-bar">🚨 Immediate safeguarding concern? Call the 24-hour welfare line: <strong>+91 1800 200 6200</strong> — or <a href="#report">submit a confidential report below</a></div>
 
 <nav style="position:sticky;top:0;z-index:300;background:#fff;border-bottom:1px solid rgba(15,95,168,.1);display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:68px;">
   <a href="/" style="font-family:'Oswald',sans-serif;font-size:20px;font-weight:700;color:#0F5FA8;text-decoration:none;">Archery<span style="color:#C9A227">.</span>Services</a>
@@ -170,12 +170,12 @@ const PROTOCOLS = [
 ];
 
 const OFFICERS = [
-  {name:'Club Welfare Officer',role:'Club-Level Welfare',phone:'+41 79 100 2001',email:'welfare@archery-club.example',qualified:'Child Protection Level 3',area:'Local club',icon:'🛡'},
-  {name:'Regional Welfare Lead',role:'Regional Welfare Lead',phone:'+41 79 100 2002',email:'welfare.north@archery-fed.example',qualified:'Designated Safeguarding Lead',area:'Northern region',icon:'🌍'},
-  {name:'Federation Welfare Director',role:'National Federation',phone:'+41 22 456 7800',email:'welfare@archery-fed.example',qualified:'National Safeguarding Coordinator',area:'National level',icon:'🏛'},
-  {name:'Independent Safeguarding Advisor',role:'Independent Review',phone:'+41 22 456 7801',email:'independent@archery-fed.example',qualified:'Social Work & Child Protection PhD',area:'Independent',icon:'⚖️'},
-  {name:'Anti-Bullying Lead',role:'Welfare Specialist',phone:'+41 79 100 2003',email:'antibullying@archery-fed.example',qualified:'Mentoring and Mediation Certified',area:'All clubs',icon:'🤝'},
-  {name:'24-Hour Welfare Helpline',role:'Emergency Welfare Line',phone:'+41 800 100 200',email:'urgent@archery-services.example',qualified:'Staffed 24/7',area:'Worldwide',icon:'📞'},
+  {name:'Club Welfare Officer',role:'Club-Level Welfare',phone:'+91 98200 10021',email:'welfare@archery-club.example',qualified:'Child Protection Level 3',area:'Local club',icon:'🛡'},
+  {name:'Regional Welfare Lead',role:'Regional Welfare Lead',phone:'+91 98200 10022',email:'welfare.north@archery-fed.example',qualified:'Designated Safeguarding Lead',area:'Northern region',icon:'🌍'},
+  {name:'Federation Welfare Director',role:'National Federation',phone:'+91 11 4567 7800',email:'welfare@archery-fed.example',qualified:'National Safeguarding Coordinator',area:'National level',icon:'🏛'},
+  {name:'Independent Safeguarding Advisor',role:'Independent Review',phone:'+91 11 4567 7801',email:'independent@archery-fed.example',qualified:'Social Work & Child Protection PhD',area:'Independent',icon:'⚖️'},
+  {name:'Anti-Bullying Lead',role:'Welfare Specialist',phone:'+91 98200 10023',email:'antibullying@archery-fed.example',qualified:'Mentoring and Mediation Certified',area:'All clubs',icon:'🤝'},
+  {name:'24-Hour Welfare Helpline',role:'Emergency Welfare Line',phone:'+91 1800 200 6200',email:'urgent@archery-services.example',qualified:'Staffed 24/7',area:'Worldwide',icon:'📞'},
 ];
 
 const RESOURCES = [
@@ -245,12 +245,12 @@ async function submitReport(){
   const res=await fetch('/api/reports',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).then(r=>r.json()).catch(()=>null);
   if(btn){btn.textContent=orig;btn.disabled=false;}
   if(res&&res.ok){
-    alert('Your report has been submitted securely and will be reviewed by the Welfare Officer team within 24 hours. If this is an emergency, please call +41 800 100 200 immediately.');
+    alert('Your report has been submitted securely and will be reviewed by the Welfare Officer team within 24 hours. If this is an emergency, please call +91 1800 200 6200 immediately.');
     document.getElementById('r-desc').value='';
     document.getElementById('r-name').value='';
     document.getElementById('r-email').value='';
   } else {
-    alert((res&&res.error)||'Sorry, your report could not be submitted. If this is urgent, please call +41 800 100 200 immediately.');
+    alert((res&&res.error)||'Sorry, your report could not be submitted. If this is urgent, please call +91 1800 200 6200 immediately.');
   }
 }
 
