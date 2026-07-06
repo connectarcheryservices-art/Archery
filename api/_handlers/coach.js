@@ -3,7 +3,7 @@
 // otherwise returns {fallback:true} and the page answers from its built-in
 // coaching knowledge base. Keys never touch the browser.
 'use strict';
-const { cors, json, readBody } = require('./_lib/respond');
+const { cors, json, readBody } = require('../_lib/respond');
 
 const SYSTEM = `You are the AI Coach on Archery.Services, an Indian archery platform.
 You coach recurve, compound and barebow archers from beginner to national level.

@@ -1,7 +1,7 @@
 // /api/posts/<id>/reply  and  /api/posts/<id>/like — public forum interactions.
 'use strict';
-const { cors, json, readBody } = require('../../_lib/respond');
-const { q } = require('../../_lib/db');
+const { cors, json, readBody } = require('../_lib/respond');
+const { q } = require('../_lib/db');
 
 module.exports = async (req, res) => {
   cors(res);

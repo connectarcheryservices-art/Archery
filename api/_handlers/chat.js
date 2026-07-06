@@ -1,8 +1,8 @@
 // /api/chat — visitor sends a message (creates/append thread); admin lists threads.
 'use strict';
-const { cors, json, readBody } = require('./_lib/respond');
-const { checkAdmin } = require('./_lib/auth');
-const { q } = require('./_lib/db');
+const { cors, json, readBody } = require('../_lib/respond');
+const { checkAdmin } = require('../_lib/auth');
+const { q } = require('../_lib/db');
 
 const rowToObj = row => { const o = {}; for (const [k,v] of Object.entries(row)) o[k.replace(/_([a-z])/g, (_,c) => c.toUpperCase())] = v; return o; };
 

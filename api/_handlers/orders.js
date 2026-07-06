@@ -1,9 +1,9 @@
 // /api/orders — admin: list all orders (newest first).
 'use strict';
-const { cors, json } = require('./_lib/respond');
-const { checkAdmin } = require('./_lib/auth');
-const { q } = require('./_lib/db');
-const { rowToObj } = require('./_lib/crud');
+const { cors, json } = require('../_lib/respond');
+const { checkAdmin } = require('../_lib/auth');
+const { q } = require('../_lib/db');
+const { rowToObj } = require('../_lib/crud');
 
 module.exports = async (req, res) => {
   cors(res);

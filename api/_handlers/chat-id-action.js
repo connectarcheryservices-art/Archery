@@ -1,8 +1,8 @@
 // /api/chat/<id>/reply — admin replies to a visitor thread.
 'use strict';
-const { cors, json, readBody } = require('../../_lib/respond');
-const { checkAdmin } = require('../../_lib/auth');
-const { q } = require('../../_lib/db');
+const { cors, json, readBody } = require('../_lib/respond');
+const { checkAdmin } = require('../_lib/auth');
+const { q } = require('../_lib/db');
 
 module.exports = async (req, res) => {
   cors(res);

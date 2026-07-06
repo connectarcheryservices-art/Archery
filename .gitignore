@@ -19,3 +19,5 @@ data.json.bak
 .DS_Store
 Thumbs.db
 data.old.json
+
+.vercel
