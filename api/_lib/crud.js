@@ -5,6 +5,7 @@
 const { q } = require('./db');
 const { checkAdmin } = require('./auth');
 const { json, readBody } = require('./respond');
+const { ROWS: SEED_ROWS } = require('./seed');
 
 const TABLES = {
   products:    ['name','brand','description','price','was','category','stock','img_url','active'],
@@ -31,11 +32,21 @@ function pick(table, data) {
 
 async function listOrCreate(table, req, res) {
   if (req.method === 'GET') {
-    const sql = checkAdmin(req)
+    const admin = checkAdmin(req);
+    const sql = admin
       ? `select * from ${table} order by id desc`
       : `select * from ${table} where active is not false order by id desc`;
-    const r = await q(sql);
-    return json(res, r.rows.map(rowToObj));
+    try {
+      const r = await q(sql);
+      // DB reachable but the table is still empty → serve seed so the page isn't blank.
+      // (Admins see the true empty state so they know nothing is stored yet.)
+      if (!r.rows.length && !admin && SEED_ROWS[table]) return json(res, SEED_ROWS[table]);
+      return json(res, r.rows.map(rowToObj));
+    } catch (e) {
+      // DB unavailable (e.g. DATABASE_URL not set yet) → seed keeps the site live.
+      if (SEED_ROWS[table]) return json(res, SEED_ROWS[table]);
+      throw e;
+    }
   }
   if (req.method === 'POST') {
     if (!checkAdmin(req)) return json(res, { error: 'Unauthorised' }, 401);
