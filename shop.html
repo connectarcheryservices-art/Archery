@@ -673,14 +673,21 @@ function strip(title, sub, items){
   if(!items || !items.length) return '';
   return `<div class="reco-strip"><div class="reco-strip-head"><div><div class="reco-strip-title">${title}</div><div class="reco-strip-sub">${sub}</div></div></div><div class="reco-row">${items.map(stripCard).join('')}</div></div>`;
 }
-function renderRecoStrips(){
+async function renderRecoStrips(){
   const el=document.getElementById('reco-strips'); if(!el||!window.ArcheryReco) return;
   let html='';
   const recent=ArcheryReco.recentlyViewed(PRODUCTS,8);
   if(ArcheryReco.hasHistory()){
     html+=strip('Recommended for you','Picked from what you browse',ArcheryReco.forYou(PRODUCTS,{exclude:recent.slice(0,2).map(r=>r.id),limit:6}));
   }
-  html+=strip('Trending now','Most-viewed gear this week',ArcheryReco.trending(PRODUCTS,6));
+  // Trending prefers REAL server data (aggregate product views, last 14 days); falls back to the on-device signal.
+  let trending=null;
+  try{
+    const server=await fetch('/api/products?sort=trending&limit=6').then(r=>r.json());
+    if(Array.isArray(server)&&server.length) trending=server.map(p=>({...p,img:p.imgUrl||p.img}));
+  }catch(e){}
+  if(!trending||!trending.length) trending=ArcheryReco.trending(PRODUCTS,6);
+  html+=strip('Trending now','Most-viewed gear this week',trending);
   if(recent.length>1) html+=strip('Recently viewed','Jump back in',recent);
   el.innerHTML=html;
 }

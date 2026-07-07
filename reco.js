@@ -28,6 +28,12 @@
       if(!prod) return;
       const b = get();
       bump(b.views, prod.id, 1);
+      // Beacon the view to the server so real trending can be computed from aggregate demand.
+      try {
+        var payload = JSON.stringify({ type:'product_view', value:Number(prod.id), path:'/product.html?id='+prod.id });
+        if (navigator.sendBeacon) navigator.sendBeacon('/api/analytics', new Blob([payload],{type:'application/json'}));
+        else fetch('/api/analytics',{method:'POST',headers:{'Content-Type':'application/json'},body:payload,keepalive:true}).catch(function(){});
+      } catch(e){}
       if(prod.category) bump(b.cats, prod.category, 3);
       bump(b.prices, priceBand(prod.price), 2);
       // recently viewed (most-recent first, unique, capped)

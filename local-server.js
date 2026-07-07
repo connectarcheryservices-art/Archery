@@ -10,6 +10,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { computeQuote } = require('./api/_lib/pricing');
+const { applyToSeed } = require('./api/_lib/query');
 
 const PORT = process.env.PORT || 3000;
 const ROOT = __dirname;
@@ -456,8 +457,21 @@ async function api(parts, method, body, req, res){
   // Content collections (products, tournaments, athletes, jobs, knowledge, news, profiles)
   if (CONTENT.includes(resource)) {
     if (method === 'GET' && id === null) {
-      const list = isAdmin(req) ? STORE[resource] : STORE[resource].filter(x=>x.active!==false);
-      return send(res, list.slice().sort((a,b)=>b.id-a.id));
+      let list = (isAdmin(req) ? STORE[resource] : STORE[resource].filter(x=>x.active!==false)).slice().sort((a,b)=>b.id-a.id);
+      // Parse query string and apply server-side search / filter / sort (parity with api/_lib/crud.js).
+      let query = {};
+      try { new URL(req.url, 'http://localhost').searchParams.forEach((v,k)=>{query[k]=v;}); } catch(e){}
+      if (resource === 'products' && query.sort === 'trending') {
+        // Real trending from logged product_view events (last 14 days).
+        const cutoff = Date.now() - 14*24*3600*1000;
+        const views = {};
+        (STORE.events||[]).forEach(e=>{ if(e.type==='product_view' && (e.ts||0)>=cutoff){ const pid=Number(e.value); views[pid]=(views[pid]||0)+1; } });
+        list = list.slice().sort((a,b)=>(views[b.id]||0)-(views[a.id]||0));
+        const lim = Math.min(200, parseInt(query.limit,10)||200);
+        return send(res, list.slice(0, lim));
+      }
+      if (Object.keys(query).length) list = applyToSeed(resource, list, query);
+      return send(res, list);
     }
     if (method === 'GET' && id !== null) {
       const item = STORE[resource].find(x=>x.id===id);

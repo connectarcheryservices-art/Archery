@@ -6,6 +6,7 @@ const { q } = require('./db');
 const { checkAdmin } = require('./auth');
 const { json, readBody } = require('./respond');
 const { ROWS: SEED_ROWS } = require('./seed');
+const { buildListQuery, applyToSeed } = require('./query');
 
 const TABLES = {
   products:    ['name','brand','description','price','was','category','stock','img_url','active'],
@@ -33,18 +34,35 @@ function pick(table, data) {
 async function listOrCreate(table, req, res) {
   if (req.method === 'GET') {
     const admin = checkAdmin(req);
-    const sql = admin
-      ? `select * from ${table} order by id desc`
-      : `select * from ${table} where active is not false order by id desc`;
+    const query = req.query || {};
+    const qy = buildListQuery(table, query, { admin });
     try {
-      const r = await q(sql);
-      // DB reachable but the table is still empty → serve seed so the page isn't blank.
-      // (Admins see the true empty state so they know nothing is stored yet.)
-      if (!r.rows.length && !admin && SEED_ROWS[table]) return json(res, SEED_ROWS[table]);
+      let sql, params;
+      if (qy.wantsTrending) {
+        // Real trending: order products by product-view count over the last 14 days
+        // (analytics_events, type='product_view', value = product id), then by rating.
+        sql = `select p.* from products p
+               left join (
+                 select value::bigint pid, count(*)::int v
+                 from analytics_events
+                 where type='product_view' and created_at > now() - interval '14 days'
+                 group by value::bigint
+               ) t on t.pid = p.id
+               ${qy.whereSql}
+               order by coalesce(t.v,0) desc, p.id desc
+               limit ${qy.limit} offset ${qy.offset}`;
+        params = qy.params;
+      } else {
+        sql = `select * from ${table} ${qy.whereSql} order by ${qy.order} limit ${qy.limit} offset ${qy.offset}`;
+        params = qy.params;
+      }
+      const r = await q(sql, params);
+      // DB reachable but the table is still empty and no filters applied → seed so the page isn't blank.
+      if (!r.rows.length && !admin && !qy.hasFilters && SEED_ROWS[table]) return json(res, SEED_ROWS[table]);
       return json(res, r.rows.map(rowToObj));
     } catch (e) {
-      // DB unavailable (e.g. DATABASE_URL not set yet) → seed keeps the site live.
-      if (SEED_ROWS[table]) return json(res, SEED_ROWS[table]);
+      // DB unavailable (e.g. DATABASE_URL not set yet) → seed, filtered/sorted in-memory so search still works offline.
+      if (SEED_ROWS[table]) return json(res, applyToSeed(table, SEED_ROWS[table], query));
       throw e;
     }
   }
