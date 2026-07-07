@@ -126,6 +126,21 @@ a,button,.card,.stat-card,.btn-action,.btn-outline,.btn-ghost,.btn-primary-nav{t
 .page-hero .stat-label{color:rgba(255,255,255,.62);}
 .page-hero-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-top:32px;}
 
+/* ── MOBILE HARDENING — measured real-device fixes ── */
+@media(max-width:920px){
+  .t-main{grid-template-columns:1fr;}   /* tournaments: sidebar stacks under content */
+}
+@media(max-width:768px){
+  /* tab strips become swipeable instead of forcing page width */
+  .tab-row,.tab-bar,.t-tabs{max-width:100%;overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+  .tab-row::-webkit-scrollbar,.tab-bar::-webkit-scrollbar,.t-tabs::-webkit-scrollbar{display:none;}
+  .tab-row .tab-btn,.tab-bar .tab-btn,.t-tabs .t-tab,.tab-row button,.tab-bar button,.t-tabs button{flex-shrink:0;}
+  .billing-row{flex-wrap:wrap;justify-content:center;}
+  .live-scores{flex-wrap:wrap;}
+  .test-table{display:block;overflow-x:auto;}
+  .page-hero{overflow:hidden;}
+}
+
 /* ── Light "day" theme — paper white bands, same accents ── */
 [data-theme="day"]{
   --forest:#F5F6F8; --forest-2:#FFFFFF; --forest-3:#ECEDF1; --forest-4:#DFE1E7;

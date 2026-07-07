@@ -167,6 +167,42 @@
       + '<a href="#" class="nm-join" onclick="localStorage.removeItem(\'archery_user\');localStorage.removeItem(\'archery_user_token\');location.reload();return false;">Sign out</a>';
   })();
 
+  // ── TOASTS — branded notifications replacing native alert() on public pages ──
+  (function toasts(){
+    if (page.includes('admin')) return;
+    var wrap = document.createElement('div'); wrap.id = 'as-toasts';
+    document.body.appendChild(wrap);
+    var css = document.createElement('style');
+    css.id = 'as-toasts-css';
+    css.textContent =
+      '#as-toasts{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:99999;display:flex;flex-direction:column;gap:8px;align-items:center;width:min(430px,calc(100vw - 28px));pointer-events:none;}' +
+      '.as-toast{pointer-events:auto;display:flex;align-items:flex-start;gap:10px;width:100%;background:#17181D;border:1px solid rgba(255,255,255,.12);border-left:3px solid #C9A227;border-radius:10px;padding:12px 14px;color:#F5F6F8;font-size:13.5px;line-height:1.55;box-shadow:0 16px 40px rgba(0,0,0,.5);opacity:0;transform:translateY(14px);transition:opacity .28s,transform .28s;}' +
+      '.as-toast.show{opacity:1;transform:none;}' +
+      '.as-toast.err{border-left-color:#D22730;}.as-toast.ok{border-left-color:#22C55E;}' +
+      '.as-toast .as-x{margin-left:auto;background:none;border:none;color:#7E8290;font-size:16px;cursor:pointer;line-height:1;padding:0 0 0 6px;flex-shrink:0;}';
+    document.head.appendChild(css);
+    function toast(msg, type, ms){
+      var t = document.createElement('div');
+      t.className = 'as-toast' + (type ? ' ' + type : '');
+      var color = type === 'err' ? '#E04653' : type === 'ok' ? '#22C55E' : '#C9A227';
+      var icon = type === 'err' ? '⚠' : type === 'ok' ? '✓' : 'ℹ';
+      var safe = String(msg).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+      t.innerHTML = '<span style="flex-shrink:0;color:' + color + ';font-weight:700;">' + icon + '</span><span>' + safe + '</span><button class="as-x" aria-label="Dismiss">&times;</button>';
+      var timer = setTimeout(hide, ms || (safe.length > 90 ? 7000 : 4500));
+      function hide(){ clearTimeout(timer); t.classList.remove('show'); setTimeout(function(){ t.remove(); }, 300); }
+      t.querySelector('.as-x').addEventListener('click', hide);
+      wrap.appendChild(t);
+      while (wrap.children.length > 3) wrap.removeChild(wrap.firstChild);
+      requestAnimationFrame(function(){ t.classList.add('show'); });
+    }
+    window.ArcheryUI = { toast: toast };
+    // Legacy alert() calls surface as branded toasts (tone inferred from the message).
+    window.alert = function(m){
+      var s = String(m);
+      toast(s, /sorry|could not|cannot|failed|invalid|required|please enter|please choose|wrong|error|unable/i.test(s) ? 'err' : 'ok');
+    };
+  })();
+
   // ── ACTIVE NAV LINKS ──
   document.querySelectorAll('.nav-links a').forEach(a => {
     const href = a.getAttribute('href');
