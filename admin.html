@@ -676,10 +676,10 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
     <div class="panel" id="panel-analytics">
       <div class="breadcrumb">Admin <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg> <span>Analytics</span></div>
       <div class="stats-grid">
-        <div class="stat-card" style="--c:rgba(59,130,246,.15);"><div class="stat-label">Page Views (30d)</div><div class="stat-value">284<span>K</span></div><div class="stat-change up">↑ +24% vs last month</div></div>
-        <div class="stat-card" style="--c:rgba(34,197,94,.15);"><div class="stat-label">Unique Visitors</div><div class="stat-value">92<span>K</span></div><div class="stat-change up">↑ +18%</div></div>
-        <div class="stat-card" style="--c:rgba(201,162,39,.15);"><div class="stat-label">Avg Session (min)</div><div class="stat-value">4<span>.2</span></div><div class="stat-change up">↑ Good engagement</div></div>
-        <div class="stat-card" style="--c:rgba(239,68,68,.15);"><div class="stat-label">Bounce Rate</div><div class="stat-value">28<span>%</span></div><div class="stat-change up">↓ Improving</div></div>
+        <div class="stat-card" style="--c:rgba(59,130,246,.15);"><div class="stat-label">Page Views (30d)</div><div class="stat-value" id="an-views">—</div></div>
+        <div class="stat-card" style="--c:rgba(34,197,94,.15);"><div class="stat-label">Total Orders</div><div class="stat-value" id="an-orders">—</div></div>
+        <div class="stat-card" style="--c:rgba(201,162,39,.15);"><div class="stat-label">Paid Orders</div><div class="stat-value" id="an-paid">—</div></div>
+        <div class="stat-card" style="--c:rgba(239,68,68,.15);"><div class="stat-label">Revenue (paid)</div><div class="stat-value" id="an-rev">—</div></div>
       </div>
       <div class="card">
         <div class="card-title">Daily Page Views — Last 14 Days</div>
@@ -848,14 +848,23 @@ function toggleInlineForm(id){
 
 // ── LOAD STATS ──
 async function loadStats(){
-  const s = await get('stats');
-  if(!s) return;
-  document.getElementById('s-athletes').textContent   = s.totalAthletes?.toLocaleString('en-IN') || '–';
-  document.getElementById('s-clubs').textContent      = s.totalClubs?.toLocaleString('en-IN') || '–';
-  document.getElementById('s-tournaments').textContent= s.totalTournaments || '–';
-  document.getElementById('s-revenue').innerHTML      = '₹' + (s.totalRevenue/10000000).toFixed(1) + '<span>Cr</span>';
-  document.getElementById('s-views').innerHTML        = (s.pageViews/1000).toFixed(0) + '<span>K</span>';
-  document.getElementById('s-signups').textContent    = s.newSignups?.toLocaleString('en-IN') || '–';
+  const a = await get('analytics');
+  if(!a || a.error) return;
+  const c = a.counts || {};
+  const inr = n => Number(n||0).toLocaleString('en-IN');
+  const setCard = (id, val, label) => {
+    const el = document.getElementById(id); if(!el) return;
+    el.innerHTML = val;
+    const card = el.closest('.stat-card');
+    if(card){ const lb = card.querySelector('.stat-label'); if(lb && label) lb.textContent = label;
+              const ch = card.querySelector('.stat-change'); if(ch) ch.remove(); }
+  };
+  setCard('s-athletes', inr(c.athletes), 'Athletes');
+  setCard('s-clubs', inr(c.products), 'Products Listed');
+  setCard('s-tournaments', inr(c.tournaments), 'Tournaments');
+  setCard('s-revenue', '₹'+inr(a.revenue), 'Revenue (paid)');
+  setCard('s-views', inr(c.pageviews), 'Page Views');
+  setCard('s-signups', inr(c.orders_total), 'Total Orders');
 }
 
 // ── PRODUCTS ──
@@ -871,7 +880,7 @@ async function loadProducts(){
       <td>${p.stock}</td>
       <td><span class="td-badge ${p.active?'badge-active':'badge-inactive'}">${p.active?'Active':'Hidden'}</span></td>
       <td class="td-actions">
-        <button class="btn-toggle ${p.active?'':'off'}" onclick="toggleItem('products',${p.id},${p.active})">${p.active?'Hide':'Show'}</button>
+        <button class="btn-edit" onclick="openEdit('products',${p.id})">Edit</button><button class="btn-toggle ${p.active?'':'off'}" onclick="toggleItem('products',${p.id},${p.active})">${p.active?'Hide':'Show'}</button>
         <button class="btn-delete" onclick="deleteItem('products',${p.id})">Delete</button>
       </td>
     </tr>`).join('');
@@ -921,7 +930,7 @@ async function loadTournaments(){
       <td>${t.registered}</td>
       <td><span class="td-badge badge-${t.status}">${t.status}</span></td>
       <td class="td-actions">
-        <button class="btn-edit" onclick="toggleItem('tournaments',${t.id},false)">Edit Status</button>
+        <button class="btn-edit" onclick="openEdit('tournaments',${t.id})">Edit</button>
         <button class="btn-delete" onclick="deleteItem('tournaments',${t.id})">Delete</button>
       </td>
     </tr>`).join('');
@@ -946,7 +955,7 @@ async function loadAthletes(){
       <td>${a.pb}</td>
       <td><span class="td-badge ${a.active?'badge-active':'badge-inactive'}">${a.active?'Active':'Inactive'}</span></td>
       <td class="td-actions">
-        <button class="btn-toggle ${a.active?'':'off'}" onclick="toggleItem('athletes',${a.id},${a.active})">${a.active?'Deactivate':'Activate'}</button>
+        <button class="btn-edit" onclick="openEdit('athletes',${a.id})">Edit</button><button class="btn-toggle ${a.active?'':'off'}" onclick="toggleItem('athletes',${a.id},${a.active})">${a.active?'Deactivate':'Activate'}</button>
         <button class="btn-delete" onclick="deleteItem('athletes',${a.id})">Remove</button>
       </td>
     </tr>`).join('');
@@ -971,7 +980,7 @@ async function loadJobs(){
       <td>${j.salary}</td>
       <td><span class="td-badge ${j.active?'badge-active':'badge-inactive'}">${j.active?'Active':'Closed'}</span></td>
       <td class="td-actions">
-        <button class="btn-toggle ${j.active?'':'off'}" onclick="toggleItem('jobs',${j.id},${j.active})">${j.active?'Close':'Reopen'}</button>
+        <button class="btn-edit" onclick="openEdit('jobs',${j.id})">Edit</button><button class="btn-toggle ${j.active?'':'off'}" onclick="toggleItem('jobs',${j.id},${j.active})">${j.active?'Close':'Reopen'}</button>
         <button class="btn-delete" onclick="deleteItem('jobs',${j.id})">Delete</button>
       </td>
     </tr>`).join('');
@@ -1077,6 +1086,10 @@ async function delOrder(id){ if(!confirm('Delete this order?'))return; await del
 // ── ANALYTICS (real revenue series; demo fallback) ──
 async function loadAnalytics(){
   const a=await get('analytics');
+  if(a && !a.error){ const c=a.counts||{}; const inr=n=>Number(n||0).toLocaleString('en-IN');
+    const set=(id,v)=>{const el=document.getElementById(id); if(el)el.innerHTML=v;};
+    set('an-views', inr(c.pageviews30)); set('an-orders', inr(c.orders_total));
+    set('an-paid', inr(a.paidOrders)); set('an-rev', '₹'+inr(a.revenue)); }
   if(!a||a.error||!a.revenueSeries||!a.revenueSeries.length){ loadAnalyticsChart(); return; }
   const series=a.revenueSeries, max=Math.max(1,...series.map(s=>Number(s.v)));
   document.getElementById('analytics-chart').innerHTML=series.map(s=>`<div class="chart-bar" style="height:${(Number(s.v)/max*100).toFixed(0)}%;" title="₹${Number(s.v).toLocaleString('en-IN')}"></div>`).join('');
@@ -1137,13 +1150,13 @@ async function loadProfiles(){
   const data=await get('profiles'); if(!Array.isArray(data))return;
   const c=document.getElementById('prof-count'); if(c)c.textContent=data.length+' profiles';
   const tb=document.getElementById('profiles-tbody'); if(!tb)return;
-  tb.innerHTML=data.length?data.map(p=>`<tr><td class="td-name">${escA(p.name)}</td><td><a href="profile.html?h=${encodeURIComponent(p.handle||'')}" target="_blank" style="color:var(--gold);text-decoration:none;">/${escA(p.handle||'')}</a></td><td>${escA(p.headline||'')}</td><td>${escA(p.discipline||'')}</td><td class="td-actions"><span class="td-badge ${p.active!==false?'badge-active':'badge-inactive'}">${p.active!==false?'live':'hidden'}</span> <button class="btn-edit" onclick="setContent('profiles',${p.id},{active:${!(p.active!==false)}})">${p.active!==false?'Hide':'Show'}</button><button class="btn-delete" onclick="delContent('profiles',${p.id})">Delete</button></td></tr>`).join(''):'<tr><td colspan="5" style="padding:22px;color:var(--text-2);">No profiles yet.</td></tr>';
+  tb.innerHTML=data.length?data.map(p=>`<tr><td class="td-name">${escA(p.name)}</td><td><a href="profile.html?h=${encodeURIComponent(p.handle||'')}" target="_blank" style="color:var(--gold);text-decoration:none;">/${escA(p.handle||'')}</a></td><td>${escA(p.headline||'')}</td><td>${escA(p.discipline||'')}</td><td class="td-actions"><span class="td-badge ${p.active!==false?'badge-active':'badge-inactive'}">${p.active!==false?'live':'hidden'}</span> <button class="btn-edit" onclick="openEdit('profiles',${p.id})">Edit</button><button class="btn-edit" onclick="setContent('profiles',${p.id},{active:${!(p.active!==false)}})">${p.active!==false?'Hide':'Show'}</button><button class="btn-delete" onclick="delContent('profiles',${p.id})">Delete</button></td></tr>`).join(''):'<tr><td colspan="5" style="padding:22px;color:var(--text-2);">No profiles yet.</td></tr>';
 }
 async function loadNews(){
   const data=await get('news'); if(!Array.isArray(data))return;
   const c=document.getElementById('news-count'); if(c)c.textContent=data.length+' posts';
   const tb=document.getElementById('news-tbody'); if(!tb)return;
-  tb.innerHTML=data.length?data.map(n=>`<tr><td class="td-name">${escA(n.title)}</td><td>${escA(n.category||'')}</td><td>${escA(n.date||'')}</td><td class="td-actions"><span class="td-badge ${n.active!==false?'badge-active':'badge-inactive'}">${n.active!==false?'live':'hidden'}</span> <button class="btn-edit" onclick="setContent('news',${n.id},{active:${!(n.active!==false)}})">${n.active!==false?'Hide':'Show'}</button><button class="btn-delete" onclick="delContent('news',${n.id})">Delete</button></td></tr>`).join(''):'<tr><td colspan="4" style="padding:22px;color:var(--text-2);">No posts yet.</td></tr>';
+  tb.innerHTML=data.length?data.map(n=>`<tr><td class="td-name">${escA(n.title)}</td><td>${escA(n.category||'')}</td><td>${escA(n.date||'')}</td><td class="td-actions"><span class="td-badge ${n.active!==false?'badge-active':'badge-inactive'}">${n.active!==false?'live':'hidden'}</span> <button class="btn-edit" onclick="openEdit('news',${n.id})">Edit</button><button class="btn-edit" onclick="setContent('news',${n.id},{active:${!(n.active!==false)}})">${n.active!==false?'Hide':'Show'}</button><button class="btn-delete" onclick="delContent('news',${n.id})">Delete</button></td></tr>`).join(''):'<tr><td colspan="4" style="padding:22px;color:var(--text-2);">No posts yet.</td></tr>';
 }
 async function setContent(resource,id,patch){await put(resource,id,patch);({profiles:loadProfiles,news:loadNews}[resource])();toast('Updated');}
 async function delContent(resource,id){if(!confirm('Delete?'))return;await del(resource,id);({profiles:loadProfiles,news:loadNews}[resource])();toast('Deleted');}
@@ -1199,7 +1212,7 @@ async function loadKnowledge(){
   const tb=document.getElementById('knowledge-tbody'); if(!tb)return;
   tb.innerHTML=data.length?data.map(k=>{
     const pub=k.published!==false&&k.active!==false;
-    return `<tr><td class="td-name">${escA(k.title)}</td><td>${escA(k.category||'')}</td><td>${escA(k.level||'')}</td><td>${escA(k.readTime||'')}</td><td class="td-actions"><span class="td-badge ${pub?'badge-active':'badge-inactive'}">${pub?'Published':'Hidden'}</span> <button class="btn-edit" onclick="toggleKnowledge(${k.id},${pub})">${pub?'Unpublish':'Publish'}</button><button class="btn-delete" onclick="delKnowledge(${k.id})">Delete</button></td></tr>`;
+    return `<tr><td class="td-name">${escA(k.title)}</td><td>${escA(k.category||'')}</td><td>${escA(k.level||'')}</td><td>${escA(k.readTime||'')}</td><td class="td-actions"><span class="td-badge ${pub?'badge-active':'badge-inactive'}">${pub?'Published':'Hidden'}</span> <button class="btn-edit" onclick="openEdit('knowledge',${k.id})">Edit</button><button class="btn-edit" onclick="toggleKnowledge(${k.id},${pub})">${pub?'Unpublish':'Publish'}</button><button class="btn-delete" onclick="delKnowledge(${k.id})">Delete</button></td></tr>`;
   }).join(''):'<tr><td colspan="5" style="padding:22px;color:var(--text-2);">No articles yet — write the first one.</td></tr>';
 }
 async function saveKnowledge(){
@@ -1234,6 +1247,71 @@ function loadPanel(name){
 }
 
 // ── INIT / AUTH BOOT ──
+
+// ═══ GENERIC FULL-EDIT MODAL — edit any content row on real data (PUT) ═══
+(function(){
+  var css=document.createElement('style');
+  css.textContent=
+    '#edit-modal{display:none;position:fixed;inset:0;z-index:9998;background:rgba(7,15,34,.72);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:18px;}'+
+    '#edit-modal .em-card{background:#17181D;border:1px solid rgba(255,255,255,.1);border-radius:14px;width:100%;max-width:580px;max-height:88vh;overflow:auto;padding:24px;}'+
+    '#edit-modal .em-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;}'+
+    '#edit-modal .em-title{font-family:Oswald,sans-serif;font-size:18px;color:#F5F6F8;text-transform:uppercase;letter-spacing:.04em;}'+
+    '#edit-modal .em-x{background:none;border:none;color:#7E8290;font-size:26px;line-height:1;cursor:pointer;}'+
+    '#edit-modal-body{display:grid;grid-template-columns:1fr 1fr;gap:14px;}'+
+    '#edit-modal-body .ed-field{display:flex;flex-direction:column;gap:6px;}'+
+    '#edit-modal-body .ed-full{grid-column:1/-1;}'+
+    '#edit-modal-body label{font-size:11px;color:#B9BEC9;letter-spacing:.04em;font-weight:600;}'+
+    '#edit-modal-body input,#edit-modal-body select,#edit-modal-body textarea{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:10px 12px;color:#F5F6F8;font-size:13px;font-family:inherit;width:100%;box-sizing:border-box;}'+
+    '#edit-modal-body input:focus,#edit-modal-body select:focus,#edit-modal-body textarea:focus{border-color:#C9A227;outline:none;box-shadow:0 0 0 3px rgba(201,162,39,.12);}'+
+    '#edit-modal-body .ed-check{grid-column:1/-1;display:flex;align-items:center;gap:9px;font-size:13px;color:#F5F6F8;cursor:pointer;}'+
+    '#edit-modal-body .ed-check input{width:16px;height:16px;accent-color:#C9A227;flex:0 0 auto;}'+
+    '#edit-modal .em-actions{display:flex;gap:10px;margin-top:22px;}'+
+    '@media(max-width:560px){#edit-modal-body{grid-template-columns:1fr;}}';
+  document.head.appendChild(css);
+  var ov=document.createElement('div'); ov.id='edit-modal';
+  ov.innerHTML='<div class="em-card"><div class="em-head"><div class="em-title" id="edit-modal-title">Edit</div><button class="em-x" onclick="closeEdit()">&times;</button></div><div id="edit-modal-body"></div><div class="em-actions"><button class="btn-save" onclick="saveEdit()">Save changes</button><button class="btn-cancel" onclick="closeEdit()">Cancel</button></div></div>';
+  document.body.appendChild(ov);
+  ov.addEventListener('click',function(e){if(e.target===ov)closeEdit();});
+})();
+const EDIT_SCHEMA={
+  products:[{k:'name',l:'Name'},{k:'brand',l:'Brand'},{k:'category',l:'Category'},{k:'price',l:'Price (₹)',t:'number'},{k:'was',l:'Was / MRP (₹)',t:'number'},{k:'stock',l:'Stock',t:'number'},{k:'description',l:'Description',t:'area'},{k:'imgUrl',l:'Image URL'},{k:'active',l:'Visible in shop',t:'bool'}],
+  tournaments:[{k:'name',l:'Name'},{k:'date',l:'Date',t:'date'},{k:'location',l:'Location'},{k:'prize',l:'Prize pool (₹)',t:'number'},{k:'slots',l:'Slots',t:'number'},{k:'registered',l:'Registered',t:'number'},{k:'status',l:'Status',t:'select',opts:['open','soon','live','done']},{k:'active',l:'Visible',t:'bool'}],
+  athletes:[{k:'name',l:'Name'},{k:'state',l:'State'},{k:'discipline',l:'Discipline'},{k:'rank',l:'Rank',t:'number'},{k:'pb',l:'Personal best',t:'number'},{k:'active',l:'Active',t:'bool'}],
+  jobs:[{k:'title',l:'Title'},{k:'org',l:'Organisation'},{k:'location',l:'Location'},{k:'type',l:'Type'},{k:'salary',l:'Salary'},{k:'active',l:'Open',t:'bool'}],
+  knowledge:[{k:'title',l:'Title'},{k:'category',l:'Category'},{k:'level',l:'Level'},{k:'readTime',l:'Read time'},{k:'excerpt',l:'Excerpt',t:'area'},{k:'body',l:'Body',t:'area'},{k:'published',l:'Published',t:'bool'},{k:'active',l:'Active',t:'bool'}],
+  news:[{k:'title',l:'Title'},{k:'category',l:'Category'},{k:'date',l:'Date',t:'date'},{k:'excerpt',l:'Excerpt',t:'area'},{k:'active',l:'Visible',t:'bool'}],
+  profiles:[{k:'handle',l:'Handle'},{k:'name',l:'Name'},{k:'headline',l:'Headline'},{k:'location',l:'Location'},{k:'discipline',l:'Discipline'},{k:'bio',l:'Bio',t:'area'},{k:'pb',l:'Personal best',t:'number'},{k:'rank',l:'Rank',t:'number'},{k:'verified',l:'Verified',t:'bool'},{k:'active',l:'Visible',t:'bool'}]
+};
+const RELOAD={products:()=>loadProducts(),tournaments:()=>loadTournaments(),athletes:()=>loadAthletes(),jobs:()=>loadJobs(),knowledge:()=>loadKnowledge(),news:()=>loadNews(),profiles:()=>loadProfiles()};
+async function openEdit(resource,id){
+  const row=await get(resource+'/'+id);
+  if(!row||row.error){toast('Could not load that item');return;}
+  const schema=EDIT_SCHEMA[resource]; if(!schema)return;
+  const html=schema.map((f,i)=>{
+    const fid='ed-'+i, val=row[f.k]==null?'':row[f.k];
+    if(f.t==='bool') return '<label class="ed-check"><input type="checkbox" id="'+fid+'" '+(row[f.k]!==false?'checked':'')+'> '+f.l+'</label>';
+    if(f.t==='select') return '<div class="ed-field"><label>'+f.l+'</label><select id="'+fid+'">'+f.opts.map(o=>'<option '+(String(val)===o?'selected':'')+'>'+o+'</option>').join('')+'</select></div>';
+    if(f.t==='area') return '<div class="ed-field ed-full"><label>'+f.l+'</label><textarea id="'+fid+'" rows="3">'+escA(val)+'</textarea></div>';
+    const type=f.t==='number'?'number':f.t==='date'?'date':'text';
+    return '<div class="ed-field"><label>'+f.l+'</label><input id="'+fid+'" type="'+type+'" value="'+escA(val)+'"></div>';
+  }).join('');
+  document.getElementById('edit-modal-title').textContent='Edit '+resource.replace(/s$/,'');
+  document.getElementById('edit-modal-body').innerHTML=html;
+  const ov=document.getElementById('edit-modal'); ov.dataset.resource=resource; ov.dataset.id=id; ov.style.display='flex';
+}
+function closeEdit(){document.getElementById('edit-modal').style.display='none';}
+async function saveEdit(){
+  const ov=document.getElementById('edit-modal'), resource=ov.dataset.resource, id=ov.dataset.id;
+  const schema=EDIT_SCHEMA[resource], d={};
+  schema.forEach((f,i)=>{const el=document.getElementById('ed-'+i); if(!el)return;
+    if(f.t==='bool') d[f.k]=el.checked;
+    else if(f.t==='number') d[f.k]=el.value===''?null:Number(el.value);
+    else d[f.k]=el.value;});
+  const r=await put(resource,id,d);
+  if(r && (r.ok||r.id!==undefined)){ closeEdit(); RELOAD[resource]&&RELOAD[resource](); if(typeof loadStats==='function')loadStats(); toast('Saved'); }
+  else toast((r&&r.error)||'Could not save');
+}
+
 function boot(){ loadStats(); loadOrders(); loadRegistrations(); loadReports(); loadApplications(); loadChat(); }
 if(AUTH_TOKEN){ hideLogin(); boot(); } else { showLogin(); }
 </script>

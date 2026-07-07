@@ -295,11 +295,22 @@ async function api(parts, method, body, req, res){
     const cities = {}; STORE.orders.forEach(o=>{if(o.city)cities[o.city]=(cities[o.city]||0)+1;});
     const days = {}; const DAY=864e5;
     paid.forEach(o=>{ if(now-o.createdAt<14*DAY){ const d=new Date(o.createdAt).toLocaleDateString('en-IN',{month:'short',day:'2-digit'}); days[d]=(days[d]||0)+o.total; }});
+    const act = a => (STORE[a]||[]).filter(x=>x.active!==false).length;
+    const counts = {
+      products: act('products'), tournaments: act('tournaments'), athletes: act('athletes'),
+      jobs: act('jobs'), knowledge: act('knowledge'), posts: act('posts'),
+      users: (STORE.users||[]).length, registrations: (STORE.registrations||[]).length,
+      applications: (STORE.applications||[]).length,
+      pageviews: STORE.events.filter(e=>e.type==='pageview').length,
+      pageviews30: STORE.events.filter(e=>e.type==='pageview' && now-(e.ts||0)<30*DAY).length,
+      orders_total: STORE.orders.length,
+    };
     return send(res, {
       paidOrders: paid.length, revenue: paid.reduce((s,o)=>s+o.total,0), byStatus, events,
       topCities: Object.entries(cities).map(([city,n])=>({city,n})).sort((a,b)=>b.n-a.n).slice(0,8),
       recent: STORE.orders.slice(-10).reverse().map(o=>({id:o.id,order_no:o.orderNo,customer_name:o.customerName,total:o.total,status:o.status,payment_status:o.paymentStatus,city:o.city,created_at:o.createdAt})),
       revenueSeries: Object.entries(days).map(([d,v])=>({d,v})),
+      counts,
     });
   }
 

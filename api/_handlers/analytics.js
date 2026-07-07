@@ -28,7 +28,7 @@ module.exports = async (req, res) => {
   // Admin: aggregated dashboard
   if (!checkAdmin(req)) return json(res, { error: 'Unauthorised' }, 401);
   try {
-    const [paid, revenue, byStatus, events, cities, recent, series] = await Promise.all([
+    const [paid, revenue, byStatus, events, cities, recent, series, counts] = await Promise.all([
       q("select count(*)::int n from orders where payment_status='paid'"),
       q("select coalesce(sum(total),0) s from orders where payment_status='paid'"),
       q('select status, count(*)::int n from orders group by status'),
@@ -38,7 +38,22 @@ module.exports = async (req, res) => {
       q(`select to_char(date_trunc('day', created_at),'Mon DD') d, coalesce(sum(total),0) v
          from orders where payment_status='paid' and created_at > now() - interval '14 days'
          group by 1, date_trunc('day', created_at) order by date_trunc('day', created_at)`),
+      // Real catalogue / community counts for the dashboard tiles.
+      q(`select
+           (select count(*)::int from products    where active is not false) products,
+           (select count(*)::int from tournaments  where active is not false) tournaments,
+           (select count(*)::int from athletes     where active is not false) athletes,
+           (select count(*)::int from jobs         where active is not false) jobs,
+           (select count(*)::int from knowledge    where active is not false) knowledge,
+           (select count(*)::int from posts        where active is not false) posts,
+           (select count(*)::int from users)                                  users,
+           (select count(*)::int from registrations)                          registrations,
+           (select count(*)::int from applications)                           applications,
+           (select count(*)::int from analytics_events where type='pageview') pageviews,
+           (select count(*)::int from analytics_events where type='pageview' and created_at > now() - interval '30 days') pageviews30,
+           (select count(*)::int from orders)                                 orders_total`),
     ]);
+    const c = counts.rows[0];
     return json(res, {
       paidOrders: paid.rows[0].n,
       revenue: Number(revenue.rows[0].s),
@@ -47,6 +62,7 @@ module.exports = async (req, res) => {
       topCities: cities.rows,
       recent: recent.rows,
       revenueSeries: series.rows,
+      counts: c,
     });
   } catch (e) {
     console.error('analytics:', e?.message);
