@@ -49,6 +49,7 @@
     #main-nav .nav-links a{font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.1em;font-size:12.5px;}
     nav#main-nav{background:#131316!important;border-bottom:1px solid rgba(255,255,255,.08);backdrop-filter:none!important;}
     nav#main-nav.scrolled{background:#131316!important;border-bottom:1px solid rgba(201,162,39,.35)!important;}
+    input:focus,select:focus,textarea:focus{border-color:rgba(201,162,39,.55);box-shadow:0 0 0 3px rgba(201,162,39,.12);}
     *::-webkit-scrollbar{width:11px;height:11px;}
     *::-webkit-scrollbar-track{background:#101116;}
     *::-webkit-scrollbar-thumb{background:#26272E;border-radius:8px;border:2px solid #101116;}
