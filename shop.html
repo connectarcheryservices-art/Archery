@@ -294,6 +294,8 @@ footer{background:var(--ink-2);border-top:.5px solid rgba(255,255,255,.06);paddi
 #filters-toggle{display:none;width:100%;margin-bottom:14px;background:var(--ink-2);border:1px solid rgba(201,162,39,.35);color:var(--gold);border-radius:10px;padding:13px;font-size:14px;font-weight:600;cursor:pointer;align-items:center;justify-content:center;gap:8px;}
 @media(max-width:1024px){
   .shop-layout{grid-template-columns:1fr;}
+  .shop-main{min-width:0;}          /* let the 1fr track shrink below its content's min-content */
+  .reco-row{min-width:0;}            /* horizontal product scroller clips+scrolls instead of widening the page */
   .sidebar{position:static;display:none;}
   .shop-layout.filters-open .sidebar{display:block;}
   #filters-toggle{display:flex;}
