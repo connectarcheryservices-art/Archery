@@ -177,7 +177,31 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
 .toast-admin-icon svg{width:14px;height:14px;color:var(--green);}
 .toast-admin-text{font-size:13px;color:var(--text);font-weight:500;}
 
-@media(max-width:900px){.admin-layout{grid-template-columns:1fr;}.admin-sidebar{display:flex;flex-direction:row;overflow-x:auto;gap:4px;padding:8px 10px;position:sticky;top:0;z-index:50;background:var(--ink-2);border-bottom:1px solid rgba(255,255,255,.08);}.admin-sidebar .sidebar-section-label{display:none;}.admin-sidebar .nav-item{width:auto;white-space:nowrap;flex-shrink:0;padding:8px 12px;}.form-grid{grid-template-columns:1fr;}.stats-grid{grid-template-columns:1fr 1fr;}.chat-admin-grid{grid-template-columns:1fr!important;}.card{overflow-x:auto;}.admin-main [style*="grid-template-columns:1fr 1fr"]{grid-template-columns:1fr!important;}}
+@media(max-width:900px){
+  /* stack topbar → horizontal nav bar → content (grid was keeping the sidebar full-height) */
+  .admin-layout{display:block;min-height:100vh;}
+  .admin-sidebar{flex-direction:row;overflow-x:auto;overflow-y:hidden;height:auto;gap:4px;padding:8px 10px;position:static;border-right:none;border-bottom:1px solid rgba(255,255,255,.08);-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+  .admin-sidebar::-webkit-scrollbar{display:none;}
+  .admin-sidebar .sidebar-section-label{display:none;}
+  .admin-sidebar .nav-item{width:auto;white-space:nowrap;flex-shrink:0;padding:9px 13px;}
+  .admin-main{padding:16px;}
+  .form-grid{grid-template-columns:1fr;}
+  .stats-grid{grid-template-columns:1fr 1fr;}
+  .chat-admin-grid{grid-template-columns:1fr!important;}
+  .card{overflow-x:auto;}
+  .admin-main [style*="grid-template-columns:1fr 1fr"]{grid-template-columns:1fr!important;}
+  /* login split-panel → single column on small screens */
+  .lg-card{grid-template-columns:1fr;max-width:420px;}
+  .lg-brandpanel{display:none;}
+}
+@media(max-width:560px){
+  .stats-grid{grid-template-columns:1fr;}
+  .admin-topbar{padding:0 12px;}
+  .admin-topbar .status-indicator,.admin-topbar .admin-badge,.admin-topbar .topbar-site-link{display:none;}
+  .topbar-right{gap:8px;}
+  .admin-logo{font-size:15px;}
+  .quick-row{grid-template-columns:1fr;}
+}
 
 /* ───────── LOGIN (premium, on-brand) ───────── */
 #login-overlay{position:fixed;inset:0;z-index:99999;display:none;align-items:center;justify-content:center;padding:24px;
