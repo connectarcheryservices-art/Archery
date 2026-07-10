@@ -17,6 +17,20 @@ module.exports = (req, res) => {
     if (r0 === 'analytics' && n === 1) return H('analytics')(req, res);
     if (r0 === 'coach' && n === 1) return H('coach')(req, res);
     if (r0 === 'users' && n === 2) { q.action = seg[1]; return H('users-action')(req, res); }
+    // Logged-in user's own account: /api/me/profile, /api/me/dashboard
+    if (r0 === 'me' && n === 2) { q.sub = seg[1]; return H('my-profile')(req, res); }
+    // Staff (employees): /api/staff, /api/staff/<id>, /api/staff/me/<action>
+    if (r0 === 'staff') {
+      if (n === 1) return H('staff')(req, res);
+      q.id = seg[1];
+      if (n === 3) q.action = seg[2];
+      return H('staff')(req, res);
+    }
+    // Federation officers: /api/federation-members, /api/federation-members/<id>
+    if (r0 === 'federation-members') {
+      if (n === 2) q.id = seg[1];
+      return H('federation-members')(req, res);
+    }
     if (r0 === 'orders') {
       if (n === 1) return H('orders')(req, res);
       if (n === 2) { q.id = seg[1]; return H('orders-id')(req, res); }

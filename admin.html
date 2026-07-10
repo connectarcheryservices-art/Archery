@@ -267,15 +267,29 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
     <form class="lg-form" onsubmit="return doLogin(event)">
       <div class="lg-eyebrow">Secure Access</div>
       <h1 class="lg-title">Admin Sign In</h1>
-      <p class="lg-sub">Enter your administrator password to manage the platform.</p>
+      <p class="lg-sub" id="login-sub">Sign in with the owner password, or your staff username.</p>
+      <div id="login-user-wrap" style="display:none;">
+        <label class="lg-label" for="login-user">Staff username</label>
+        <div class="lg-inputwrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 016-6h4a6 6 0 016 6v1"/></svg>
+          <input id="login-user" type="text" autocomplete="username" placeholder="your.username">
+        </div>
+      </div>
       <label class="lg-label" for="login-pw">Password</label>
       <div class="lg-inputwrap">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
         <input id="login-pw" type="password" placeholder="••••••••" autocomplete="current-password">
       </div>
+      <div id="login-totp-wrap" style="display:none;">
+        <label class="lg-label" for="login-totp">Authenticator code</label>
+        <div class="lg-inputwrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 10h.01M12 10h.01M16 10h.01M8 14h8"/></svg>
+          <input id="login-totp" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="6-digit code">
+        </div>
+      </div>
       <div id="login-err" class="lg-err">Incorrect password — please try again.</div>
       <button type="submit" class="lg-btn">Sign in to dashboard</button>
-      <div class="lg-foot">Protected area · authorised staff only</div>
+      <div class="lg-foot" style="cursor:pointer;" onclick="toggleStaffLogin()"><span id="login-toggle">Staff member? Sign in with username →</span></div>
     </form>
   </div>
 </div>
@@ -379,7 +393,11 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
     </button>
 
     <div class="sidebar-section-label">System</div>
-    <button class="nav-item" onclick="showPanel('settings',this)">
+    <button class="nav-item" id="nav-team" onclick="showPanel('team',this);loadStaff();">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+      Team &amp; Roles
+    </button>
+    <button class="nav-item" id="nav-settings-item" onclick="showPanel('settings',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
       Site Settings
     </button>
@@ -632,6 +650,26 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
     </div>
 
     <!-- ── SETTINGS ── -->
+    <div class="panel" id="panel-team">
+      <div class="breadcrumb">Admin <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg> <span>Team &amp; Roles</span></div>
+      <button class="btn-add-new" onclick="openStaffForm()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Team Member</button>
+      <div class="card" style="margin-bottom:16px;">
+        <div style="font-size:12.5px;color:var(--text-2);line-height:1.7;">
+          <b style="color:var(--text);">Roles:</b>
+          <b style="color:var(--gold);">Manager</b> — full access incl. staff &amp; settings ·
+          <b style="color:var(--gold);">Editor</b> — manage content &amp; approvals, not staff/settings ·
+          <b style="color:var(--gold);">Support</b> — orders, approvals &amp; chat only.
+          The <b style="color:var(--text);">Owner</b> (you) signs in with the master password.
+        </div>
+      </div>
+      <div class="card">
+        <table class="data-table">
+          <thead><tr><th>Name</th><th>Username</th><th>Role</th><th>2FA</th><th>Last login</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="staff-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
     <div class="panel" id="panel-settings">
       <div class="breadcrumb">Admin <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg> <span>Site Settings</span></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
@@ -813,14 +851,43 @@ const put  = (r,id,d) => fetch(`${API}/${r}/${id}`,{method:'PUT',headers:authH()
 const del  = (r,id) => fetch(`${API}/${r}/${id}`,{method:'DELETE',headers:authH()}).then(x=>x.json()).catch(()=>null);
 
 // ── ADMIN AUTH ──
+let STAFF_MODE=false, ME_ROLE='owner', ME_NAME='Owner';
+function toggleStaffLogin(){
+  STAFF_MODE=!STAFF_MODE;
+  document.getElementById('login-user-wrap').style.display=STAFF_MODE?'block':'none';
+  document.getElementById('login-toggle').textContent=STAFF_MODE?'← Sign in as owner (master password)':'Staff member? Sign in with username →';
+  document.getElementById('login-sub').textContent=STAFF_MODE?'Sign in with your staff username and password.':'Sign in with the owner password, or your staff username.';
+}
 async function doLogin(e){
   if(e&&e.preventDefault) e.preventDefault();
   const pw=document.getElementById('login-pw').value;
   const err=document.getElementById('login-err'); if(err) err.style.display='none';
-  const r=await fetch(API+'/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pw})}).then(x=>x.json()).catch(()=>({ok:false}));
-  if(r&&r.ok&&r.token){ AUTH_TOKEN=r.token; sessionStorage.setItem('archery_admin_token',AUTH_TOKEN); hideLogin(); boot(); }
-  else if(err){ err.style.display='block'; }
+  const body={password:pw};
+  if(STAFF_MODE) body.username=document.getElementById('login-user').value.trim();
+  const totp=document.getElementById('login-totp').value.trim();
+  if(totp) body.totp=totp;
+  const r=await fetch(API+'/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(x=>x.json()).catch(()=>({ok:false}));
+  if(r&&r.ok&&r.token){
+    AUTH_TOKEN=r.token; sessionStorage.setItem('archery_admin_token',AUTH_TOKEN);
+    ME_ROLE=r.role||'owner'; ME_NAME=r.name||'Owner';
+    sessionStorage.setItem('archery_admin_role',ME_ROLE); sessionStorage.setItem('archery_admin_name',ME_NAME);
+    hideLogin(); applyRole(); boot();
+  } else if(r&&r.needsTotp){
+    document.getElementById('login-totp-wrap').style.display='block';
+    if(err){ err.textContent=r.error||'Enter your authenticator code.'; err.style.display='block'; }
+    document.getElementById('login-totp').focus();
+  } else if(err){ err.textContent=(r&&r.error)||'Incorrect credentials — please try again.'; err.style.display='block'; }
   return false;
+}
+// Hide owner/manager-only sections (Team, Settings) from lower-privilege staff.
+function applyRole(){
+  ME_ROLE=sessionStorage.getItem('archery_admin_role')||ME_ROLE;
+  ME_NAME=sessionStorage.getItem('archery_admin_name')||ME_NAME;
+  const canStaff = ME_ROLE==='owner'||ME_ROLE==='manager';
+  const teamNav=document.getElementById('nav-team'); if(teamNav) teamNav.style.display=canStaff?'':'none';
+  const setNav=document.getElementById('nav-settings-item'); if(setNav) setNav.style.display=canStaff?'':'none';
+  const badge=document.querySelector('.admin-badge'); if(badge) badge.textContent=ME_ROLE.toUpperCase();
+  const av=document.querySelector('.topbar-avatar'); if(av) av.textContent=(ME_NAME||'A').charAt(0).toUpperCase();
 }
 function showLogin(){ const o=document.getElementById('login-overlay'); if(o)o.style.display='flex'; const l=document.querySelector('.admin-layout'); if(l)l.style.visibility='hidden'; }
 function hideLogin(){ const o=document.getElementById('login-overlay'); if(o)o.style.display='none'; const l=document.querySelector('.admin-layout'); if(l)l.style.visibility='visible'; }
@@ -1341,7 +1408,60 @@ function edPickImg(input,fid){
 }
 function edClearImg(fid){ document.getElementById(fid).value=''; const pv=document.getElementById(fid+'-prev'); if(pv){pv.src='';pv.style.display='none';} const u=document.getElementById(fid+'-url'); if(u)u.value=''; }
 
-function boot(){ loadStats(); loadOrders(); loadRegistrations(); loadReports(); loadApplications(); loadChat(); }
+// ── TEAM & ROLES (staff accounts) ──
+async function loadStaff(){
+  const data=await get('staff'); const tb=document.getElementById('staff-tbody'); if(!tb)return;
+  if(!Array.isArray(data)){ tb.innerHTML='<tr><td colspan="7" style="padding:22px;color:var(--text-2);">'+((data&&data.error)||'Only the owner or a manager can view the team.')+'</td></tr>'; return; }
+  tb.innerHTML=data.length?data.map(s=>`
+    <tr>
+      <td class="td-name">${escA(s.name)}</td>
+      <td>${escA(s.username)}</td>
+      <td><span class="td-badge badge-soon">${escA(s.role)}</span></td>
+      <td>${s.twoFactor?'<span class="td-badge badge-active">On</span>':'<span class="td-badge badge-inactive">Off</span>'}</td>
+      <td style="font-size:12px;">${s.lastLogin?new Date(s.lastLogin).toLocaleString('en-IN'):'never'}</td>
+      <td><span class="td-badge ${s.active!==false?'badge-active':'badge-inactive'}">${s.active!==false?'Active':'Disabled'}</span></td>
+      <td class="td-actions">
+        <button class="btn-edit" onclick='openStaffForm(${JSON.stringify(s)})'>Edit</button>
+        <button class="btn-toggle ${s.active!==false?'':'off'}" onclick="toggleStaff(${s.id},${s.active!==false})">${s.active!==false?'Disable':'Enable'}</button>
+        <button class="btn-delete" onclick="delStaff(${s.id},'${escA(s.name)}')">Remove</button>
+      </td>
+    </tr>`).join(''):'<tr><td colspan="7" style="padding:22px;color:var(--text-2);">No team members yet — add your first employee.</td></tr>';
+}
+function openStaffForm(s){
+  s=s||{};
+  const editing=!!s.id;
+  const IN='width:100%;background:#101116;border:1px solid rgba(255,255,255,.14);border-radius:8px;padding:10px 12px;color:#F5F6F8;font-size:13px;box-sizing:border-box;font-family:inherit;';
+  const ov=document.createElement('div'); ov.id='staff-ov';
+  ov.style.cssText='position:fixed;inset:0;z-index:9998;background:rgba(7,15,34,.75);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:18px;';
+  ov.innerHTML='<div style="background:#17181D;border:1px solid rgba(255,255,255,.1);border-radius:14px;width:100%;max-width:440px;padding:24px;">'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;"><div style="font-family:Oswald,sans-serif;font-size:17px;color:#fff;text-transform:uppercase;letter-spacing:.04em;">'+(editing?'Edit team member':'Add team member')+'</div><button onclick="document.getElementById(\'staff-ov\').remove()" style="background:none;border:none;color:#7E8290;font-size:24px;cursor:pointer;">&times;</button></div>'+
+    '<label class="form-label">Full name</label><input id="sf-name" style="'+IN+'" value="'+escA(s.name||'')+'">'+
+    '<label class="form-label" style="margin-top:10px;display:block;">Username '+(editing?'(cannot change)':'')+'</label><input id="sf-user" style="'+IN+(editing?'opacity:.6;':'')+'" value="'+escA(s.username||'')+'" '+(editing?'disabled':'')+'>'+
+    '<label class="form-label" style="margin-top:10px;display:block;">Email (optional)</label><input id="sf-email" style="'+IN+'" value="'+escA(s.email||'')+'">'+
+    '<label class="form-label" style="margin-top:10px;display:block;">Role</label><select id="sf-role" style="'+IN+'">'+['manager','editor','support'].map(r=>'<option '+(s.role===r?'selected':'')+'>'+r+'</option>').join('')+'</select>'+
+    '<label class="form-label" style="margin-top:10px;display:block;">'+(editing?'New password (leave blank to keep)':'Password')+'</label><input id="sf-pass" type="password" style="'+IN+'" placeholder="min 8 characters">'+
+    (editing?'<label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:12.5px;color:var(--text-2);cursor:pointer;"><input type="checkbox" id="sf-reset2fa" style="width:15px;height:15px;accent-color:#C9A227;"> Reset their 2FA (if they lost their device)</label>':'')+
+    '<div style="display:flex;gap:10px;margin-top:20px;"><button class="btn-save" onclick="saveStaff('+(s.id||0)+')">'+(editing?'Save changes':'Create account')+'</button><button class="btn-cancel" onclick="document.getElementById(\'staff-ov\').remove()">Cancel</button></div>'+
+    '</div>';
+  document.body.appendChild(ov);
+  ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
+}
+async function saveStaff(id){
+  const v=x=>{const el=document.getElementById(x);return el?el.value.trim():'';};
+  const body={name:v('sf-name'),role:v('sf-role')};
+  const pass=v('sf-pass'); if(pass) body.password=pass;
+  const email=v('sf-email'); body.email=email||null;
+  const r2=document.getElementById('sf-reset2fa'); if(r2&&r2.checked) body.reset2fa=true;
+  let r;
+  if(id){ r=await put('staff',id,body); }
+  else { body.username=v('sf-user'); if(!body.name||!body.username||!pass){toast('Name, username and password are required');return;} r=await post('staff',body); }
+  if(r&&(r.ok||r.id)){ document.getElementById('staff-ov').remove(); loadStaff(); toast('Saved'); }
+  else toast((r&&r.error)||'Could not save');
+}
+async function toggleStaff(id,active){ await put('staff',id,{active:!active}); loadStaff(); toast('Updated'); }
+async function delStaff(id,name){ if(!confirm('Remove '+name+'? They will lose access immediately.'))return; await del('staff',id); loadStaff(); toast('Removed'); }
+
+function boot(){ applyRole(); loadStats(); loadOrders(); loadRegistrations(); loadReports(); loadApplications(); loadChat(); }
 if(AUTH_TOKEN){ hideLogin(); boot(); } else { showLogin(); }
 </script>
 </body>
