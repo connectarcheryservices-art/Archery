@@ -201,9 +201,11 @@
     if (!user || !user.name) return;
     var right = document.querySelector('#main-nav .nav-right');
     if (right) {
-      var hi = document.createElement('span');
-      hi.style.cssText = 'color:#C9A227;font-size:13px;font-weight:600;white-space:nowrap;';
+      var hi = document.createElement('a');
+      hi.href = 'account.html';
+      hi.style.cssText = 'color:#C9A227;font-size:13px;font-weight:600;white-space:nowrap;text-decoration:none;';
       hi.textContent = 'Hi, ' + String(user.name).split(' ')[0];
+      hi.title = 'My account';
       var out = document.createElement('button');
       out.className = 'btn-primary-nav';
       out.textContent = 'Sign out';
@@ -220,7 +222,7 @@
       right.insertBefore(hi, out);
     }
     var nm = document.querySelector('#nav-mobile .nm-actions');
-    if (nm) nm.innerHTML = '<a href="profile.html">Hi, ' + String(user.name).split(' ')[0] + '</a>'
+    if (nm) nm.innerHTML = '<a href="account.html">My account</a>'
       + '<a href="#" class="nm-join" onclick="localStorage.removeItem(\'archery_user\');localStorage.removeItem(\'archery_user_token\');location.reload();return false;">Sign out</a>';
   })();
 
