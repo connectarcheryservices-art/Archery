@@ -21,3 +21,6 @@ Thumbs.db
 data.old.json
 
 .vercel
+cdp-*/
+__t.html
+.local-server.*.log
