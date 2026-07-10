@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Account — Archery.Services</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+  .ac-wrap{max-width:820px;margin:0 auto;padding:110px var(--g) 80px;}
+  .ac-head h1{font-family:'Oswald',sans-serif;font-size:clamp(28px,4vw,40px);font-weight:600;text-transform:uppercase;letter-spacing:.02em;color:#fff;}
+  .ac-head p{color:var(--text-2);font-size:14px;margin-top:6px;}
+  .ac-card{background:var(--char);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:24px;margin-top:18px;}
+  .ac-card h2{font-family:'Oswald',sans-serif;font-size:16px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--gold);margin-bottom:6px;display:flex;align-items:center;gap:9px;}
+  .ac-card .ac-desc{font-size:13px;color:var(--text-2);line-height:1.6;margin-bottom:16px;}
+  .ac-row{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.05);flex-wrap:wrap;}
+  .ac-row:last-child{border-bottom:none;}
+  .ac-row .k{font-size:12px;color:var(--muted-2);text-transform:uppercase;letter-spacing:.05em;}
+  .ac-row .v{font-size:14px;color:#fff;}
+  .ac-btn{background:var(--gold);color:#131316;border:none;border-radius:8px;padding:11px 20px;font-family:'Oswald',sans-serif;font-size:12.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;}
+  .ac-btn.ghost{background:transparent;border:1px solid rgba(255,255,255,.2);color:#fff;}
+  .ac-btn.danger{background:transparent;border:1px solid rgba(210,39,48,.4);color:#E04653;}
+  .ac-pill{font-size:11px;padding:4px 11px;border-radius:20px;font-weight:600;}
+  .ac-pill.on{background:rgba(34,197,94,.12);color:#7BE08A;}
+  .ac-pill.off{background:rgba(255,255,255,.06);color:var(--muted-2);}
+  .ac-pill.pending{background:rgba(201,162,39,.12);color:var(--gold);}
+  input,select,textarea{width:100%;background:#101116;border:1px solid rgba(255,255,255,.14);border-radius:9px;padding:11px 13px;color:#fff;font-size:14px;box-sizing:border-box;font-family:inherit;margin-top:6px;}
+  input:focus,select:focus{border-color:var(--gold);outline:none;}
+  label{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text-2);}
+  .ac-secret{font-family:'Courier New',monospace;font-size:18px;letter-spacing:3px;color:var(--gold);background:#101116;border:1px dashed rgba(201,162,39,.4);border-radius:9px;padding:14px;text-align:center;word-break:break-all;margin:12px 0;user-select:all;}
+  .ac-codes{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0;}
+  .ac-codes span{font-family:'Courier New',monospace;font-size:14px;color:#fff;background:#101116;border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:9px;text-align:center;}
+  .ac-msg{font-size:13px;margin-top:12px;padding:11px 13px;border-radius:9px;display:none;}
+  .ac-msg.ok{display:block;background:rgba(34,197,94,.1);color:#7BE08A;border:1px solid rgba(34,197,94,.25);}
+  .ac-msg.err{display:block;background:rgba(210,39,48,.1);color:#E04653;border:1px solid rgba(210,39,48,.25);}
+  .ac-signin{max-width:420px;margin:140px auto;text-align:center;}
+</style>
+</head>
+<body>
+<div class="ac-wrap" id="ac-root">
+  <div class="ac-signin"><h1 style="font-family:'Oswald';text-transform:uppercase;color:#fff;">My Account</h1><p style="color:var(--text-2);margin:12px 0 24px;">Sign in to manage your account, security and profile.</p><a class="ac-btn" href="signin.html?next=account.html" style="text-decoration:none;">Sign in</a></div>
+</div>
+
+<script src="auth.js"></script>
+<script>
+const T=()=>ArcheryAuth.token();
+let DASH=null;
+
+async function boot(){
+  if(!T()){ return; } // signed-out default already shown
+  const d=await fetch('/api/me/dashboard',{headers:{Authorization:'Bearer '+T()}}).then(r=>r.json()).catch(()=>null);
+  if(!d||!d.ok){ return; }
+  DASH=d;
+  render();
+}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+function render(){
+  const d=DASH, u=d.user, p=d.profile||{};
+  const fed=(d.federationRoles||[]).map(f=>`<div class="ac-row"><span class="v">${esc(f.orgName)}</span><span class="ac-pill on">${esc((f.office||'').replace('_',' '))}</span></div>`).join('');
+  document.getElementById('ac-root').innerHTML=`
+    <div class="ac-head"><h1>My Account</h1><p>Signed in as ${esc(u.email)}</p></div>
+
+    <div class="ac-card">
+      <h2><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 016-6h4a6 6 0 016 6v1"/></svg> Profile</h2>
+      <div class="ac-row"><span class="k">Name</span><span class="v">${esc(u.name)}</span></div>
+      <div class="ac-row"><span class="k">Public link</span><span class="v">archery.services/${esc(p.handle||'')} ${p.verified?'<span class="ac-pill on">Verified</span>':''}</span></div>
+      <div class="ac-row"><span class="k">Registrations · Orders</span><span class="v">${d.registrations||0} · ${d.orders||0}</span></div>
+      <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;"><a class="ac-btn" href="profile.html" style="text-decoration:none;">View / edit my profile</a></div>
+    </div>
+
+    <div class="ac-card">
+      <h2><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg> Security — Two-Factor Authentication</h2>
+      <div class="ac-desc">Protect your account with an authenticator app (Google Authenticator, Authy, 1Password, Microsoft Authenticator). Even if someone has your password, they can't sign in without your device.</div>
+      <div class="ac-row"><span class="k">Status</span><span class="ac-pill ${d.twoFactor?'on':'off'}">${d.twoFactor?'Enabled':'Not enabled'}</span></div>
+      <div id="tfa-area" style="margin-top:14px;">
+        ${d.twoFactor
+          ? `<button class="ac-btn danger" onclick="disable2fa()">Disable 2FA</button>`
+          : `<button class="ac-btn" onclick="start2fa()">Enable 2FA</button>`}
+      </div>
+      <div class="ac-msg" id="tfa-msg"></div>
+    </div>
+
+    <div class="ac-card">
+      <h2><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><path d="M3 6h18M16 10a4 4 0 01-8 0"/></svg> Sell on Archery.Services</h2>
+      ${d.sellerStatus==='approved'
+        ? `<div class="ac-desc">You are an approved seller${d.businessName?' ('+esc(d.businessName)+')':''}.</div><a class="ac-btn" href="seller.html" style="text-decoration:none;">Open seller dashboard</a>`
+        : d.sellerStatus==='pending'
+        ? `<div class="ac-desc">Your seller application${d.businessName?' for '+esc(d.businessName):''} is <span class="ac-pill pending">under review</span>. We'll notify you once it's approved.</div>`
+        : `<div class="ac-desc">List your archery equipment to Indian archers. Apply to become a verified seller.</div>
+           <label>Business / brand name</label><input id="s-biz" placeholder="e.g. Bullseye Archery Co.">
+           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px;"><div><label>GST number (optional)</label><input id="s-gst" placeholder="GSTIN"></div><div><label>Payout UPI</label><input id="s-upi" placeholder="you@upi"></div></div>
+           <button class="ac-btn" style="margin-top:14px;" onclick="applySeller()">Apply to sell</button>`}
+      <div class="ac-msg" id="seller-msg"></div>
+    </div>
+
+    ${fed?`<div class="ac-card"><h2><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/></svg> Federation Roles</h2><div class="ac-desc">Offices you hold in registered federations.</div>${fed}<a class="ac-btn ghost" href="federation.html" style="text-decoration:none;margin-top:14px;">Open federation portal</a></div>`:''}
+
+    <div style="margin-top:22px;text-align:center;"><button class="ac-btn ghost" onclick="ArcheryAuth.logout();location.href='index.html';">Sign out</button></div>
+  `;
+  if(window.ArcheryObserveReveals) window.ArcheryObserveReveals();
+}
+
+// ── 2FA flow ──
+async function start2fa(){
+  const area=document.getElementById('tfa-area'), msg=document.getElementById('tfa-msg'); msg.className='ac-msg';
+  const r=await fetch('/api/users/2fa-setup',{method:'POST',headers:{Authorization:'Bearer '+T()}}).then(x=>x.json()).catch(()=>null);
+  if(!r||!r.secret){ msg.className='ac-msg err'; msg.textContent=(r&&r.error)||'Could not start 2FA setup.'; return; }
+  const grouped=r.secret.replace(/(.{4})/g,'$1 ').trim();
+  area.innerHTML=`
+    <div class="ac-desc"><b style="color:#fff;">Step 1.</b> Open your authenticator app → add account → choose "enter a setup key" → paste this key:</div>
+    <div class="ac-secret" onclick="navigator.clipboard&&navigator.clipboard.writeText('${r.secret}')" title="Click to copy">${grouped}</div>
+    <div class="ac-desc"><b style="color:#fff;">Step 2.</b> Enter the 6-digit code your app now shows:</div>
+    <input id="tfa-code" inputmode="numeric" placeholder="6-digit code" maxlength="6" style="max-width:200px;">
+    <div style="margin-top:14px;display:flex;gap:10px;"><button class="ac-btn" onclick="confirm2fa()">Verify &amp; turn on</button><button class="ac-btn ghost" onclick="boot()">Cancel</button></div>`;
+  document.getElementById('tfa-code').focus();
+}
+async function confirm2fa(){
+  const msg=document.getElementById('tfa-msg'); msg.className='ac-msg';
+  const code=document.getElementById('tfa-code').value.trim();
+  const r=await fetch('/api/users/2fa-enable',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+T()},body:JSON.stringify({code})}).then(x=>x.json()).catch(()=>null);
+  if(r&&r.ok){
+    document.getElementById('tfa-area').innerHTML=`
+      <div class="ac-msg ok" style="display:block;">2FA is now on. Save these one-time backup codes somewhere safe — each works once if you lose your device:</div>
+      <div class="ac-codes">${r.backupCodes.map(c=>`<span>${c}</span>`).join('')}</div>
+      <button class="ac-btn" onclick="boot()">Done</button>`;
+  } else { msg.className='ac-msg err'; msg.textContent=(r&&r.error)||'Incorrect code — try again.'; }
+}
+async function disable2fa(){
+  const pw=prompt('Enter your account password to disable 2FA:');
+  if(!pw) return;
+  const msg=document.getElementById('tfa-msg'); msg.className='ac-msg';
+  const r=await fetch('/api/users/2fa-disable',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+T()},body:JSON.stringify({password:pw})}).then(x=>x.json()).catch(()=>null);
+  if(r&&r.ok){ boot(); } else { msg.className='ac-msg err'; msg.textContent=(r&&r.error)||'Could not disable 2FA.'; }
+}
+
+// ── seller apply ──
+async function applySeller(){
+  const msg=document.getElementById('seller-msg'); msg.className='ac-msg';
+  const body={businessName:document.getElementById('s-biz').value.trim(),gst:document.getElementById('s-gst').value.trim(),payoutUpi:document.getElementById('s-upi').value.trim()};
+  if(!body.businessName){ msg.className='ac-msg err'; msg.textContent='Business name is required.'; return; }
+  const r=await fetch('/api/users/apply-seller',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+T()},body:JSON.stringify(body)}).then(x=>x.json()).catch(()=>null);
+  if(r&&r.ok){ boot(); } else { msg.className='ac-msg err'; msg.textContent=(r&&r.error)||'Could not submit.'; }
+}
+
+boot();
+</script>
+<script src="shared.js"></script>
+</body>
+</html>

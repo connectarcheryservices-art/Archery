@@ -367,6 +367,11 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
     </button>
 
     <div class="sidebar-section-label">Platform</div>
+    <button class="nav-item" onclick="showPanel('sellers',this);loadSellers();">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><path d="M3 6h18M16 10a4 4 0 01-8 0"/></svg>
+      Sellers
+      <span class="badge-count" id="seller-badge" style="display:none;">0</span>
+    </button>
     <button class="nav-item" onclick="showPanel('registrations',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
       Registrations
@@ -650,6 +655,17 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
     </div>
 
     <!-- ── SETTINGS ── -->
+    <div class="panel" id="panel-sellers">
+      <div class="breadcrumb">Admin <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg> <span>Sellers</span></div>
+      <div class="card">
+        <div class="card-title">Seller applications &amp; accounts</div>
+        <table class="data-table">
+          <thead><tr><th>Business</th><th>Contact</th><th>GST</th><th>Payout UPI</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="sellers-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
     <div class="panel" id="panel-team">
       <div class="breadcrumb">Admin <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg> <span>Team &amp; Roles</span></div>
       <button class="btn-add-new" onclick="openStaffForm()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Team Member</button>
@@ -1202,13 +1218,56 @@ async function loadApplications(){
   const tb=document.getElementById('applications-tbody'); if(!tb)return;
   tb.innerHTML=data.length?data.map(a=>{
     const badge=a.status==='approved'?'badge-active':a.status==='rejected'?'badge-inactive':'badge-soon';
+    const officers=`<button class="btn-edit" onclick='openOfficers(${a.id},${JSON.stringify(a.orgName||"")})'>Officers</button>`;
     const act=a.status==='pending'
-      ?`<button class="btn-toggle" onclick="setInbox('applications',${a.id},'approved')">Approve</button><button class="btn-delete" onclick="setInbox('applications',${a.id},'rejected')">Reject</button>`
-      :`<span class="td-badge ${badge}">${a.status}</span> <button class="btn-delete" onclick="delInbox('applications',${a.id})">Delete</button>`;
+      ?`<button class="btn-toggle" onclick="setInbox('applications',${a.id},'approved')">Approve</button>${officers}<button class="btn-delete" onclick="setInbox('applications',${a.id},'rejected')">Reject</button>`
+      :`<span class="td-badge ${badge}">${a.status}</span> ${officers}<button class="btn-delete" onclick="delInbox('applications',${a.id})">Delete</button>`;
     const mail=a.email?`<a href="mailto:${escA(a.email)}" style="color:var(--gold);text-decoration:none;">${escA(a.email)}</a>`:'';
     return `<tr><td class="td-name">${escA(a.orgName||'—')}</td><td>${escA(a.orgType||'')}</td><td>${escA(a.contactName||'')}</td><td>${mail}</td><td>${escA(a.phone||'')}</td><td class="td-actions">${act}</td></tr>`;
   }).join(''):'<tr><td colspan="6" style="padding:22px;color:var(--text-2);">No applications yet.</td></tr>';
 }
+
+// ── SELLERS ──
+async function loadSellers(){
+  const data=await get('sellers'); const tb=document.getElementById('sellers-tbody'); if(!tb)return;
+  if(!Array.isArray(data)){ tb.innerHTML='<tr><td colspan="6" style="padding:22px;color:var(--text-2);">Could not load sellers.</td></tr>'; return; }
+  const pending=data.filter(s=>s.status==='pending').length; setBadge('seller-badge',pending);
+  tb.innerHTML=data.length?data.map(s=>{
+    const badge=s.status==='approved'?'badge-active':s.status==='rejected'?'badge-inactive':'badge-soon';
+    const act=s.status==='approved'
+      ?`<span class="td-badge badge-active">approved</span> <button class="btn-delete" onclick="setSeller(${s.id},'rejected')">Revoke</button>`
+      :`<button class="btn-toggle" onclick="setSeller(${s.id},'approved')">Approve</button><button class="btn-delete" onclick="setSeller(${s.id},'rejected')">Reject</button>`;
+    return `<tr><td class="td-name">${escA(s.businessName||'—')}</td><td>${escA(s.name||'')}<br><span style="color:var(--text-2);font-size:11px;">${escA(s.email||'')}</span></td><td>${escA(s.gst||'—')}</td><td>${escA(s.payoutUpi||'—')}</td><td><span class="td-badge ${badge}">${s.status}</span></td><td class="td-actions">${act}</td></tr>`;
+  }).join(''):'<tr><td colspan="6" style="padding:22px;color:var(--text-2);">No seller applications yet.</td></tr>';
+}
+async function setSeller(id,status){ await put('sellers',id,{status}); loadSellers(); toast(status==='approved'?'Seller approved':'Updated'); }
+
+// ── FEDERATION OFFICERS ──
+async function openOfficers(appId,orgName){
+  const list=await get('federation-members?applicationId='+appId);
+  const IN='width:100%;background:#101116;border:1px solid rgba(255,255,255,.14);border-radius:8px;padding:10px 12px;color:#F5F6F8;font-size:13px;box-sizing:border-box;font-family:inherit;';
+  const rows=Array.isArray(list)&&list.length?list.map(m=>`<div class="ac-orow" style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.06);"><div><b style="color:#fff;">${escA(m.name)}</b> <span style="color:var(--text-2);font-size:12px;">${escA(m.email)}</span></div><div style="display:flex;align-items:center;gap:8px;"><span class="td-badge badge-soon">${escA((m.office||'').replace('_',' '))}</span><button class="btn-delete" onclick="delOfficer(${m.id},${appId},'${escA(orgName)}')">×</button></div></div>`).join(''):'<div style="color:var(--text-2);font-size:13px;padding:8px 0;">No officers assigned yet.</div>';
+  const ov=document.createElement('div'); ov.id='off-ov';
+  ov.style.cssText='position:fixed;inset:0;z-index:9998;background:rgba(7,15,34,.75);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:18px;';
+  ov.innerHTML='<div style="background:#17181D;border:1px solid rgba(255,255,255,.1);border-radius:14px;width:100%;max-width:480px;padding:24px;">'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><div style="font-family:Oswald,sans-serif;font-size:17px;color:#fff;text-transform:uppercase;letter-spacing:.04em;">Officers — '+escA(orgName)+'</div><button onclick="document.getElementById(\'off-ov\').remove()" style="background:none;border:none;color:#7E8290;font-size:24px;cursor:pointer;">&times;</button></div>'+
+    '<div style="font-size:12px;color:var(--text-2);margin-bottom:14px;">Assign federation offices to registered user accounts (by email). They must have signed up first.</div>'+
+    '<div id="off-list" style="margin-bottom:16px;">'+rows+'</div>'+
+    '<div style="border-top:1px solid rgba(255,255,255,.08);padding-top:14px;"><label class="form-label">User email</label><input id="off-email" style="'+IN+'" placeholder="member@example.com">'+
+    '<label class="form-label" style="margin-top:10px;display:block;">Office</label><select id="off-office" style="'+IN+'"><option value="president">President</option><option value="secretary">Secretary</option><option value="treasurer">Treasurer</option><option value="executive_member">Executive Member</option></select>'+
+    '<button class="btn-save" style="margin-top:14px;" onclick="addOfficer('+appId+',\''+escA(orgName)+'\')">Assign officer</button></div>'+
+    '</div>';
+  document.body.appendChild(ov);
+  ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
+}
+async function addOfficer(appId,orgName){
+  const email=document.getElementById('off-email').value.trim(); const office=document.getElementById('off-office').value;
+  if(!email){toast('Enter the user email');return;}
+  const r=await post('federation-members',{applicationId:appId,email,office});
+  if(r&&r.ok){ document.getElementById('off-ov').remove(); openOfficers(appId,orgName); toast('Assigned '+(r.name||'officer')); }
+  else toast((r&&r.error)||'Could not assign');
+}
+async function delOfficer(id,appId,orgName){ await del('federation-members',id); document.getElementById('off-ov').remove(); openOfficers(appId,orgName); toast('Removed'); }
 async function setInbox(resource,id,status){await put(resource,id,{status});({registrations:loadRegistrations,reports:loadReports,applications:loadApplications}[resource])();toast('Updated');}
 async function delInbox(resource,id){if(!confirm('Delete this item?'))return;await del(resource,id);({registrations:loadRegistrations,reports:loadReports,applications:loadApplications}[resource])();toast('Deleted');}
 

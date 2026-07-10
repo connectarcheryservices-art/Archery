@@ -28,10 +28,10 @@
       return r;
     },
 
-    async login(email, password){
+    async login(email, password, totp){
       const r = await fetch('/api/users/login', {
         method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email, password, totp: totp || undefined })
       }).then(x=>x.json()).catch(()=>null);
       if (r && r.ok && r.token) save(r.token, r.user);
       return r;

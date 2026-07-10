@@ -80,9 +80,13 @@
             <button type="button" class="a-toggle" onclick="togglePw(this,'password')">Show</button>
           </div>
         </div>
+        <div class="a-field" id="totp-field" style="display:none;">
+          <label for="totp">Authenticator code</label>
+          <input id="totp" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="6-digit code from your app">
+        </div>
         <div class="a-row">
           <label><input type="checkbox" id="remember" checked> Remember me</label>
-          <a href="contact.html">Forgot password?</a>
+          <a href="forgot-password.html">Forgot password?</a>
         </div>
         <button class="a-btn" type="submit" id="submit-btn">Sign In</button>
         <div class="a-msg" id="auth-msg"></div>
@@ -103,11 +107,17 @@ async function doSignin(e){
   const btn=document.getElementById('submit-btn');
   if(!email||!password){msg.className='a-msg err';msg.textContent='Please enter your email and password.';return false;}
   btn.disabled=true;btn.textContent='Signing in…';
-  const res=await ArcheryAuth.login(email,password);
+  const totp=document.getElementById('totp').value.trim();
+  const res=await ArcheryAuth.login(email,password,totp);
   if(res&&res.ok){
     msg.className='a-msg ok';msg.textContent='Signed in — redirecting…';
     const dest=new URLSearchParams(location.search).get('next')||'profile.html';
     setTimeout(()=>location.href=dest,500);
+  }else if(res&&res.needsTotp){
+    document.getElementById('totp-field').style.display='';
+    document.getElementById('totp').focus();
+    msg.className='a-msg err';msg.textContent=res.error||'Enter the 6-digit code from your authenticator app.';
+    btn.disabled=false;btn.textContent='Sign In';
   }else{
     msg.className='a-msg err';msg.textContent=(res&&res.error)||'Incorrect email or password.';
     btn.disabled=false;btn.textContent='Sign In';
