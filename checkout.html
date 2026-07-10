@@ -232,12 +232,25 @@ function useLocation(){
   if(!navigator.geolocation){ alert('Location is not available on this device.'); return; }
   const btn=document.getElementById('loc-btn'), lbl=document.getElementById('loc-label');
   lbl.textContent='Getting your location…';
-  navigator.geolocation.getCurrentPosition(pos=>{
+  navigator.geolocation.getCurrentPosition(async pos=>{
     geo={lat:pos.coords.latitude,lng:pos.coords.longitude,accuracy:pos.coords.accuracy};
-    btn.classList.add('ok'); lbl.textContent='Location captured ✓ (helps us deliver accurately)';
+    btn.classList.add('ok'); lbl.textContent='Location found — filling your address…';
+    // Reverse-geocode the coordinates → auto-fill city / state / pincode (free, no key).
+    try{
+      const r=await fetch('https://api.bigdatacloud.net/data/reverse-geocode-client?latitude='+geo.lat+'&longitude='+geo.lng+'&localityLanguage=en').then(x=>x.json());
+      const setIf=(id,v)=>{ const el=document.getElementById(id); if(el && v && !el.value.trim()){ el.value=v; el.dispatchEvent(new Event('input')); } };
+      const city = r.city || r.locality || (r.localityInfo&&r.localityInfo.administrative&&r.localityInfo.administrative.slice(-1)[0]&&r.localityInfo.administrative.slice(-1)[0].name) || '';
+      setIf('c-city', city);
+      setIf('c-state', r.principalSubdivision || '');
+      setIf('c-pin', r.postcode || '');
+      const cs=[city, r.principalSubdivision].filter(Boolean).join(', ');
+      lbl.textContent = cs ? ('Location captured ✓ — '+cs) : 'Location captured ✓ (helps us deliver accurately)';
+    }catch(e){
+      lbl.textContent='Location captured ✓ (helps us deliver accurately)';
+    }
   }, err=>{
     lbl.textContent='Use my current location (faster, accurate delivery)';
-    alert('Could not get location: '+err.message);
+    if(window.ArcheryUI) ArcheryUI.toast('Could not get location: '+err.message,'err'); else alert('Could not get location: '+err.message);
   }, {enableHighAccuracy:true, timeout:10000});
 }
 
