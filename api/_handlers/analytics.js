@@ -28,7 +28,7 @@ module.exports = async (req, res) => {
   // Admin: aggregated dashboard
   if (!checkAdmin(req)) return json(res, { error: 'Unauthorised' }, 401);
   try {
-    const [paid, revenue, byStatus, events, cities, recent, series, counts] = await Promise.all([
+    const [paid, revenue, byStatus, events, cities, recent, series, counts, activity, sources, fills] = await Promise.all([
       q("select count(*)::int n from orders where payment_status='paid'"),
       q("select coalesce(sum(total),0) s from orders where payment_status='paid'"),
       q('select status, count(*)::int n from orders group by status'),
@@ -52,6 +52,22 @@ module.exports = async (req, res) => {
            (select count(*)::int from analytics_events where type='pageview') pageviews,
            (select count(*)::int from analytics_events where type='pageview' and created_at > now() - interval '30 days') pageviews30,
            (select count(*)::int from orders)                                 orders_total`),
+      // Real recent-activity feed: a union of the latest events across tables.
+      q(`(select 'signup' k, name label, '' sub, created_at ts from users order by id desc limit 6)
+          union all (select 'order', coalesce(customer_name,'Someone'), 'placed order '||order_no, extract(epoch from created_at)*1000 from orders order by id desc limit 6)
+          union all (select 'registration', trim(coalesce(first_name,'')||' '||coalesce(last_name,'')), 'registered for '||coalesce(tournament_name,'a tournament'), created_at from registrations order by id desc limit 6)
+          union all (select 'application', coalesce(org_name,'A federation'), 'applied for federation access', created_at from applications order by id desc limit 6)
+          union all (select 'post', coalesce(author,'A member'), 'posted: '||coalesce(title,''), created_at from posts order by id desc limit 6)
+          order by ts desc nulls last limit 14`),
+      // Traffic sources from referrer strings.
+      q(`select case
+             when referrer is null or referrer='' then 'Direct'
+             when referrer ilike '%google%' or referrer ilike '%bing%' then 'Search'
+             when referrer ilike '%facebook%' or referrer ilike '%instagram%' or referrer ilike '%t.co%' or referrer ilike '%twitter%' or referrer ilike '%linkedin%' or referrer ilike '%whatsapp%' then 'Social'
+             else 'Referral' end source, count(*)::int n
+           from analytics_events where type='pageview' group by 1 order by n desc`),
+      // Tournament fill rates.
+      q(`select name, registered, slots from tournaments where active is not false and slots>0 order by date nulls last limit 6`),
     ]);
     const c = counts.rows[0];
     return json(res, {
@@ -63,6 +79,9 @@ module.exports = async (req, res) => {
       recent: recent.rows,
       revenueSeries: series.rows,
       counts: c,
+      activity: activity.rows.map(r => ({ k: r.k, label: (r.label || '').trim() || 'Someone', sub: r.sub, ts: Number(r.ts) || null })),
+      sources: sources.rows,
+      fillRates: fills.rows.map(r => ({ name: r.name, registered: r.registered, slots: r.slots, pct: r.slots > 0 ? Math.round(r.registered / r.slots * 100) : 0 })),
     });
   } catch (e) {
     console.error('analytics:', e?.message);

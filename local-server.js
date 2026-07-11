@@ -339,6 +339,20 @@ async function api(parts, method, body, req, res){
       recent: STORE.orders.slice(-10).reverse().map(o=>({id:o.id,order_no:o.orderNo,customer_name:o.customerName,total:o.total,status:o.status,payment_status:o.paymentStatus,city:o.city,created_at:o.createdAt})),
       revenueSeries: Object.entries(days).map(([d,v])=>({d,v})),
       counts,
+      activity: (()=>{
+        const a=[];
+        (STORE.users||[]).slice(-6).forEach(u=>a.push({k:'signup',label:u.name||'New member',sub:'created an account',ts:u.createdAt}));
+        (STORE.orders||[]).slice(-6).forEach(o=>a.push({k:'order',label:o.customerName||'Someone',sub:'placed order '+o.orderNo,ts:o.createdAt}));
+        (STORE.registrations||[]).slice(-6).forEach(r=>a.push({k:'registration',label:((r.firstName||'')+' '+(r.lastName||'')).trim()||'Someone',sub:'registered for '+(r.tournamentName||'a tournament'),ts:r.createdAt}));
+        (STORE.applications||[]).slice(-6).forEach(x=>a.push({k:'application',label:x.orgName||'A federation',sub:'applied for federation access',ts:x.createdAt}));
+        (STORE.posts||[]).slice(-6).forEach(p=>a.push({k:'post',label:p.author||'A member',sub:'posted: '+(p.title||''),ts:p.createdAt}));
+        return a.sort((x,y)=>(y.ts||0)-(x.ts||0)).slice(0,14);
+      })(),
+      sources: (()=>{
+        const s={}; STORE.events.filter(e=>e.type==='pageview').forEach(e=>{const r=(e.referrer||'').toLowerCase();const k=!r?'Direct':/google|bing/.test(r)?'Search':/facebook|instagram|t\.co|twitter|linkedin|whatsapp/.test(r)?'Social':'Referral';s[k]=(s[k]||0)+1;});
+        return Object.entries(s).map(([source,n])=>({source,n})).sort((a,b)=>b.n-a.n);
+      })(),
+      fillRates: (STORE.tournaments||[]).filter(t=>t.active!==false&&t.slots>0).slice(0,6).map(t=>({name:t.name,registered:t.registered,slots:t.slots,pct:Math.round((t.registered/t.slots)*100)})),
     });
   }
 

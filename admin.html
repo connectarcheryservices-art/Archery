@@ -455,21 +455,12 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
         <div class="card">
-          <div class="card-title">Recent Activity <span class="card-action">View all</span></div>
-          <div class="activity-list">
-            <div class="activity-item"><div class="activity-dot" style="background:var(--green);"></div><div class="activity-text"><strong>Rohit Krishnan</strong> registered for Assam Open 2025</div><div class="activity-time">2m ago</div></div>
-            <div class="activity-item"><div class="activity-dot" style="background:var(--gold);"></div><div class="activity-text"><strong>A verified seller</strong> added 3 new products to the shop</div><div class="activity-time">18m ago</div></div>
-            <div class="activity-item"><div class="activity-dot" style="background:var(--blue);"></div><div class="activity-text"><strong>Karnataka Archery Assoc.</strong> applied for federation access</div><div class="activity-time">1h ago</div></div>
-            <div class="activity-item"><div class="activity-dot" style="background:var(--purple);"></div><div class="activity-text"><strong>42 new athletes</strong> signed up today</div><div class="activity-time">2h ago</div></div>
-            <div class="activity-item"><div class="activity-dot" style="background:var(--red);"></div><div class="activity-text"><strong>NRT Round 3</strong> registration is 82% full — 88 slots left</div><div class="activity-time">3h ago</div></div>
-            <div class="activity-item"><div class="activity-dot" style="background:var(--green);"></div><div class="activity-text"><strong>₹2,40,000</strong> shop order processed</div><div class="activity-time">4h ago</div></div>
-          </div>
+          <div class="card-title">Recent Activity <span class="card-action" onclick="loadDashboard()">Refresh</span></div>
+          <div class="activity-list" id="activity-list"><div class="activity-item"><div class="activity-text" style="color:var(--muted-2);">Loading…</div></div></div>
         </div>
         <div class="card">
           <div class="card-title">Tournament Fill Rates</div>
-          <div class="progress-item"><div class="progress-label-row"><span>Assam Open 2025</span><span>78%</span></div><div class="progress-track"><div class="progress-fill" style="width:78%;background:linear-gradient(90deg,var(--gold-dark),var(--gold));"></div></div></div>
-          <div class="progress-item"><div class="progress-label-row"><span>National Ranking Round 3</span><span>82%</span></div><div class="progress-track"><div class="progress-fill" style="width:82%;background:linear-gradient(90deg,var(--gold-dark),var(--gold));"></div></div></div>
-          <div class="progress-item"><div class="progress-label-row"><span>India International Grand Prix</span><span>12%</span></div><div class="progress-track"><div class="progress-fill" style="width:12%;background:linear-gradient(90deg,#185FA5,var(--blue));"></div></div></div>
+          <div id="fill-rates"><div style="color:var(--muted-2);font-size:13px;">Loading…</div></div>
           <div style="margin-top:20px;" class="card-title">Quick Actions</div>
           <div style="display:flex;flex-wrap:wrap;gap:8px;">
             <button class="btn-add-new" style="margin-bottom:0;" onclick="showPanel('products',document.querySelector('[onclick*=products]'))"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Product</button>
@@ -789,10 +780,7 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
           <div class="progress-item"><div class="progress-label-row"><span>Knowledge</span><span>8%</span></div><div class="progress-track"><div class="progress-fill" style="width:8%;background:var(--orange);"></div></div></div>
         </div>
         <div class="card"><div class="card-title">Traffic Sources</div>
-          <div class="progress-item"><div class="progress-label-row"><span>Direct</span><span>42%</span></div><div class="progress-track"><div class="progress-fill" style="width:42%;background:var(--gold);"></div></div></div>
-          <div class="progress-item"><div class="progress-label-row"><span>Google Search</span><span>31%</span></div><div class="progress-track"><div class="progress-fill" style="width:31%;background:var(--blue);"></div></div></div>
-          <div class="progress-item"><div class="progress-label-row"><span>Social Media</span><span>18%</span></div><div class="progress-track"><div class="progress-fill" style="width:18%;background:var(--purple);"></div></div></div>
-          <div class="progress-item"><div class="progress-label-row"><span>Referral</span><span>9%</span></div><div class="progress-track"><div class="progress-fill" style="width:9%;background:var(--green);"></div></div></div>
+          <div id="traffic-sources"><div style="color:var(--muted-2);font-size:13px;">Loading…</div></div>
         </div>
       </div>
     </div>
@@ -1392,7 +1380,7 @@ async function toggleKnowledge(id,cur){ await put('knowledge',id,{published:!cur
 async function delKnowledge(id){ if(!confirm('Delete this article?'))return; await del('knowledge',id); loadKnowledge(); toast('Deleted'); }
 
 function loadPanel(name){
-  if(name==='dashboard'){loadStats();}
+  if(name==='dashboard'){loadStats();loadDashboard();}
   else if(name==='products'){loadProducts();}
   else if(name==='orders'){loadOrders();}
   else if(name==='tournaments'){loadTournaments();}
@@ -1556,6 +1544,35 @@ async function saveStaff(id){
   if(r&&(r.ok||r.id)){ document.getElementById('staff-ov').remove(); loadStaff(); toast('Saved'); }
   else toast((r&&r.error)||'Could not save');
 }
+// ── DASHBOARD: real recent activity + traffic sources + fill rates ──
+function timeAgo(ts){ if(!ts) return ''; const s=Math.floor((Date.now()-ts)/1000); if(s<60)return 'just now'; if(s<3600)return Math.floor(s/60)+'m ago'; if(s<86400)return Math.floor(s/3600)+'h ago'; return Math.floor(s/86400)+'d ago'; }
+async function loadDashboard(){
+  const a=await get('analytics'); if(!a||a.error) return;
+  // Recent activity
+  const dot={signup:'var(--purple)',order:'var(--green)',registration:'var(--gold)',application:'var(--blue)',post:'var(--red)'};
+  const act=document.getElementById('activity-list');
+  if(act){
+    const items=(a.activity||[]);
+    act.innerHTML=items.length?items.map(e=>`<div class="activity-item"><div class="activity-dot" style="background:${dot[e.k]||'var(--muted)'};"></div><div class="activity-text"><strong>${escA(e.label)}</strong> ${escA(e.sub||'')}</div><div class="activity-time">${timeAgo(e.ts)}</div></div>`).join('')
+      :'<div class="activity-item"><div class="activity-text" style="color:var(--muted-2);">No activity yet — it appears here as customers register, order and post.</div></div>';
+  }
+  // Traffic sources
+  const ts=document.getElementById('traffic-sources');
+  if(ts){
+    const src=a.sources||[]; const total=src.reduce((s,x)=>s+x.n,0)||1;
+    const col={Direct:'var(--gold)',Search:'var(--blue)',Social:'var(--purple)',Referral:'var(--green)'};
+    ts.innerHTML=src.length?src.map(x=>{const p=Math.round(x.n/total*100);return `<div class="progress-item"><div class="progress-label-row"><span>${x.source}</span><span>${p}%</span></div><div class="progress-track"><div class="progress-fill" style="width:${p}%;background:${col[x.source]||'var(--muted)'};"></div></div></div>`;}).join('')
+      :'<div style="color:var(--muted-2);font-size:13px;">No traffic recorded yet.</div>';
+  }
+  // Fill rates
+  const fr=document.getElementById('fill-rates');
+  if(fr){
+    const list=a.fillRates||[];
+    fr.innerHTML=list.length?list.map(t=>{const c=t.pct>=70?'linear-gradient(90deg,var(--gold-dark),var(--gold))':'linear-gradient(90deg,#185FA5,var(--blue))';return `<div class="progress-item"><div class="progress-label-row"><span>${escA(t.name)}</span><span>${t.pct}% · ${t.registered}/${t.slots}</span></div><div class="progress-track"><div class="progress-fill" style="width:${Math.min(100,t.pct)}%;background:${c};"></div></div></div>`;}).join('')
+      :'<div style="color:var(--muted-2);font-size:13px;">No tournaments with slots yet.</div>';
+  }
+}
+
 // ── MAIL SERVER (in-house SMTP) ──
 async function loadMailSettings(){
   const s=await get('mail/settings');
@@ -1591,7 +1608,7 @@ async function testMail(){
 async function toggleStaff(id,active){ await put('staff',id,{active:!active}); loadStaff(); toast('Updated'); }
 async function delStaff(id,name){ if(!confirm('Remove '+name+'? They will lose access immediately.'))return; await del('staff',id); loadStaff(); toast('Removed'); }
 
-function boot(){ applyRole(); loadStats(); loadOrders(); loadRegistrations(); loadReports(); loadApplications(); loadChat(); }
+function boot(){ applyRole(); loadStats(); loadDashboard(); loadOrders(); loadRegistrations(); loadReports(); loadApplications(); loadChat(); }
 if(AUTH_TOKEN){ hideLogin(); boot(); } else { showLogin(); }
 </script>
 </body>
