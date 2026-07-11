@@ -60,6 +60,16 @@ module.exports = async (req, res) => {
       // Every registered user gets a real, editable, shareable profile — no more demo data.
       const handle = await uniqueHandle(name);
       await q(`insert into profiles (handle,name,user_id,active) values ($1,$2,$3,true)`, [handle, name, userId]);
+      // Welcome email (best-effort — silent if no mail server connected yet).
+      try {
+        const { sendMail, branded } = require('../_lib/mailer');
+        const site = b.origin || 'https://archery.services';
+        sendMail({ to: email, subject: 'Welcome to Archery.Services 🏹',
+          html: branded({ heading: 'Welcome, ' + name.split(' ')[0] + '!',
+            preheader: 'Your archery account is ready',
+            body: 'Your account is ready. Build your athlete profile, enter tournaments, shop equipment, and connect with the archery community across India.<br><br>Your public profile: <b>archery.services/' + handle + '</b>',
+            cta: 'Go to my profile', ctaUrl: site + '/profile' }) }).catch(() => {});
+      } catch (e) {}
       const user = { id: userId, name, email };
       return json(res, { ok: true, token: sign(user), user });
     }

@@ -33,7 +33,7 @@ module.exports = async (req, res) => {
       `update orders set payment_status='paid', payment_method='razorpay',
          razorpay_payment_id=$1, status='confirmed', updated_at=now()
        where razorpay_order_id=$2 and payment_status <> 'paid'
-       returning id, order_no, items, total`,
+       returning id, order_no, items, total, customer_name, customer_email`,
       [razorpay_payment_id, razorpay_order_id]
     );
 
@@ -44,6 +44,16 @@ module.exports = async (req, res) => {
         if (it.id) await q('update products set stock = greatest(0, stock - $1) where id=$2', [Math.max(1, it.qty || 1), it.id]).catch(() => {});
       }
       await q(`insert into analytics_events (type, value, order_id) values ('purchase', $1, $2)`, [o.total, o.id]).catch(() => {});
+      // Order confirmation email (best-effort — silent if no mail server connected).
+      if (o.customer_email) {
+        try {
+          const { sendMail, branded } = require('../_lib/mailer');
+          const lines = items.map(i => `${i.name} × ${i.qty || 1} — ₹${Number(i.price).toLocaleString('en-IN')}`).join('<br>');
+          sendMail({ to: o.customer_email, subject: `Order confirmed — ${o.order_no}`,
+            html: branded({ heading: 'Order confirmed 🎯', preheader: 'Payment received — ' + o.order_no,
+              body: `Thank you${o.customer_name ? ', ' + o.customer_name.split(' ')[0] : ''}! We've received your payment and your order is confirmed.<br><br><b>Order ${o.order_no}</b><br>${lines}<br><br><b>Total paid: ₹${Number(o.total).toLocaleString('en-IN')}</b><br><br>We'll notify you as it ships across India.` }) }).catch(() => {});
+        } catch (e) {}
+      }
       return json(res, { ok: true, orderNo: o.order_no });
     }
     return json(res, { ok: true }); // already finalised
