@@ -286,6 +286,34 @@ async function api(parts, method, body, req, res){
   }
 
   // Analytics
+  // In-house mail settings + test (parity with api/_handlers/mail.js)
+  if (resource === 'mail') {
+    if (!isAdmin(req)) return send(res, {error:'Unauthorised'}, 401);
+    const action = parts[2];
+    const S = STORE.settings || (STORE.settings = {});
+    if (action === 'settings' && method === 'GET') {
+      return send(res, { host:S.mailSmtpHost||'', port:S.mailSmtpPort||587, user:S.mailSmtpUser||'', secure:!!S.mailSmtpSecure, insecure:!!S.mailSmtpInsecure,
+        fromName:S.mailFromName||'Archery.Services', fromAddress:S.mailFromAddress||'', hasPassword:!!S.mailSmtpPass, configured:!!S.mailSmtpHost });
+    }
+    if (action === 'settings' && method === 'POST') {
+      S.mailSmtpHost=String(data.host||'').trim(); S.mailSmtpPort=+data.port||587; S.mailSmtpUser=String(data.user||'').trim();
+      S.mailSmtpSecure=!!data.secure; S.mailSmtpInsecure=!!data.insecure; S.mailFromName=String(data.fromName||'Archery.Services').trim();
+      S.mailFromAddress=String(data.fromAddress||data.user||'').trim(); if(data.password)S.mailSmtpPass=String(data.password);
+      save(); return send(res, {ok:true});
+    }
+    if (action === 'test' && method === 'POST') {
+      try {
+        const { verifySmtp, sendMail, branded } = require('./api/_lib/mailer');
+        const c = { host:data.host||S.mailSmtpHost, port:+data.port||S.mailSmtpPort||587, user:data.user||S.mailSmtpUser, pass:data.password||S.mailSmtpPass, secure:!!data.secure, allowSelfSigned:!!data.insecure, fromName:data.fromName||S.mailFromName||'Archery.Services', fromAddress:data.fromAddress||S.mailFromAddress||data.user };
+        const v = await verifySmtp(c); if(!v.ok) return send(res, {ok:false, error:v.error, hint:v.hint});
+        const to = data.to||c.fromAddress||c.user;
+        const r = await sendMail({to, config:c, subject:'Archery.Services — mail is working ✓', html:branded({heading:'Mail server connected',body:'Test message from your local admin.'})});
+        return send(res, r.ok?{ok:true,detail:v.detail,sentTo:to}:{ok:false,error:r.error});
+      } catch(e){ return send(res, {ok:false, error:e.message}); }
+    }
+    return send(res, {error:'Not found'}, 404);
+  }
+
   if (resource === 'analytics') {
     if (method === 'POST') { STORE.events.push({type:String(data.type||'').slice(0,40), path:data.path, value:data.value??null, ts:now}); if (STORE.events.length>5000) STORE.events=STORE.events.slice(-4000); save(); return send(res, {ok:true}); }
     if (!isAdmin(req)) return send(res, {error:'Unauthorised'}, 401);

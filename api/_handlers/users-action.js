@@ -136,17 +136,20 @@ module.exports = async (req, res) => {
         const hash = crypto.createHash('sha256').update(raw).digest('hex');
         await q('update users set reset_hash=$1, reset_expires=$2 where id=$3', [hash, Date.now() + 30 * 60 * 1000, row.id]);
         const link = (b.origin || '') + '/reset-password.html?token=' + raw + '&email=' + encodeURIComponent(email);
-        if (process.env.RESEND_API_KEY) {
-          await fetch('https://api.resend.com/emails', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + process.env.RESEND_API_KEY },
-            body: JSON.stringify({ from: 'Archery.Services <noreply@archery.services>', to: email, subject: 'Reset your password',
-              html: `<p>Click to reset your password (expires in 30 minutes):</p><p><a href="${link}">${link}</a></p>` }),
-          }).catch(() => {});
-          return json(res, { ok: true, message: 'If that email is registered, a reset link has been sent.' });
-        }
-        // No email provider configured: return the link directly so the flow is still testable/usable.
-        return json(res, { ok: true, message: 'Email delivery is not configured yet — here is your reset link.', devLink: link });
+        // In-house SMTP (Mail Settings). No third-party API.
+        const { sendMail, branded } = require('../_lib/mailer');
+        const sent = await sendMail({
+          to: email, subject: 'Reset your Archery.Services password',
+          html: branded({
+            heading: 'Reset your password',
+            preheader: 'Reset link inside — valid 30 minutes',
+            body: 'We received a request to reset your password. Click the button below to choose a new one. This link expires in 30 minutes. If you didn’t request this, you can ignore this email.',
+            cta: 'Reset password', ctaUrl: link,
+          }),
+        });
+        if (sent.ok) return json(res, { ok: true, message: 'If that email is registered, a reset link has been sent. Check your inbox.' });
+        // No mail server connected yet → return the link directly so the flow still works.
+        return json(res, { ok: true, message: 'Mail server not connected yet — here is your reset link.', devLink: link });
       }
       return json(res, { ok: true, message: 'If that email is registered, a reset link has been sent.' });
     }

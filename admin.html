@@ -402,6 +402,10 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
       Team &amp; Roles
     </button>
+    <button class="nav-item" id="nav-mail-item" onclick="showPanel('mail',this);loadMailSettings();">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 6L2 7"/></svg>
+      Mail Server
+    </button>
     <button class="nav-item" id="nav-settings-item" onclick="showPanel('settings',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
       Site Settings
@@ -686,6 +690,40 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
       </div>
     </div>
 
+    <div class="panel" id="panel-mail">
+      <div class="breadcrumb">Admin <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg> <span>Mail Server</span></div>
+      <div class="card" style="margin-bottom:16px;">
+        <div style="font-size:12.5px;color:var(--text-2);line-height:1.7;">
+          <b style="color:var(--text);">In-house mail — no third party.</b> Connect any SMTP server (your own mail server, or your domain's mailbox). The platform sends password resets, order confirmations and notifications through it. Port <b style="color:var(--gold);">465</b> = TLS on · Port <b style="color:var(--gold);">587</b> = TLS off (STARTTLS).
+          <span id="mail-status" style="display:block;margin-top:8px;"></span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">SMTP Connection</div>
+        <div class="form-grid">
+          <div class="form-group full"><label class="form-label">SMTP Host</label><input class="form-input" id="m-host" placeholder="mail.yourdomain.com"></div>
+          <div class="form-group"><label class="form-label">Port</label><input class="form-input" id="m-port" type="number" value="587"></div>
+          <div class="form-group"><label class="form-label" style="display:flex;align-items:center;gap:8px;margin-top:22px;"><input type="checkbox" id="m-secure" style="width:16px;height:16px;accent-color:var(--gold);"> Use TLS/SSL (tick for port 465)</label></div>
+          <div class="form-group"><label class="form-label">Username</label><input class="form-input" id="m-user" placeholder="you@yourdomain.com" autocomplete="off"></div>
+          <div class="form-group"><label class="form-label">Password</label><input class="form-input" id="m-pass" type="password" placeholder="•••••••• (leave blank to keep current)" autocomplete="new-password"></div>
+          <div class="form-group"><label class="form-label">From name</label><input class="form-input" id="m-fromname" value="Archery.Services"></div>
+          <div class="form-group"><label class="form-label">From address</label><input class="form-input" id="m-fromaddr" placeholder="noreply@yourdomain.com"></div>
+          <div class="form-group full"><label class="form-label" style="display:flex;align-items:center;gap:8px;"><input type="checkbox" id="m-insecure" style="width:16px;height:16px;accent-color:var(--gold);"> Allow self-signed certificate (only if you trust the server)</label></div>
+        </div>
+        <div class="form-actions">
+          <button class="btn-save" onclick="saveMailSettings()">Save connection</button>
+        </div>
+      </div>
+      <div class="card" style="margin-top:16px;">
+        <div class="card-title">Send a test email</div>
+        <div class="form-grid">
+          <div class="form-group full"><label class="form-label">Send test to</label><input class="form-input" id="m-testto" placeholder="your-email@example.com"></div>
+        </div>
+        <div class="form-actions"><button class="btn-add-new" style="margin:0;" onclick="testMail()">Send test email</button></div>
+        <div id="mail-test-result" style="margin-top:12px;font-size:13px;line-height:1.6;"></div>
+      </div>
+    </div>
+
     <div class="panel" id="panel-settings">
       <div class="breadcrumb">Admin <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg> <span>Site Settings</span></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
@@ -902,6 +940,7 @@ function applyRole(){
   const canStaff = ME_ROLE==='owner'||ME_ROLE==='manager';
   const teamNav=document.getElementById('nav-team'); if(teamNav) teamNav.style.display=canStaff?'':'none';
   const setNav=document.getElementById('nav-settings-item'); if(setNav) setNav.style.display=canStaff?'':'none';
+  const mailNav=document.getElementById('nav-mail-item'); if(mailNav) mailNav.style.display=canStaff?'':'none';
   const badge=document.querySelector('.admin-badge'); if(badge) badge.textContent=ME_ROLE.toUpperCase();
   const av=document.querySelector('.topbar-avatar'); if(av) av.textContent=(ME_NAME||'A').charAt(0).toUpperCase();
 }
@@ -1516,6 +1555,38 @@ async function saveStaff(id){
   else { body.username=v('sf-user'); if(!body.name||!body.username||!pass){toast('Name, username and password are required');return;} r=await post('staff',body); }
   if(r&&(r.ok||r.id)){ document.getElementById('staff-ov').remove(); loadStaff(); toast('Saved'); }
   else toast((r&&r.error)||'Could not save');
+}
+// ── MAIL SERVER (in-house SMTP) ──
+async function loadMailSettings(){
+  const s=await get('mail/settings');
+  if(!s||s.error) return;
+  document.getElementById('m-host').value=s.host||'';
+  document.getElementById('m-port').value=s.port||587;
+  document.getElementById('m-user').value=s.user||'';
+  document.getElementById('m-secure').checked=!!s.secure;
+  document.getElementById('m-insecure').checked=!!s.insecure;
+  document.getElementById('m-fromname').value=s.fromName||'Archery.Services';
+  document.getElementById('m-fromaddr').value=s.fromAddress||'';
+  document.getElementById('m-pass').placeholder=s.hasPassword?'•••••••• (saved — leave blank to keep)':'password';
+  const st=document.getElementById('mail-status');
+  if(st) st.innerHTML=s.configured?'<b style="color:#22C55E;">● Connected</b> — '+ (s.host||'') +':'+(s.port||''):'<b style="color:#E0902A;">● Not connected yet</b> — enter your SMTP details below.';
+}
+function mailFormBody(){
+  return {host:document.getElementById('m-host').value.trim(),port:+document.getElementById('m-port').value||587,user:document.getElementById('m-user').value.trim(),
+    password:document.getElementById('m-pass').value,secure:document.getElementById('m-secure').checked,insecure:document.getElementById('m-insecure').checked,
+    fromName:document.getElementById('m-fromname').value.trim(),fromAddress:document.getElementById('m-fromaddr').value.trim()};
+}
+async function saveMailSettings(){
+  const r=await post('mail/settings',mailFormBody());
+  if(r&&r.ok){ document.getElementById('m-pass').value=''; loadMailSettings(); toast('Mail settings saved'); }
+  else toast((r&&r.error)||'Could not save');
+}
+async function testMail(){
+  const box=document.getElementById('mail-test-result'); box.innerHTML='Testing connection…';
+  const body=mailFormBody(); body.to=document.getElementById('m-testto').value.trim();
+  const r=await post('mail/test',body);
+  if(r&&r.ok){ box.innerHTML='<b style="color:#22C55E;">✓ Success</b> — '+(r.detail||'')+'<br>Test email sent to <b>'+(r.sentTo||'')+'</b>. Check the inbox.'; }
+  else{ box.innerHTML='<b style="color:#E04653;">✕ '+((r&&r.error)||'Failed')+'</b>'+(r&&r.hint?'<br><span style="color:var(--text-2);">'+r.hint+'</span>':''); }
 }
 async function toggleStaff(id,active){ await put('staff',id,{active:!active}); loadStaff(); toast('Updated'); }
 async function delStaff(id,name){ if(!confirm('Remove '+name+'? They will lose access immediately.'))return; await del('staff',id); loadStaff(); toast('Removed'); }

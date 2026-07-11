@@ -14,6 +14,8 @@ module.exports = (req, res) => {
     if (r0 === 'checkout' && n === 2 && (seg[1] === 'quote' || seg[1] === 'create' || seg[1] === 'fee')) return H('checkout-' + seg[1])(req, res);
     if (r0 === 'razorpay' && n === 2 && (seg[1] === 'verify' || seg[1] === 'config')) return H('razorpay-' + seg[1])(req, res);
     if (r0 === 'admin' && n === 2 && seg[1] === 'login') return H('admin-login')(req, res);
+    // In-house mail: /api/mail/settings, /api/mail/test
+    if (r0 === 'mail' && n === 2) { q.action = seg[1]; return H('mail')(req, res); }
     if (r0 === 'analytics' && n === 1) return H('analytics')(req, res);
     if (r0 === 'coach' && n === 1) return H('coach')(req, res);
     if (r0 === 'users' && n === 2) { q.action = seg[1]; return H('users-action')(req, res); }
