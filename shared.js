@@ -86,41 +86,71 @@
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function(){ navigator.serviceWorker.register('/sw.js').catch(function(){}); });
     }
-    // Custom install banner (captures the browser's install prompt) — skipped on admin + when already installed.
+    // ── Install banner — works on EVERY device ──
+    // Chrome/Android: one-tap native prompt via beforeinstallprompt.
+    // iOS Safari (never fires that event): show Add-to-Home-Screen instructions.
+    // Other mobile browsers with no prompt: show a menu hint. Desktop Chrome: native.
     if (page.includes('admin')) return;
-    var installed = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+    var installed = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
     if (installed) return;
-    var deferred = null;
-    window.addEventListener('beforeinstallprompt', function(e){
-      e.preventDefault(); deferred = e;
-      if (localStorage.getItem('archery_pwa_dismissed')) return;
-      showInstall();
-    });
-    function showInstall(){
-      if (document.getElementById('pwa-banner')) return;
-      var css = document.createElement('style');
+    if (localStorage.getItem('archery_pwa_dismissed')) return;
+
+    var ua = navigator.userAgent || '';
+    var isIOS = /iPhone|iPad|iPod/i.test(ua) && !window.MSStream;
+    var isAndroid = /Android/i.test(ua);
+    var isMobile = isIOS || isAndroid || /Mobi/i.test(ua);
+    var deferred = null, shown = false;
+
+    function injectCss(){
+      if (document.getElementById('pwa-banner-css')) return;
+      var css = document.createElement('style'); css.id = 'pwa-banner-css';
       css.textContent =
-        '#pwa-banner{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:99998;width:min(560px,calc(100vw - 24px));background:#131316;border:1px solid rgba(201,162,39,.35);border-radius:12px;box-shadow:0 18px 50px rgba(0,0,0,.55);display:flex;align-items:center;gap:14px;padding:13px 15px;opacity:0;transition:opacity .3s,transform .3s;transform:translateX(-50%) translateY(12px);}' +
+        '#pwa-banner{position:fixed;left:50%;bottom:16px;transform:translateX(-50%) translateY(14px);z-index:99998;width:min(560px,calc(100vw - 20px));background:#131316;border:1px solid rgba(201,162,39,.4);border-radius:14px;box-shadow:0 18px 55px rgba(0,0,0,.6);padding:14px 16px;opacity:0;transition:opacity .32s,transform .32s;}' +
         '#pwa-banner.show{opacity:1;transform:translateX(-50%) translateY(0);}' +
-        '#pwa-banner img{width:38px;height:38px;border-radius:8px;flex-shrink:0;}' +
+        '#pwa-banner .pb-row{display:flex;align-items:center;gap:13px;}' +
+        '#pwa-banner img{width:42px;height:42px;border-radius:9px;flex-shrink:0;}' +
         '#pwa-banner .pb-txt{flex:1;min-width:0;}' +
-        '#pwa-banner .pb-t{font-family:Oswald,sans-serif;font-size:14px;font-weight:600;color:#fff;letter-spacing:.02em;}' +
-        '#pwa-banner .pb-s{font-size:12px;color:#B9BEC9;margin-top:1px;}' +
-        '#pwa-banner .pb-i{background:#C9A227;color:#131316;border:none;border-radius:6px;padding:9px 16px;font-family:Oswald,sans-serif;font-size:12.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;flex-shrink:0;}' +
-        '#pwa-banner .pb-l{background:none;border:none;color:#7E8290;font-size:12.5px;cursor:pointer;flex-shrink:0;padding:6px;}';
+        '#pwa-banner .pb-t{font-family:Oswald,sans-serif;font-size:14.5px;font-weight:600;color:#fff;letter-spacing:.02em;}' +
+        '#pwa-banner .pb-s{font-size:12px;color:#B9BEC9;margin-top:2px;line-height:1.45;}' +
+        '#pwa-banner .pb-i{background:#C9A227;color:#131316;border:none;border-radius:7px;padding:10px 18px;font-family:Oswald,sans-serif;font-size:12.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;flex-shrink:0;}' +
+        '#pwa-banner .pb-l{background:none;border:none;color:#7E8290;font-size:20px;line-height:1;cursor:pointer;flex-shrink:0;padding:4px 6px;}' +
+        '#pwa-banner .pb-steps{margin:10px 0 0;font-size:12.5px;color:#E6E8EE;line-height:1.7;}' +
+        '#pwa-banner .pb-steps b{color:#C9A227;}';
       document.head.appendChild(css);
-      var b = document.createElement('div'); b.id = 'pwa-banner';
-      b.innerHTML = '<img src="/icon-192.png" alt=""><div class="pb-txt"><div class="pb-t">Install Archery.Services</div><div class="pb-s">Add to your home screen — faster access & offline pages.</div></div>' +
-        '<button class="pb-i">Install</button><button class="pb-l">Later</button>';
+    }
+    function dismiss(b){ b.classList.remove('show'); setTimeout(function(){ b.remove(); }, 320); localStorage.setItem('archery_pwa_dismissed', '1'); }
+    function banner(inner){
+      if (shown || document.getElementById('pwa-banner')) return;
+      shown = true; injectCss();
+      var b = document.createElement('div'); b.id = 'pwa-banner'; b.innerHTML = inner;
       document.body.appendChild(b);
       requestAnimationFrame(function(){ b.classList.add('show'); });
+      var close = b.querySelector('.pb-l'); if (close) close.addEventListener('click', function(){ dismiss(b); });
+      return b;
+    }
+    // 1. Native (Chrome / Edge / Android)
+    window.addEventListener('beforeinstallprompt', function(e){
+      e.preventDefault(); deferred = e;
+      var b = banner('<div class="pb-row"><img src="/icon-192.png" alt=""><div class="pb-txt"><div class="pb-t">Install Archery.Services</div><div class="pb-s">Add to your home screen — faster access & works offline.</div></div><button class="pb-i">Install</button><button class="pb-l">&times;</button></div>');
+      if (!b) return;
       b.querySelector('.pb-i').addEventListener('click', function(){
-        b.remove(); if (!deferred) return; deferred.prompt();
-        deferred.userChoice.finally(function(){ deferred = null; });
+        deferred.prompt();
+        deferred.userChoice.finally(function(){ deferred = null; b.remove(); });
       });
-      b.querySelector('.pb-l').addEventListener('click', function(){
-        b.remove(); localStorage.setItem('archery_pwa_dismissed', '1');
-      });
+    });
+    // 2. iOS Safari — show manual Add-to-Home-Screen steps (no native event exists).
+    if (isIOS) {
+      setTimeout(function(){
+        banner('<div class="pb-row"><img src="/icon-192.png" alt=""><div class="pb-txt"><div class="pb-t">Install Archery.Services</div><div class="pb-s">Get the full-screen app that works offline.</div></div><button class="pb-l">&times;</button></div>' +
+          '<div class="pb-steps">Tap the <b>Share</b> icon <span style="font-size:15px;">&#x2191;</span> in Safari, then choose <b>“Add to Home Screen”</b>.</div>');
+      }, 2600);
+    }
+    // 3. Other mobile browsers where the native prompt never arrives → menu hint.
+    else if (isMobile) {
+      setTimeout(function(){
+        if (deferred || shown) return;
+        banner('<div class="pb-row"><img src="/icon-192.png" alt=""><div class="pb-txt"><div class="pb-t">Install Archery.Services</div><div class="pb-s">Open your browser menu <b style="color:#C9A227;">⋮</b> and tap <b style="color:#C9A227;">“Install app”</b> / “Add to Home screen”.</div></div><button class="pb-l">&times;</button></div>');
+      }, 4000);
     }
   })();
 
