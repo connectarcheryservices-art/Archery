@@ -184,10 +184,11 @@ document.querySelectorAll('.r-tab').forEach(b=>b.addEventListener('click',functi
 }));
 fetch('/api/athletes')
   .then(r=>r.json())
-  .then(data=>{if(data&&data.length){
-    // merge API data with display data
-    data.forEach(a=>{const local=ATHLETES.find(x=>x.name===a.name);if(!local)ATHLETES.push({rank:a.rank,disc:a.discipline||'Recurve Open',init:a.name.split(' ').map(w=>w[0]).join('').slice(0,2),name:a.name,state:a.state,club:a.discipline||'',avg:a.pb-10,pb:a.pb,events:12,trend:'eq',color:'#C9A227',bg:'rgba(201,162,39,.15)'});});
-    ATHLETES.sort((a,b)=>a.rank-b.rank);
+  .then(data=>{if(Array.isArray(data)&&data.length){
+    // Database is the source of truth — real athletes REPLACE the sample list.
+    const PAL=[['#C9A227','rgba(201,162,39,.15)'],['#1F3E9C','rgba(31,62,156,.15)'],['#D22730','rgba(210,39,48,.15)'],['#3AA45B','rgba(58,164,91,.15)']];
+    ATHLETES.length=0;
+    data.slice().sort((a,b)=>(a.rank||999)-(b.rank||999)).forEach((a,i)=>{const[c,bg]=PAL[i%4];ATHLETES.push({rank:a.rank||i+1,disc:a.discipline||'Recurve Open',init:(a.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase(),name:a.name,state:a.state||'',club:a.club||'',avg:a.pb?a.pb-(8+i):0,pb:a.pb||0,events:a.events||12,trend:'eq',color:c,bg:bg,img:a.imgUrl});});
   }filterAthletes('');})
   .catch(()=>filterAthletes(''));
 // Animate bars when in view

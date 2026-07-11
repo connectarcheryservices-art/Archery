@@ -28,7 +28,7 @@ module.exports = async (req, res) => {
   // Admin: aggregated dashboard
   if (!checkAdmin(req)) return json(res, { error: 'Unauthorised' }, 401);
   try {
-    const [paid, revenue, byStatus, events, cities, recent, series, counts, activity, sources, fills] = await Promise.all([
+    const [paid, revenue, byStatus, events, cities, recent, series, counts, activity, sources, fills, topPages] = await Promise.all([
       q("select count(*)::int n from orders where payment_status='paid'"),
       q("select coalesce(sum(total),0) s from orders where payment_status='paid'"),
       q('select status, count(*)::int n from orders group by status'),
@@ -68,6 +68,8 @@ module.exports = async (req, res) => {
            from analytics_events where type='pageview' group by 1 order by n desc`),
       // Tournament fill rates.
       q(`select name, registered, slots from tournaments where active is not false and slots>0 order by date nulls last limit 6`),
+      // Top pages by pageview.
+      q(`select coalesce(nullif(path,''),'/') path, count(*)::int n from analytics_events where type='pageview' group by 1 order by n desc limit 6`),
     ]);
     const c = counts.rows[0];
     return json(res, {
@@ -82,6 +84,7 @@ module.exports = async (req, res) => {
       activity: activity.rows.map(r => ({ k: r.k, label: (r.label || '').trim() || 'Someone', sub: r.sub, ts: Number(r.ts) || null })),
       sources: sources.rows,
       fillRates: fills.rows.map(r => ({ name: r.name, registered: r.registered, slots: r.slots, pct: r.slots > 0 ? Math.round(r.registered / r.slots * 100) : 0 })),
+      topPages: topPages.rows,
     });
   } catch (e) {
     console.error('analytics:', e?.message);

@@ -353,6 +353,7 @@ async function api(parts, method, body, req, res){
         return Object.entries(s).map(([source,n])=>({source,n})).sort((a,b)=>b.n-a.n);
       })(),
       fillRates: (STORE.tournaments||[]).filter(t=>t.active!==false&&t.slots>0).slice(0,6).map(t=>({name:t.name,registered:t.registered,slots:t.slots,pct:Math.round((t.registered/t.slots)*100)})),
+      topPages: (()=>{const p={};STORE.events.filter(e=>e.type==='pageview').forEach(e=>{const k=(e.path||'/')||'/';p[k]=(p[k]||0)+1;});return Object.entries(p).map(([path,n])=>({path,n})).sort((a,b)=>b.n-a.n).slice(0,6);})(),
     });
   }
 

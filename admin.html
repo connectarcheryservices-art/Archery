@@ -773,11 +773,7 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;">
         <div class="card"><div class="card-title">Top Pages</div>
-          <div class="progress-item"><div class="progress-label-row"><span>Homepage (index.html)</span><span>34%</span></div><div class="progress-track"><div class="progress-fill" style="width:34%;background:var(--gold);"></div></div></div>
-          <div class="progress-item"><div class="progress-label-row"><span>Shop (shop.html)</span><span>28%</span></div><div class="progress-track"><div class="progress-fill" style="width:28%;background:var(--blue);"></div></div></div>
-          <div class="progress-item"><div class="progress-label-row"><span>Tournaments</span><span>18%</span></div><div class="progress-track"><div class="progress-fill" style="width:18%;background:var(--purple);"></div></div></div>
-          <div class="progress-item"><div class="progress-label-row"><span>Athletes</span><span>12%</span></div><div class="progress-track"><div class="progress-fill" style="width:12%;background:var(--green);"></div></div></div>
-          <div class="progress-item"><div class="progress-label-row"><span>Knowledge</span><span>8%</span></div><div class="progress-track"><div class="progress-fill" style="width:8%;background:var(--orange);"></div></div></div>
+          <div id="top-pages"><div style="color:var(--muted-2);font-size:13px;">Loading…</div></div>
         </div>
         <div class="card"><div class="card-title">Traffic Sources</div>
           <div id="traffic-sources"><div style="color:var(--muted-2);font-size:13px;">Loading…</div></div>
@@ -1199,7 +1195,12 @@ async function loadAnalytics(){
   if(a && !a.error){ const c=a.counts||{}; const inr=n=>Number(n||0).toLocaleString('en-IN');
     const set=(id,v)=>{const el=document.getElementById(id); if(el)el.innerHTML=v;};
     set('an-views', inr(c.pageviews30)); set('an-orders', inr(c.orders_total));
-    set('an-paid', inr(a.paidOrders)); set('an-rev', '₹'+inr(a.revenue)); }
+    set('an-paid', inr(a.paidOrders)); set('an-rev', '₹'+inr(a.revenue));
+    // Top pages (real) + traffic sources reuse the dashboard renderers.
+    const tp=document.getElementById('top-pages');
+    if(tp){ const pages=a.topPages||[]; const tot=pages.reduce((s,x)=>s+x.n,0)||1; const cols=['var(--gold)','var(--blue)','var(--purple)','var(--green)','var(--orange)','var(--red)'];
+      tp.innerHTML=pages.length?pages.map((x,i)=>{const p=Math.round(x.n/tot*100);const nm=(x.path==='/'?'Homepage':x.path.replace(/^\//,'').replace(/\.html$/,'')||'Homepage');return `<div class="progress-item"><div class="progress-label-row"><span>${nm}</span><span>${p}%</span></div><div class="progress-track"><div class="progress-fill" style="width:${p}%;background:${cols[i%6]};"></div></div></div>`;}).join(''):'<div style="color:var(--muted-2);font-size:13px;">No pageviews recorded yet.</div>'; }
+    if(typeof loadDashboard==='function') loadDashboard(); }
   if(!a||a.error||!a.revenueSeries||!a.revenueSeries.length){ loadAnalyticsChart(); return; }
   const series=a.revenueSeries, max=Math.max(1,...series.map(s=>Number(s.v)));
   document.getElementById('analytics-chart').innerHTML=series.map(s=>`<div class="chart-bar" style="height:${(Number(s.v)/max*100).toFixed(0)}%;" title="₹${Number(s.v).toLocaleString('en-IN')}"></div>`).join('');
