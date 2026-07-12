@@ -83,7 +83,7 @@ function render(p, isOwn){
   root.innerHTML=`
   <div class="pf-cover"><svg viewBox="0 0 160 160" fill="none"><circle cx="80" cy="80" r="75" stroke="#fff" stroke-width="2"/><circle cx="80" cy="80" r="52" stroke="#fff" stroke-width="1.4"/><circle cx="80" cy="80" r="30" stroke="#fff" stroke-width="2"/><circle cx="80" cy="80" r="11" fill="#fff"/></svg></div>
   <div class="pf-head">
-    <div class="pf-av">${(p.imgUrl||p.photo)?`<img src="${esc(p.imgUrl||p.photo)}">`:initials(p.name)}</div>
+    <div class="pf-av">${(p.imgUrl||p.photo)?`<img src="${esc(p.imgUrl||p.photo)}" alt="${esc(p.name)}">`:initials(p.name)}</div>
     <div class="pf-id">
       <div class="pf-name">${esc(p.name)} ${p.verified?'<span class="pf-verify"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>Verified</span>':''}</div>
       <div class="pf-headline">${esc(p.headline||'')}</div>
@@ -166,7 +166,7 @@ function openProfileEdit(){
   const F=(l,id,v,type)=>'<label style="display:block;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:#9CA1AD;margin:10px 0 5px;">'+l+'</label><input id="'+id+'" type="'+(type||'text')+'" value="'+esc2(v)+'" style="'+IN+'">';
   ov.innerHTML='<div style="background:#17181D;border:1px solid rgba(255,255,255,.1);border-radius:14px;width:100%;max-width:520px;max-height:88vh;overflow:auto;padding:24px;">'+
     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><div style="font-family:Oswald,sans-serif;font-size:18px;color:#fff;text-transform:uppercase;letter-spacing:.04em;">Edit my profile</div><button onclick="document.getElementById(\'pf-edit-ov\').remove()" style="background:none;border:none;color:#7E8290;font-size:26px;cursor:pointer;line-height:1;">&times;</button></div>'+
-    '<div style="display:flex;gap:14px;align-items:center;margin:6px 0 4px;"><img id="pe-prev" src="'+esc2(p.imgUrl)+'" style="width:64px;height:64px;object-fit:cover;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:#101116;'+(p.imgUrl?'':'display:none;')+'"><button type="button" class="btn-outline" onclick="document.getElementById(\'pe-file\').click()" style="cursor:pointer;">📷 Upload photo</button><input type="file" id="pe-file" accept="image/*" style="display:none;" onchange="peImg(this)"><input type="hidden" id="pe-imgUrl" value="'+esc2(p.imgUrl)+'"></div>'+
+    '<div style="display:flex;gap:14px;align-items:center;margin:6px 0 4px;"><img id="pe-prev" alt="Profile photo" src="'+esc2(p.imgUrl)+'" style="width:64px;height:64px;object-fit:cover;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:#101116;'+(p.imgUrl?'':'display:none;')+'"><button type="button" class="btn-outline" onclick="document.getElementById(\'pe-file\').click()" style="cursor:pointer;">📷 Upload photo</button><input type="file" id="pe-file" accept="image/*" style="display:none;" onchange="peImg(this)"><input type="hidden" id="pe-imgUrl" value="'+esc2(p.imgUrl)+'"></div>'+
     F('Display name','pe-name',p.name)+
     F('Headline (e.g. Recurve Open Athlete)','pe-headline',p.headline)+
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">'+

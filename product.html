@@ -323,7 +323,7 @@ function render(p){
       <div class="pd-gallery">
         <div class="pd-main-img" id="pd-main">${save>0?`<div class="pd-badge">-${save}%</div>`:''}${(function(){const u=ArcheryReco.urgency(p);return u?`<div class="pd-urgency" style="background:${u.c}">${u.t}</div>`:'';})()}${svg}</div>
         <div class="pd-thumbs">
-          ${[0,1,2].map(i=>`<div class="pd-thumb ${i===0?'active':''}" style="background:${thumbBg[i]};" onclick="this.parentElement.querySelectorAll('.pd-thumb').forEach(t=>t.classList.remove('active'));this.classList.add('active');">${p.imgUrl?`<img src="${p.imgUrl}">`:`<svg viewBox="0 0 80 80" fill="none" stroke="${p.color}" stroke-width="1.2" stroke-linecap="round">${getProductSVG(p.icon,p.color)}</svg>`}</div>`).join('')}
+          ${[0,1,2].map(i=>`<div class="pd-thumb ${i===0?'active':''}" style="background:${thumbBg[i]};" onclick="this.parentElement.querySelectorAll('.pd-thumb').forEach(t=>t.classList.remove('active'));this.classList.add('active');">${p.imgUrl?`<img src="${p.imgUrl}" alt="${p.name}">`:`<svg viewBox="0 0 80 80" fill="none" stroke="${p.color}" stroke-width="1.2" stroke-linecap="round">${getProductSVG(p.icon,p.color)}</svg>`}</div>`).join('')}
         </div>
       </div>
       <div class="pd-buybox">

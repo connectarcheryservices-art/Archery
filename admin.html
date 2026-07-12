@@ -489,7 +489,7 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
             <label class="form-label">Product Photo</label>
             <div id="p-img-drop" onclick="document.getElementById('p-img-file').click()" style="border:2px dashed rgba(201,162,39,.3);border-radius:10px;padding:22px;text-align:center;cursor:pointer;background:rgba(201,162,39,.04);">
               <div style="font-size:13px;color:var(--text-2);">Click to upload a product photo (JPG/PNG, auto-compressed)</div>
-              <img id="p-img-preview" style="display:none;max-width:130px;max-height:130px;margin:12px auto 0;border-radius:8px;">
+              <img id="p-img-preview" alt="Product photo preview" style="display:none;max-width:130px;max-height:130px;margin:12px auto 0;border-radius:8px;">
             </div>
             <input type="file" id="p-img-file" accept="image/*" style="display:none;" onchange="handleProductImg(this)">
           </div>
