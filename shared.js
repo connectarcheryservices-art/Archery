@@ -93,7 +93,6 @@
     if (page.includes('admin')) return;
     var installed = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
     if (installed) return;
-    if (localStorage.getItem('archery_pwa_dismissed')) return;
 
     var ua = navigator.userAgent || '';
     var isIOS = /iPhone|iPad|iPod/i.test(ua) && !window.MSStream;
@@ -128,30 +127,81 @@
       var close = b.querySelector('.pb-l'); if (close) close.addEventListener('click', function(){ dismiss(b); });
       return b;
     }
-    // 1. Native (Chrome / Edge / Android)
+    var TITLE='<img src="/icon-192.png" alt=""><div class="pb-txt"><div class="pb-t">Install Archery.Services</div><div class="pb-s">Full-screen app · works offline.</div></div>';
+    function iosBanner(force){
+      var b=banner('<div class="pb-row">'+TITLE+'<button class="pb-l">&times;</button></div><div class="pb-steps">Tap the <b>Share</b> icon <span style="font-size:15px;">&#x2191;</span> in Safari, then <b>“Add to Home Screen”</b>.</div>', force);
+      return b;
+    }
+    function hintBanner(force){
+      return banner('<div class="pb-row">'+TITLE+'<button class="pb-l">&times;</button></div><div class="pb-steps">Open your browser menu <b>⋮</b> and tap <b>“Install app”</b> / “Add to Home screen”.</div>', force);
+    }
+    // Manual trigger — always works (nav "Install app" item calls this). Ignores dismissed.
+    window.ArcheryInstall = function(){
+      if (window.matchMedia('(display-mode: standalone)').matches || navigator.standalone) { return; }
+      var existing=document.getElementById('pwa-banner'); if(existing){existing.remove();shown=false;}
+      if (deferred){
+        deferred.prompt();
+        deferred.userChoice.finally(function(){ deferred=null; });
+        return;
+      }
+      if (isIOS) iosBanner(true); else hintBanner(true);
+    };
+    // 1. Native prompt (Chrome / Edge / Android / desktop) — one-tap install.
     window.addEventListener('beforeinstallprompt', function(e){
       e.preventDefault(); deferred = e;
-      var b = banner('<div class="pb-row"><img src="/icon-192.png" alt=""><div class="pb-txt"><div class="pb-t">Install Archery.Services</div><div class="pb-s">Add to your home screen — faster access & works offline.</div></div><button class="pb-i">Install</button><button class="pb-l">&times;</button></div>');
+      if (localStorage.getItem('archery_pwa_dismissed')) return;
+      var b = banner('<div class="pb-row">'+TITLE+'<button class="pb-i">Install</button><button class="pb-l">&times;</button></div>');
       if (!b) return;
       b.querySelector('.pb-i').addEventListener('click', function(){
-        deferred.prompt();
-        deferred.userChoice.finally(function(){ deferred = null; b.remove(); });
+        b.remove(); deferred.prompt();
+        deferred.userChoice.finally(function(){ deferred = null; });
       });
     });
-    // 2. iOS Safari — show manual Add-to-Home-Screen steps (no native event exists).
-    if (isIOS) {
-      setTimeout(function(){
-        banner('<div class="pb-row"><img src="/icon-192.png" alt=""><div class="pb-txt"><div class="pb-t">Install Archery.Services</div><div class="pb-s">Get the full-screen app that works offline.</div></div><button class="pb-l">&times;</button></div>' +
-          '<div class="pb-steps">Tap the <b>Share</b> icon <span style="font-size:15px;">&#x2191;</span> in Safari, then choose <b>“Add to Home Screen”</b>.</div>');
-      }, 2600);
+    // 2. iOS Safari (no native event) → auto-show Add-to-Home-Screen steps.
+    if (isIOS && !localStorage.getItem('archery_pwa_dismissed')) setTimeout(function(){ iosBanner(false); }, 2600);
+    // 3. Other mobile with no native prompt → menu hint.
+    else if (isMobile && !isIOS && !localStorage.getItem('archery_pwa_dismissed')) setTimeout(function(){ if (!deferred && !shown) hintBanner(false); }, 4200);
+  })();
+
+  // ── DAY / NIGHT THEME — real, persistent, site-wide ──
+  (function theme(){
+    if (page.includes('admin')) return;
+    var root = document.documentElement;
+    function apply(mode){
+      if (mode === 'day'){ root.setAttribute('data-theme','day'); root.classList.add('day'); }
+      else { root.removeAttribute('data-theme'); root.classList.remove('day'); }
+      var fab = document.getElementById('theme-fab');
+      if (fab) fab.innerHTML = mode === 'day'
+        ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>'   // moon (switch to night)
+        : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>'; // sun (switch to day)
     }
-    // 3. Other mobile browsers where the native prompt never arrives → menu hint.
-    else if (isMobile) {
-      setTimeout(function(){
-        if (deferred || shown) return;
-        banner('<div class="pb-row"><img src="/icon-192.png" alt=""><div class="pb-txt"><div class="pb-t">Install Archery.Services</div><div class="pb-s">Open your browser menu <b style="color:#C9A227;">⋮</b> and tap <b style="color:#C9A227;">“Install app”</b> / “Add to Home screen”.</div></div><button class="pb-l">&times;</button></div>');
-      }, 4000);
+    var saved = localStorage.getItem('archery_theme') || 'night';
+    apply(saved);
+    // Inject the day-mode token overrides (pages built on the shared var() tokens lighten instantly).
+    if (!document.getElementById('archery-day-css')){
+      var st = document.createElement('style'); st.id='archery-day-css';
+      st.textContent =
+        'html[data-theme="day"]{--ink:#EEF0F4;--ink-2:#FFFFFF;--ink-3:#E6E8EE;--surface:#FFFFFF;--surface-2:#E9EBF0;--char:#FFFFFF;--char-2:#EEF0F4;--char-3:#E0E3EA;--forest:#EEF0F4;--forest-2:#FFFFFF;--forest-3:#E9EBF0;--forest-4:#DEE1E8;--text:#15161A;--text-2:#454954;--muted:#7A7E88;--muted-2:#5C606B;--ivory:#15161A;--ivory-2:#454954;--ivory-3:#5C606B;}' +
+        'html[data-theme="day"] body{background:#EEF0F4!important;background-image:none!important;color:#15161A;}' +
+        'html[data-theme="day"] .card,html[data-theme="day"] .stat-card,html[data-theme="day"] .t-card,html[data-theme="day"] .product-card,html[data-theme="day"] .job-card,html[data-theme="day"] .post-card,html[data-theme="day"] .article-card,html[data-theme="day"] .sidebar-card{background:#FFFFFF!important;border-color:rgba(19,19,22,.1)!important;}' +
+        'html[data-theme="day"] footer{background:#131316;}' +   // keep footer dark (looks good either mode)
+        'html[data-theme="day"] #theme-fab{background:#fff;color:#131316;border-color:rgba(19,19,22,.15);box-shadow:0 6px 20px rgba(0,0,0,.15);}';
+      (document.head||document.documentElement).appendChild(st);
     }
+    // Floating toggle on every page (bottom-left, clear of the chat FAB on the right).
+    function addFab(){
+      if (document.getElementById('theme-fab') || !document.body) return;
+      var f = document.createElement('button');
+      f.id='theme-fab'; f.setAttribute('aria-label','Toggle day / night mode');
+      f.style.cssText='position:fixed;left:16px;bottom:16px;z-index:9990;width:44px;height:44px;border-radius:50%;background:#17181D;color:#C9A227;border:1px solid rgba(201,162,39,.35);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.4);';
+      f.addEventListener('click', function(){
+        var next = (localStorage.getItem('archery_theme')==='day') ? 'night' : 'day';
+        localStorage.setItem('archery_theme', next); apply(next);
+      });
+      document.body.appendChild(f);
+      apply(localStorage.getItem('archery_theme') || 'night');   // set the correct icon now the FAB exists
+    }
+    if (document.body) addFab(); else window.addEventListener('DOMContentLoaded', addFab);
   })();
 
   // ── PAGEVIEW ANALYTICS (best-effort; powers the admin dashboard) ──
