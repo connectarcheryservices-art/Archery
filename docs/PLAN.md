@@ -11,7 +11,7 @@
 | | |
 |---|---|
 | **Current phase** | **Phase 0 — Stop the bleeding** |
-| **Phase 0 progress** | **6 / 9** — 0.1 0.2 0.3 0.4 0.7 0.8 0.9 done; **0.5 (money) and 0.6 (AI) remain** |
+| **Phase 0 progress** | **7 / 9** — only **0.6 (AI coach)** remains |
 | **Last updated** | 2026-07-15 |
 | **Live** | https://archery.services — **Phase 0 work is NOT deployed yet.** Live still serves the old build. |
 
@@ -65,8 +65,12 @@ The only occurrence of "arrow" in the schema is a product name.**
 - [x] **0.3** Escape the XSS sink (`admin.html:982-984`); audit all `innerHTML` sites; **one**
       shared sanitiser, delete the rest. *(T1)*
 - [x] **0.4** Strict **CSP** in `vercel.json`. *(T1)*
-- [ ] **0.5** **Razorpay webhook** as source of truth; authenticate `/api/razorpay/verify`;
-      reconcile stuck `pending` orders — **there is real money in them**. *(T6)*
+- [x] **0.5** **Razorpay webhook** as source of truth; authenticate `/api/razorpay/verify`;
+      reconcile stuck `pending` orders — **there is real money in them**. *(T6)* —
+      `/api/razorpay-webhook` (raw-body HMAC, idempotent, amount checked against our own
+      price); verify is now a convenience layer that can no longer mark an order failed
+      without a signature; `/api/razorpay/reconcile` + admin UI recovers the backlog.
+      **Needs `RAZORPAY_WEBHOOK_SECRET` set and migration 008 applied — see DEPLOY.md.**
 - [ ] **0.6** `/api/coach`: authenticate + rate limit + spend cap; **Sonnet**; server-held
       history; stream. *(T7, ADR-0008)*
 - [x] **0.7** Rate limit `/api/admin/login`; **TOTP for owner**; constant-time compare; remove

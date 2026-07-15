@@ -898,6 +898,22 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
     <!-- ── SHOP ORDERS ── -->
     <div class="panel" id="panel-orders">
       <div class="breadcrumb">Admin <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg> <span>Shop Orders</span></div>
+      <div class="card" style="margin-bottom:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;">
+          <div>
+            <div style="font-family:'Oswald',sans-serif;font-size:14px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--text);">Payment reconciliation</div>
+            <div style="font-size:12.5px;color:var(--text-2);margin-top:4px;line-height:1.6;">
+              Finds orders still marked <b>pending</b> that Razorpay says were actually <b>paid</b> — a customer who paid
+              and closed the tab before the confirmation landed. Asks Razorpay for the truth; never invents a payment.
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn-add-new" style="margin:0;background:transparent;border:1px solid var(--line);color:var(--text-2);" onclick="reconcile(true)">Check (dry run)</button>
+            <button class="btn-add-new" style="margin:0;" onclick="reconcile(false)">Reconcile now</button>
+          </div>
+        </div>
+        <div id="recon-out" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid var(--line);font-size:12.5px;color:var(--text-2);line-height:1.8;"></div>
+      </div>
       <div class="card">
         <div class="card-title">Customer Orders <span class="td-badge badge-active" style="font-size:11px;" id="ord-count">0</span></div>
         <p style="font-size:13px;color:var(--text-2);margin-bottom:16px;">Paid orders placed from the shop. Stock reduces automatically on payment. Move each order new &rarr; confirmed &rarr; packed &rarr; shipped &rarr; delivered, or cancel it. "Map" opens the customer's captured location.</p>
@@ -1199,6 +1215,35 @@ function loadAnalyticsChart(){
 // ── SHOP ORDERS ──
 // escA now comes from esc.js — one shared, correct escaper (CLAUDE.md §1.7).
 const ORD_FLOW={new:'confirmed',confirmed:'packed',packed:'shipped',shipped:'delivered'};
+// T6 recovery path: money moved but the browser never told us. Razorpay is asked
+// for the truth server-side — this never marks anything paid on its own say-so.
+async function reconcile(dryRun){
+  const out=document.getElementById('recon-out');
+  out.style.display='';
+  out.textContent=dryRun?'Checking with Razorpay…':'Reconciling…';
+  const r=await fetch(`${API}/razorpay/reconcile`,{method:'POST',headers:authH(),body:JSON.stringify({dryRun})}).then(x=>x.json()).catch(()=>null);
+  if(!r||!r.ok){ out.textContent=(r&&r.error)||'Reconcile failed.'; return; }
+  out.textContent='';
+  const head=document.createElement('div');
+  head.style.cssText='color:var(--text);font-weight:600;margin-bottom:6px;';
+  const n=dryRun?r.wouldRecover:r.recovered;
+  head.textContent=`Scanned ${r.scanned} pending order(s). ${dryRun?`${n} would be recovered.`:`${n} recovered.`}`;
+  out.appendChild(head);
+  if(!r.results.length){
+    const d=document.createElement('div'); d.textContent='No pending orders older than 5 minutes — nothing to reconcile.'; out.appendChild(d);
+  }
+  r.results.forEach(x=>{
+    const d=document.createElement('div');
+    const label={marked_paid:'✅ recovered — marked paid',would_mark_paid:'would recover — Razorpay has a captured payment',
+      no_payment:'no payment at Razorpay — left pending',razorpay_unreachable:'⚠ Razorpay unreachable',
+      amount_mismatch:'⚠ AMOUNT MISMATCH — needs a human',already_paid:'already paid',unknown_order:'unknown order'}[x.action]||x.action;
+    d.textContent=`${x.orderNo} — ${label}${x.amount?` (₹${x.amount})`:''}${x.reason?` — ${x.reason}`:''}`;
+    if(x.action==='amount_mismatch') d.style.color='var(--red)';
+    out.appendChild(d);
+  });
+  if(!dryRun) loadOrders();
+}
+
 async function loadOrders(){
   const data=await get('orders'); if(!Array.isArray(data)) return;
   const open=data.filter(o=>['new','confirmed','packed'].includes(o.status)).length;

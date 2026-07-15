@@ -1,10 +1,25 @@
-// /api/razorpay/verify — verify the payment signature, then finalise the order:
-// mark paid + confirmed, decrement stock, log the purchase. Verification is the
-// security gate (HMAC of order_id|payment_id with the key secret).
+// /api/razorpay/verify — the browser's post-checkout callback.
+//
+// This is NO LONGER the source of truth for payment state (§1.6, THREAT_MODEL
+// T6). /api/razorpay-webhook is. This endpoint exists so the customer sees
+// "confirmed" immediately instead of waiting on webhook delivery; if it never
+// runs — tab closed, network dropped, redirect failed — the webhook still marks
+// the order paid, and reconcile catches anything the webhook missed. Payment
+// state no longer depends on the customer's browser completing a round trip.
+//
+// It is safe for this to run as well as the webhook: both funnel into
+// markPaid(), whose conditional UPDATE lets exactly one of them win.
+//
+// Fixed here (T6):
+//   * A bad signature used to write `payment_status='failed'` to the order named
+//     in the request. That is an UNAUTHENTICATED state mutation: anyone who
+//     learned a razorpay_order_id could POST garbage and mark that order failed.
+//     A bad signature now means "this caller proved nothing" and writes nothing.
+//   * The captured amount is confirmed with Razorpay and checked against the
+//     price WE set, in markPaid() — never taken from the browser.
 'use strict';
-const crypto = require('crypto');
 const { cors, json, readBody } = require('../_lib/respond');
-const { q } = require('../_lib/db');
+const { verifyCallbackSignature, fetchPayment, markPaid, fulfil } = require('../_lib/payments');
 
 module.exports = async (req, res) => {
   cors(res);
@@ -15,48 +30,41 @@ module.exports = async (req, res) => {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = b;
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature)
       return json(res, { ok: false, error: 'Missing payment fields' }, 400);
-    const secret = process.env.RAZORPAY_KEY_SECRET;
-    if (!secret) return json(res, { ok: false, error: 'Razorpay not configured' }, 500);
 
-    const expected = crypto.createHmac('sha256', secret)
-      .update(`${razorpay_order_id}|${razorpay_payment_id}`).digest('hex');
-    const a = Buffer.from(expected), s = Buffer.from(String(razorpay_signature));
-    const valid = a.length === s.length && crypto.timingSafeEqual(a, s);
-
-    if (!valid) {
-      await q("update orders set payment_status='failed', updated_at=now() where razorpay_order_id=$1", [razorpay_order_id]).catch(() => {});
+    const sig = verifyCallbackSignature(razorpay_order_id, razorpay_payment_id, razorpay_signature);
+    if (!sig.ok) {
+      // Write nothing. An unsigned caller cannot change an order's state.
+      console.error('razorpay/verify: bad signature for', razorpay_order_id);
       return json(res, { ok: false, error: 'Payment verification failed' }, 400);
     }
 
-    // Finalise once (payment_status guard makes re-calls no-ops).
-    const upd = await q(
-      `update orders set payment_status='paid', payment_method='razorpay',
-         razorpay_payment_id=$1, status='confirmed', updated_at=now()
-       where razorpay_order_id=$2 and payment_status <> 'paid'
-       returning id, order_no, items, total, customer_name, customer_email`,
-      [razorpay_payment_id, razorpay_order_id]
-    );
-
-    if (upd.rows[0]) {
-      const o = upd.rows[0];
-      const items = Array.isArray(o.items) ? o.items : [];
-      for (const it of items) {
-        if (it.id) await q('update products set stock = greatest(0, stock - $1) where id=$2', [Math.max(1, it.qty || 1), it.id]).catch(() => {});
-      }
-      await q(`insert into analytics_events (type, value, order_id) values ('purchase', $1, $2)`, [o.total, o.id]).catch(() => {});
-      // Order confirmation email (best-effort — silent if no mail server connected).
-      if (o.customer_email) {
-        try {
-          const { sendMail, branded } = require('../_lib/mailer');
-          const lines = items.map(i => `${i.name} × ${i.qty || 1} — ₹${Number(i.price).toLocaleString('en-IN')}`).join('<br>');
-          sendMail({ to: o.customer_email, subject: `Order confirmed — ${o.order_no}`,
-            html: branded({ heading: 'Order confirmed 🎯', preheader: 'Payment received — ' + o.order_no,
-              body: `Thank you${o.customer_name ? ', ' + o.customer_name.split(' ')[0] : ''}! We've received your payment and your order is confirmed.<br><br><b>Order ${o.order_no}</b><br>${lines}<br><br><b>Total paid: ₹${Number(o.total).toLocaleString('en-IN')}</b><br><br>We'll notify you as it ships across India.` }) }).catch(() => {});
-        } catch (e) {}
-      }
-      return json(res, { ok: true, orderNo: o.order_no });
+    // The signature proves this order/payment pair came from Razorpay, but not
+    // how much was actually captured. Ask Razorpay directly rather than trust a
+    // number from the browser (§1.6). If that call fails we do not guess — the
+    // webhook is authoritative and will settle it.
+    const payment = await fetchPayment(razorpay_payment_id).catch(() => null);
+    if (!payment) {
+      return json(res, { ok: true, pending: true,
+        message: 'Payment received — confirming. Your order will update shortly.' });
     }
-    return json(res, { ok: true }); // already finalised
+    if (payment.status !== 'captured' && payment.status !== 'authorized') {
+      return json(res, { ok: false, error: 'Payment not captured' }, 400);
+    }
+
+    const r = await markPaid({
+      razorpayOrderId: razorpay_order_id,
+      paymentId: razorpay_payment_id,
+      amountPaise: Number(payment.amount),
+      source: 'callback',
+    });
+
+    if (r.status === 'paid') { await fulfil(r.order); return json(res, { ok: true, orderNo: r.order.order_no }); }
+    if (r.status === 'already_paid') return json(res, { ok: true, orderNo: r.order?.order_no });
+    if (r.status === 'amount_mismatch') {
+      console.error('razorpay/verify amount mismatch:', r.reason);
+      return json(res, { ok: false, error: 'Payment amount mismatch — our team has been alerted.' }, 400);
+    }
+    return json(res, { ok: false, error: 'Order not found' }, 404);
   } catch (e) {
     console.error('razorpay/verify error:', e?.message);
     return json(res, { ok: false, error: 'Verification error' }, 500);

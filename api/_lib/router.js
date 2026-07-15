@@ -12,7 +12,10 @@ module.exports = (req, res) => {
 
   try {
     if (r0 === 'checkout' && n === 2 && (seg[1] === 'quote' || seg[1] === 'create' || seg[1] === 'fee')) return H('checkout-' + seg[1])(req, res);
-    if (r0 === 'razorpay' && n === 2 && (seg[1] === 'verify' || seg[1] === 'config')) return H('razorpay-' + seg[1])(req, res);
+    // NB: /api/razorpay-webhook is deliberately NOT routed here. It is its own
+    // function using the Web Standard signature, because it must read the RAW
+    // body to verify Razorpay's HMAC — see api/razorpay-webhook.js.
+    if (r0 === 'razorpay' && n === 2 && (seg[1] === 'verify' || seg[1] === 'config' || seg[1] === 'reconcile')) return H('razorpay-' + seg[1])(req, res);
     if (r0 === 'admin' && n === 2 && seg[1] === 'login') return H('admin-login')(req, res);
     // In-house mail: /api/mail/settings, /api/mail/test
     if (r0 === 'mail' && n === 2) { q.action = seg[1]; return H('mail')(req, res); }

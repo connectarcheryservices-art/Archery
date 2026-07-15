@@ -23,6 +23,11 @@ vercel whoami        # expect: connectarcheryservices-4339
 
 ## Deploy
 
+> ### ⚠ Migrations run BEFORE the deploy, never after
+> The code assumes its schema. Deploying `008_payment_truth.sql`'s code without applying the
+> migration first means `markPaid()` writes columns that do not exist, and **every payment
+> confirmation fails**. Order: apply migrations → deploy → re-alias → verify.
+
 **The domain does NOT auto-follow production.** A deploy alone changes nothing that users see —
 you must re-alias both hosts or the deploy is invisible:
 
@@ -52,7 +57,7 @@ Set in the Vercel dashboard (project `archery`), never in the repo:
 | `DATABASE_URL` | Supabase Postgres, session pooler `:5432` |
 | `ADMIN_PASSWORD` | Owner master password. Signs the owner token. Long + random. |
 | `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` | Payments |
-| `RAZORPAY_WEBHOOK_SECRET` | Webhook signature verification — distinct from the key secret (§1.2) |
+| `RAZORPAY_WEBHOOK_SECRET` | Webhook signature verification — **a different secret from the key secret** (§1.2). Set when you create the webhook (below). Without it the webhook rejects every delivery. |
 | `ANTHROPIC_API_KEY` | AI coach |
 | `SMTP_*` | Mail |
 
@@ -69,6 +74,34 @@ DATABASE_URL="postgresql://…:5432/postgres" node supabase/apply.js
 
 The data store is Postgres. `data.json` is not used and has not been since the Supabase
 migration.
+
+## Razorpay webhook — required, this is how payments actually settle
+
+Payment state is decided by the webhook, not the customer's browser (CLAUDE.md §1.6). Until
+this is configured, an order is only marked paid if the customer's tab survives the redirect
+back from checkout — anyone who pays and closes the tab leaves real money against a `pending`
+order.
+
+1. Razorpay Dashboard → **Settings → Webhooks → Add New Webhook**
+2. URL: `https://archery.services/api/razorpay-webhook`
+3. Secret: generate a strong random value — **not** your API key secret:
+   ```bash
+   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+   ```
+4. Active events: `payment.captured`, `payment.failed`, `order.paid`
+5. Put that same secret in Vercel as `RAZORPAY_WEBHOOK_SECRET`, then redeploy + re-alias.
+
+Verify it: Razorpay's webhook page has a delivery log; a healthy delivery returns `200
+{"ok":true}`. A `400 invalid signature` means `RAZORPAY_WEBHOOK_SECRET` does not match the
+dashboard.
+
+### Recovering money that is already stuck
+
+Admin → **Shop Orders → Payment reconciliation → Check (dry run)** lists orders we have as
+`pending` that Razorpay says were captured. "Reconcile now" settles them. It asks Razorpay for
+the truth server-side and never invents a payment; an order with no captured payment is left
+alone. Run the dry run first — and run it once after this release, because the backlog of
+stuck orders predates the webhook.
 
 ## Admin access
 
