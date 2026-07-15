@@ -26,8 +26,15 @@ Committed so far:
 | `34ea1fa` | **0.8** (T8) — Supabase CA pinned; seed rows out of the request path |
 | *(this)* | **0.7 + 0.9** (T5) — login rate limit, owner TOTP, `/admin.html` unlinked, `local-server.js` deleted, `draw.html` fabrication removed, `npm test` covers auth |
 
-**Next: 0.5 (Razorpay webhook — real money is sitting in `pending` orders), then 0.6 (coach),
-then deploy + re-alias.** Nothing in Phase 0 is live until the re-alias runs (`DEPLOY.md`).
+**Phase 0 is code-complete and pushed. Migrations 008 + 009 are APPLIED to production.**
+Not yet deployed — `vercel deploy --prod` + re-alias both hosts is the remaining step, and
+nothing in Phase 0 reaches users until the re-alias runs (`DEPLOY.md`).
+
+**On "real money in stuck pending orders":** checked against Razorpay (live key) on
+2026-07-15. There are 4 pending orders (Rs 31,319) but **none has a captured payment** —
+all four are abandoned checkouts where the customer never paid. Nothing is owed. T6 is
+therefore *preventive*: the flaw was real, but it has not bitten yet because no live
+payment has completed. The first real payment would have hit it.
 
 ### Found in flight — things this plan had wrong
 
@@ -99,8 +106,12 @@ The only occurrence of "arrow" in the schema is a product name.**
       **default deny**, with **scope**. Soft-delete replaces hard delete. *(T2, T12, ADR-0003)*
 - [ ] **1.4** **Audit log** on every mutation; first-class admin view. *(T11)*
 - [ ] **1.5** ~~Delete `local-server.js`~~ **done in Phase 0** — it was a live second admin
-      login, not a cleanup task. Still to do: delete root `schema.sql`, baseline migrations,
-      add indexes + FKs *(ADR-0002)*.
+      login, not a cleanup task. Still to do: delete `supabase/schema.sql`, baseline
+      migrations, add indexes + FKs *(ADR-0002)*. **Urgent sub-item:** `schema.sql`'s
+      products seed uses `on conflict do nothing` with no conflict target and no unique
+      constraint to catch it, so `supabase/apply.js` inserts 5 invented demo products into
+      the live shop **on every run** (§1.1). `apply.js` is currently a footgun pointed at
+      production — see the warning in DEPLOY.md.
 - [ ] **1.6** Fix `analytics_events.value` polymorphism. *(T14, ADR-0004)*
 - [ ] **1.7** Schema validation at the boundary *(ADR-0004)*; middleware chain *(ADR-0003)*.
 - [ ] **1.8** Tests + CI on **money, auth, RBAC**. Coverage gate. No merge without green.

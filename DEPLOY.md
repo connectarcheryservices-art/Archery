@@ -66,11 +66,31 @@ ticket, or a log, it is burned — rotate it.
 
 ## Database
 
-Migrations only, forward-only (ADR-0002). There is no `schema.sql` to run.
+Migrations only, forward-only (ADR-0002).
 
-```bash
-DATABASE_URL="postgresql://…:5432/postgres" node supabase/apply.js
-```
+> ### ⚠ Do NOT run `supabase/apply.js` against production
+> It runs `supabase/schema.sql` first, and that file ends with:
+> ```sql
+> -- Seed a couple of products so the shop isn't empty (prices in INR)
+> insert into products (name, brand, …) values (…5 rows…) on conflict do nothing;
+> ```
+> `products.id` is a generated identity and the insert does not name it, so there is nothing
+> for `on conflict` to conflict *with* — and no unique constraint on `products` to catch it.
+> **Those 5 invented products are inserted on every single run**, into the live shop. That is a
+> CLAUDE.md §1.1 violation ("no seeded demo rows served to real users as real"), and the comment
+> admits the motive: *"so the shop isn't empty."*
+>
+> `apply.js` is the legacy bootstrap path. Until ADR-0002 is finished (Phase 1.5: delete
+> `schema.sql`, baseline the migrations), **apply migration files individually**:
+>
+> ```bash
+> # one file, explicitly, against a DATABASE_URL you have checked
+> psql "$DATABASE_URL" -f supabase/migrations/00X_name.sql
+> ```
+>
+> Verify the host before you run anything. `vercel env pull` returns **empty** values for the
+> production environment (those vars are Sensitive); the *development* environment pulls real
+> values and its `DATABASE_URL` points at the same live Supabase instance.
 
 The data store is Postgres. `data.json` is not used and has not been since the Supabase
 migration.
