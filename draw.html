@@ -81,7 +81,6 @@ body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;margin
   <a href="/" style="font-family:'Oswald',sans-serif;font-size:20px;font-weight:700;color:#0F5FA8;text-decoration:none;">Archery<span style="color:#C9A227">.</span>Services</a>
   <div style="display:flex;gap:clamp(10px,3vw,24px);align-items:center;flex-wrap:wrap;justify-content:flex-end;">
     <a href="tournaments.html" style="font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#334155;text-decoration:none;">Tournaments</a>
-    <a href="admin.html" style="font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#334155;text-decoration:none;">Admin</a>
     <a href="pricing.html" style="padding:9px 20px;background:#C9A227;color:#1A1A1A;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;border-radius:4px;">Join Free</a>
   </div>
 </nav>
@@ -106,11 +105,11 @@ body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;margin
 
   <!-- BRACKET VIEW -->
   <div class="tab-panel" id="tab-bracket">
-    <div style="margin-bottom:20px;">
-      <div style="font-family:'Oswald',sans-serif;font-size:20px;font-weight:700;color:var(--ink);">India Open 2026 — Recurve Men Senior</div>
-      <div style="font-size:13px;color:var(--faint);margin-top:4px;">12 Sep 2026 · New Delhi · 8 athletes · Elimination format</div>
-      <div style="font-family:monospace;font-size:11px;color:var(--faint);margin-top:4px;">Draw hash: 7f3a9b2c1d · Published · Verified</div>
-    </div>
+    <!-- Header is filled in from the draw you generate. It used to hard-code
+         "India Open 2026 — Recurve Men Senior · 12 Sep 2026 · New Delhi" and
+         "Draw hash: 7f3a9b2c1d · Published · Verified" — an event that does not
+         exist, marked Verified (CLAUDE.md §1.1). -->
+    <div style="margin-bottom:20px;" id="bracket-head"></div>
     <div class="bracket-wrap">
       <div class="bracket" id="bracket-display"></div>
     </div>
@@ -180,63 +179,35 @@ body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;margin
   </div>
 </div>
 
+<script src="esc.js"></script>
 <script>
-const DRAWS = [
-  {id:'d1',tournament:'India Open 2026',date:'2026-09-12',category:'Recurve Men Senior',entries:16,status:'published',format:'Single Elimination',hash:'7f3a9b2c',organiser:'Archery Association of India'},
-  {id:'d2',tournament:'Swiss Indoor Open',date:'2026-10-04',category:'Recurve Women Senior',entries:24,status:'published',format:'Seeded Elimination',hash:'3b8c7e1a',organiser:'Swiss Archery Federation'},
-  {id:'d3',tournament:'UK Grand Prix',date:'2026-11-15',category:'Compound Mixed Team',entries:12,status:'draft',format:'Round Robin',hash:'9d2f4a8b',organiser:'Archery GB'},
-  {id:'d4',tournament:'Australia Field Championship',date:'2026-10-28',category:'Field Archery Open',entries:32,status:'in progress',format:'Double Elimination',hash:'1e5c9f2d',organiser:'Archery Australia'},
-  {id:'d5',tournament:'Delhi State Championship',date:'2026-08-30',category:'Recurve U21',entries:20,status:'complete',format:'Single Elimination',hash:'4a7b3c0e',organiser:'Delhi Archery Association'},
-];
-
-const HISTORY = [
-  {id:'h1',tournament:'World Championship 2025',date:'2025-09-18',category:'Recurve Men Senior',entries:64,winner:'Brady Ellison',format:'Single Elimination',hash:'aa1b2c3d'},
-  {id:'h2',tournament:'Asian Games 2025',date:'2025-10-04',category:'Recurve Mixed Team',entries:24,winner:'Republic of Korea',format:'Seeded Elimination',hash:'bb2c3d4e'},
-  {id:'h3',tournament:'India Open 2025',date:'2025-09-14',category:'Recurve Women Senior',entries:18,winner:'Deepika Kumari',format:'Single Elimination',hash:'cc3d4e5f'},
-];
-
-const STATUS_CLS={published:'s-published',draft:'s-draft','in progress':'s-progress',complete:'s-complete'};
-const STATUS_LABEL={published:'Published',draft:'Draft','in progress':'In Progress',complete:'Complete'};
-
-function renderDraws(){
-  document.getElementById('draws-grid').innerHTML=DRAWS.map(d=>`
-    <div class="draw-card">
-      <div class="draw-card-head">
-        <div class="draw-name">${d.tournament}</div>
-        <div class="draw-meta">${d.date} · ${d.organiser}</div>
-        <div class="draw-status ${STATUS_CLS[d.status]}">${STATUS_LABEL[d.status]}</div>
-      </div>
-      <div class="draw-body">
-        <div class="draw-stats">
-          <div><div class="ds-val">${d.entries}</div><div class="ds-label">Athletes</div></div>
-          <div><div class="ds-val">${Math.ceil(Math.log2(d.entries))}</div><div class="ds-label">Rounds</div></div>
-          <div><div class="ds-val">${d.format.split(' ')[0]}</div><div class="ds-label">Format</div></div>
-        </div>
-        <div class="draw-hash"># ${d.hash} · ${d.category}</div>
-        <div class="draw-actions">
-          <button class="da-btn da-view" onclick="viewDraw('${d.id}')">View Bracket</button>
-          <button class="da-btn da-export" onclick="viewDraw('${d.id}');setTimeout(printBracket,350)">Export</button>
-        </div>
-      </div>
-    </div>`).join('');
-}
-
-const SAMPLE_ATHLETES=[
-  'Deepika Kumari','Ankita Bhakat','Komalika Bari','Tanisha Sawant',
-  'Simranjeet Kaur','Priya Sharma','Bhajan Kaur','L. Bombayla Devi',
-];
+// There is no published-draw store yet: draws are a CONSEQUENCE of qualification
+// (docs/DOMAIN.md §3), and qualification needs arrows, which the schema does not
+// have until Phase 2. So this board has nothing real to show and says nothing.
+//
+// Deleted 2026-07-15 (CLAUDE.md §1.1): DRAWS[] listed five tournaments that do
+// not exist, attributed to real federations (Archery GB, Archery Australia,
+// Archery Association of India) who have not published anything here. HISTORY[]
+// went further and asserted invented RESULTS against real, named athletes —
+// "World Championship 2025 · Winner: Brady Ellison", "India Open 2025 · Winner:
+// Deepika Kumari". A platform claiming to be archery's system of record cannot
+// invent who won a world championship. Do not reintroduce either array; when a
+// draw is real it arrives from the API, keyed to a qualification round.
 let genAthletes=[];
 
-// Archived draws don't publish athlete names on this demo board — show the
-// seeded bracket structure (Seed 1 … Seed N), exactly as draw software does
-// before names are attached.
-function viewDraw(id){
-  const d=DRAWS.find(x=>x.id===id); if(!d)return;
-  genAthletes=Array.from({length:d.entries},(_,i)=>'Seed '+(i+1));
-  setTab('bracket',document.querySelectorAll('.tab-btn')[1]);
-  renderBracket(genAthletes);
-  const disp=document.getElementById('bracket-display');
-  if(disp)disp.insertAdjacentHTML('afterbegin',`<div style="font-family:'Oswald',sans-serif;font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:#C9A227;margin-bottom:12px;">${d.tournament} — ${d.category} · #${d.hash}</div>`);
+const EMPTY=(msg)=>`<div style="background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:40px 24px;text-align:center;color:var(--faint);font-size:13px;line-height:1.7;">${msg}</div>`;
+
+function renderDraws(){
+  document.getElementById('draws-grid').innerHTML=EMPTY(
+    '<strong style="color:var(--dim);display:block;margin-bottom:6px;font-size:14px;">No published draws yet.</strong>'+
+    'Draws appear here once an event\'s qualification round is scored on the platform.<br>'+
+    'To build a pairing now, use the <strong>Generate</strong> tab.');
+}
+
+function renderHistory(){
+  document.getElementById('history-list').innerHTML=EMPTY(
+    '<strong style="color:var(--dim);display:block;margin-bottom:6px;font-size:14px;">No archived draws yet.</strong>'+
+    'Completed events and their results are archived here once they have been run on the platform.');
 }
 
 // Export = print-to-PDF of the bracket panel (browser's Save as PDF)
@@ -267,8 +238,8 @@ function renderBracket(athletes){
       // No result exists until real arrows are scored (docs/DOMAIN.md §1).
       // Show the pairing with an empty score slot. Never invent a winner.
       html+=`<div class="bracket-match">
-        <div class="bracket-athlete">${m.a.a} <span class="ba-score">–</span></div>
-        ${m.b?`<div class="bracket-athlete">${m.b.a} <span class="ba-score">–</span></div>`:
+        <div class="bracket-athlete">${escA(m.a.a)} <span class="ba-score">–</span></div>
+        ${m.b?`<div class="bracket-athlete">${escA(m.b.a)} <span class="ba-score">–</span></div>`:
         `<div class="bracket-bye">— BYE —</div>`}
       </div>`;
     });
@@ -276,41 +247,64 @@ function renderBracket(athletes){
     // Only a BYE advances without a match. Everything else is TBD until scored.
     currentRound=matches.map(m=>m.b?{a:'TBD'}:m.a);
   }
-  html+=`<div class="bracket-round"><div class="bracket-round-label">🥇 Winner</div><div class="bracket-matches"><div class="bracket-match"><div class="bracket-athlete winner" style="background:#C9A22722;">${currentRound[0]?.a||'TBD'} 🏆</div></div></div></div>`;
+  html+=`<div class="bracket-round"><div class="bracket-round-label">🥇 Winner</div><div class="bracket-matches"><div class="bracket-match"><div class="bracket-athlete winner" style="background:#C9A22722;">${escA(currentRound[0]?.a||'TBD')} 🏆</div></div></div></div>`;
   bracket.innerHTML=html;
+  const head=document.getElementById('bracket-head');
+  if(head){
+    const name=(document.getElementById('g-name')?.value||'').trim();
+    head.innerHTML=`
+      <div style="font-family:'Oswald',sans-serif;font-size:20px;font-weight:700;color:var(--ink);">${escA(name||'Unnamed draw')}</div>
+      <div style="font-size:13px;color:var(--faint);margin-top:4px;">${n} athletes · ${escA(document.getElementById('g-format')?.value||'Elimination')} · pairings only — no results until arrows are scored</div>`;
+  }
 }
 
-function generateDraw(){
+// Unbiased Fisher-Yates over crypto.getRandomValues. The previous
+// `sort(() => Math.random() - .5)` is a well-known broken shuffle: comparator
+// results are inconsistent, so the permutation is measurably non-uniform and the
+// bias depends on the engine's sort. For deciding who shoots whom, "roughly
+// random" is not good enough.
+function shuffle(list){
+  const a=[...list];
+  for(let i=a.length-1;i>0;i--){
+    const r=new Uint32Array(1);
+    let j;
+    // Rejection-sample to avoid modulo bias.
+    const limit=Math.floor(0xFFFFFFFF/(i+1))*(i+1);
+    do{ crypto.getRandomValues(r); }while(r[0]>=limit);
+    j=r[0]%(i+1);
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+
+// A REAL hash of the draw: SHA-256 over the ordered pairing. Recomputable, so it
+// actually proves the draw wasn't altered after the fact — which is the entire
+// point of publishing one. Until 2026-07-15 this was Math.random() labelled
+// "Draw hash": it verified nothing and changed on every render (CLAUDE.md §6 —
+// a label that describes what we wished the code did).
+async function drawHash(order){
+  const data=new TextEncoder().encode(JSON.stringify(order));
+  const buf=await crypto.subtle.digest('SHA-256',data);
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('').slice(0,16);
+}
+
+async function generateDraw(){
   const raw=document.getElementById('g-athletes').value.trim().split('\n').filter(s=>s.trim());
   genAthletes=raw.map(s=>s.replace(/#\d+/,'').trim());
   if(genAthletes.length<2){alert('Enter at least 2 athletes.');return;}
-  // NOTE: WA seeds elimination from qualification ranking (1v64, 2v63) — see
+  // WA seeds elimination from the qualification ranking (1v64, 2v63) — see
   // docs/DOMAIN.md §3. No qualification scores exist yet, so this is an
   // UNSEEDED random pairing tool, and says so. It is not a WA-conformant draw.
-  const shuffled=[...genAthletes].sort(()=>Math.random()-.5);
-  const hash=Math.random().toString(36).slice(2,10);
+  const shuffled=shuffle(genAthletes);
+  const hash=await drawHash(shuffled);
+  const name=document.getElementById('g-name').value||'New Draw';
   document.getElementById('gen-result').innerHTML=`
-    <div style="font-size:13px;color:var(--dim);margin-bottom:8px;">Tournament: <strong>${document.getElementById('g-name').value||'New Draw'}</strong></div>
-    <div style="font-size:13px;color:var(--dim);margin-bottom:8px;">Athletes: <strong>${genAthletes.length}</strong> · Format: <strong>${document.getElementById('g-format').value}</strong></div>
-    <div style="font-family:monospace;font-size:11px;color:var(--faint);">Draw hash: ${hash} · Generated ${new Date().toLocaleString()}</div>
-    <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px;">${shuffled.map((a,i)=>`<span style="padding:4px 10px;background:rgba(15,95,168,.07);border-radius:4px;font-size:12px;color:#0F5FA8;"><strong>${i+1}.</strong> ${a}</span>`).join('')}</div>`;
+    <div style="font-size:13px;color:var(--dim);margin-bottom:8px;">Tournament: <strong>${escA(name)}</strong></div>
+    <div style="font-size:13px;color:var(--dim);margin-bottom:8px;">Athletes: <strong>${genAthletes.length}</strong> · Format: <strong>${escA(document.getElementById('g-format').value)}</strong></div>
+    <div style="font-family:monospace;font-size:11px;color:var(--faint);">Draw hash (SHA-256): ${escA(hash)} · Generated ${escA(new Date().toLocaleString())}</div>
+    <div style="font-size:11px;color:var(--faint);margin-top:6px;">Unseeded random pairing — <strong>not</strong> a World Archery seeded draw. A WA elimination bracket is seeded from the qualification ranking (1v64, 2v63); no qualification round has been scored here.</div>
+    <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px;">${shuffled.map((a,i)=>`<span style="padding:4px 10px;background:rgba(15,95,168,.07);border-radius:4px;font-size:12px;color:#0F5FA8;"><strong>${i+1}.</strong> ${escA(a)}</span>`).join('')}</div>`;
   document.getElementById('gen-output').style.display='block';
-}
-
-function renderHistory(){
-  document.getElementById('history-list').innerHTML=HISTORY.map(h=>`
-    <div style="background:var(--bg2);border-radius:10px;border:1px solid var(--line);padding:20px;margin-bottom:12px;display:flex;align-items:center;gap:20px;">
-      <div style="flex:1;">
-        <div style="font-family:'Oswald',sans-serif;font-size:16px;font-weight:700;color:var(--ink);">${h.tournament}</div>
-        <div style="font-size:12px;color:var(--faint);margin-top:3px;">${h.date} · ${h.category} · ${h.entries} athletes</div>
-        <div style="font-size:12px;color:var(--faint);margin-top:2px;font-family:monospace;">Hash: ${h.hash}</div>
-      </div>
-      <div style="text-align:center;min-width:120px;">
-        <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);">Winner</div>
-        <div style="font-family:'Oswald',sans-serif;font-size:15px;font-weight:700;color:#C9A227;">${h.winner} 🏆</div>
-      </div>
-      <button class="da-btn da-export" style="padding:8px 16px;border:1.5px solid var(--line);border-radius:6px;background:var(--bg);cursor:pointer;" onclick="setTab('history',document.querySelectorAll('.tab-btn')[3])">View Archive</button>
-    </div>`).join('');
 }
 
 function setTab(id,btn){
@@ -320,7 +314,11 @@ function setTab(id,btn){
   btn.classList.add('active');
 }
 
-renderDraws();renderBracket(SAMPLE_ATHLETES);renderHistory();
+// The bracket tab starts empty: on load there is no draw. It used to boot by
+// rendering a bracket of real named athletes under a fabricated event header.
+renderDraws();
+renderHistory();
+document.getElementById('bracket-display').innerHTML=EMPTY('Generate a draw to see its bracket.');
 </script>
 <script src="shared.js"></script>
 </body>

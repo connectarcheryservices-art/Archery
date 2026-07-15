@@ -1,12 +1,11 @@
 {
   "name": "archery-services",
   "version": "1.0.0",
-  "description": "Archery.Services — archery e-commerce on Vercel + Supabase",
+  "description": "Archery.Services \u2014 archery e-commerce on Vercel + Supabase",
   "type": "commonjs",
   "scripts": {
     "dev": "vercel dev",
-    "test": "node api/_lib/pricing.test.js",
-    "local": "node local-server.js"
+    "test": "node test/run.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.88.0",

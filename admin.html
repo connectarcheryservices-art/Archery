@@ -671,9 +671,40 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
           <b style="color:var(--gold);">Manager</b> — full access incl. staff &amp; settings ·
           <b style="color:var(--gold);">Editor</b> — manage content &amp; approvals, not staff/settings ·
           <b style="color:var(--gold);">Support</b> — orders, approvals &amp; chat only.
-          The <b style="color:var(--text);">Owner</b> (you) signs in with the master password.
         </div>
       </div>
+
+      <div class="card" style="margin-bottom:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;">
+          <div>
+            <div style="font-family:'Oswald',sans-serif;font-size:14px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--text);">Two-factor authentication</div>
+            <div style="font-size:12.5px;color:var(--text-2);margin-top:4px;" id="my2fa-state">Checking…</div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn-add-new" style="margin:0;" id="my2fa-btn" onclick="start2fa()">Enable 2FA</button>
+            <button class="btn-add-new" style="margin:0;display:none;background:transparent;border:1px solid var(--line);color:var(--text-2);" id="my2fa-off" onclick="disable2fa()">Turn off</button>
+          </div>
+        </div>
+        <div id="my2fa-setup" style="display:none;margin-top:18px;padding-top:18px;border-top:1px solid var(--line);">
+          <div style="font-size:12.5px;color:var(--text-2);line-height:1.7;margin-bottom:10px;">
+            Add this key to your authenticator app (Google Authenticator, Authy, 1Password), then enter the 6-digit code it shows to confirm.
+          </div>
+          <div style="font-family:ui-monospace,Menlo,monospace;font-size:15px;letter-spacing:.14em;color:var(--gold);background:rgba(201,162,39,.08);border:1px solid rgba(201,162,39,.2);border-radius:6px;padding:12px 14px;word-break:break-all;" id="my2fa-secret"></div>
+          <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+            <input id="my2fa-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000"
+                   style="width:130px;background:var(--ink-2);border:1px solid var(--line);border-radius:6px;padding:10px 12px;color:var(--text);font-family:ui-monospace,Menlo,monospace;font-size:16px;letter-spacing:.2em;outline:none;">
+            <button class="btn-add-new" style="margin:0;" onclick="confirm2fa()">Confirm</button>
+          </div>
+          <div id="my2fa-msg" style="font-size:12.5px;margin-top:10px;"></div>
+        </div>
+        <div id="my2fa-codes" style="display:none;margin-top:18px;padding-top:18px;border-top:1px solid var(--line);">
+          <div style="font-size:12.5px;color:var(--text-2);line-height:1.7;margin-bottom:10px;">
+            <b style="color:var(--red);">Save these backup codes now.</b> Each works once, if you lose your authenticator. They are not shown again.
+          </div>
+          <div id="my2fa-codes-list" style="font-family:ui-monospace,Menlo,monospace;font-size:14px;line-height:2;color:var(--text);"></div>
+        </div>
+      </div>
+
       <div class="card">
         <table class="data-table">
           <thead><tr><th>Name</th><th>Username</th><th>Role</th><th>2FA</th><th>Last login</th><th>Status</th><th>Actions</th></tr></thead>
@@ -1497,7 +1528,50 @@ function edPickImg(input,fid){
 function edClearImg(fid){ document.getElementById(fid).value=''; const pv=document.getElementById(fid+'-prev'); if(pv){pv.src='';pv.style.display='none';} const u=document.getElementById(fid+'-url'); if(u)u.value=''; }
 
 // ── TEAM & ROLES (staff accounts) ──
+// ── My own 2FA (owner -> owner_security, staff -> staff row). THREAT_MODEL T5.3:
+// the endpoints existed but nothing ever called them, and the owner was refused
+// outright — the most privileged account was the only one that couldn't have 2FA.
+async function load2fa(){
+  const st=document.getElementById('my2fa-state'); if(!st)return;
+  const r=await get('staff/me');
+  if(!r||!r.ok){ st.textContent='Unavailable.'; return; }
+  const on=!!(r.me&&r.me.twoFactor);
+  st.textContent=on?'On — a 6-digit code is required at sign-in.':'Off — your password is the only thing protecting this account.';
+  st.style.color=on?'var(--text-2)':'var(--red)';
+  document.getElementById('my2fa-btn').style.display=on?'none':'';
+  document.getElementById('my2fa-off').style.display=on?'':'none';
+}
+async function start2fa(){
+  const r=await fetch(`${API}/staff/me/2fa-setup`,{method:'POST',headers:authH()}).then(x=>x.json()).catch(()=>null);
+  if(!r||!r.ok){ alert((r&&r.error)||'Could not start 2FA setup.'); return; }
+  document.getElementById('my2fa-secret').textContent=r.secret;
+  document.getElementById('my2fa-setup').style.display='';
+  document.getElementById('my2fa-code').focus();
+}
+async function confirm2fa(){
+  const code=document.getElementById('my2fa-code').value.trim();
+  const msg=document.getElementById('my2fa-msg');
+  const r=await fetch(`${API}/staff/me/2fa-enable`,{method:'POST',headers:authH(),body:JSON.stringify({code})}).then(x=>x.json()).catch(()=>null);
+  if(!r||!r.ok){ msg.style.color='var(--red)'; msg.textContent=(r&&r.error)||'Could not enable 2FA.'; return; }
+  msg.textContent='';
+  document.getElementById('my2fa-setup').style.display='none';
+  const list=document.getElementById('my2fa-codes-list');
+  list.textContent='';
+  (r.backupCodes||[]).forEach(c=>{ const d=document.createElement('div'); d.textContent=c; list.appendChild(d); });
+  document.getElementById('my2fa-codes').style.display='';
+  load2fa();
+}
+async function disable2fa(){
+  const code=prompt('Enter a current 6-digit code from your authenticator to turn 2FA off:');
+  if(!code)return;
+  const r=await fetch(`${API}/staff/me/2fa-disable`,{method:'POST',headers:authH(),body:JSON.stringify({code:code.trim()})}).then(x=>x.json()).catch(()=>null);
+  if(!r||!r.ok){ alert((r&&r.error)||'Could not turn off 2FA.'); return; }
+  document.getElementById('my2fa-codes').style.display='none';
+  load2fa();
+}
+
 async function loadStaff(){
+  load2fa();
   const data=await get('staff'); const tb=document.getElementById('staff-tbody'); if(!tb)return;
   if(!Array.isArray(data)){ tb.innerHTML='<tr><td colspan="7" style="padding:22px;color:var(--text-2);">'+((data&&data.error)||'Only the owner or a manager can view the team.')+'</td></tr>'; return; }
   tb.innerHTML=data.length?data.map(s=>`

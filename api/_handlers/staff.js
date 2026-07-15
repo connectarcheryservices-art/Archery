@@ -22,7 +22,42 @@ module.exports = async (req, res) => {
   try {
     // Any signed-in admin (owner or staff) can set up 2FA on their OWN account.
     if (id === 'me') {
-      if (actor.role === 'owner') return json(res, { error: 'The owner secures login via the master password + Vercel env; per-account 2FA applies to staff accounts.' }, 400);
+      // The OWNER enrols against owner_security (migration 007), not `staff` —
+      // the owner has no staff row. Until 2026-07-15 this branch returned 400
+      // with "the owner secures login via the master password + Vercel env",
+      // which is not a second factor: it is one shared password, and it left
+      // the single most privileged account on the platform as the only one that
+      // could not have 2FA (THREAT_MODEL T5.3).
+      if (actor.role === 'owner') {
+        const sec = (await q('select * from owner_security where id=1')).rows[0] || {};
+        if (sub === '2fa-setup' && req.method === 'POST') {
+          const s = generateSecret();
+          await q(
+            `insert into owner_security (id, totp_secret, totp_enabled) values (1,$1,false)
+             on conflict (id) do update set totp_secret=$1, totp_enabled=false`, [s]);
+          return json(res, { ok: true, secret: s, otpauth: otpauthUri(s, { account: 'owner' }) });
+        }
+        if (sub === '2fa-enable' && req.method === 'POST') {
+          const b = readBody(req);
+          if (!sec.totp_secret || !verifyTotp(sec.totp_secret, b.code)) return json(res, { ok: false, error: 'Incorrect code.' }, 400);
+          const { plain, hashed } = generateBackupCodes();
+          await q('update owner_security set totp_enabled=true, backup_codes=$1 where id=1', [JSON.stringify(hashed)]);
+          return json(res, { ok: true, backupCodes: plain });
+        }
+        if (sub === '2fa-disable' && req.method === 'POST') {
+          // Requires a current code — possession of the session token alone must
+          // not be enough to strip the second factor off the owner account.
+          const b = readBody(req);
+          if (!sec.totp_enabled) return json(res, { ok: false, error: '2FA is not enabled.' }, 400);
+          if (!verifyTotp(sec.totp_secret, String(b.code || ''))) return json(res, { ok: false, error: 'Incorrect code.' }, 400);
+          await q(`update owner_security set totp_enabled=false, totp_secret=null, backup_codes='[]' where id=1`);
+          return json(res, { ok: true });
+        }
+        if (req.method === 'GET') {
+          return json(res, { ok: true, me: { id: 'owner', name: 'Owner', username: 'owner', role: 'owner', active: true, twoFactor: !!sec.totp_enabled } });
+        }
+        return json(res, { error: 'Method not allowed' }, 405);
+      }
       const me = (await q('select * from staff where id=$1', [actor.sid])).rows[0];
       if (!me) return json(res, { error: 'Not found' }, 404);
       if (sub === '2fa-setup' && req.method === 'POST') {

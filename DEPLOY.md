@@ -1,65 +1,77 @@
 # How to Go Live — Archery.Services
 
-## Option 1 — Railway (Recommended, free to start)
+Production is **Vercel** (serverless, `api/**`) + **Supabase Postgres**. There is one backend
+and it is the one in `api/` (ADR-0001). Nothing else is supported.
 
-1. Push this folder to a GitHub repository (private is fine).
-2. Go to https://railway.app → New Project → Deploy from GitHub Repo.
-3. Select the repo. Railway auto-detects Node.js and runs `node local-server.js`.
-4. Go to **Variables** tab and add:
-   - `ADMIN_PASSWORD` = your chosen password (e.g. `ArcheryAdmin2025!`)
-   - `PORT` is set automatically by Railway — do NOT set it yourself.
-5. Go to **Settings → Domains** → Generate Domain → you'll get a `.up.railway.app` URL immediately.
-6. To use your own domain (e.g. `archery.services`):
-   - Add a **Custom Domain** in Railway Settings.
-   - Copy the CNAME value Railway gives you.
-   - In your domain registrar (GoDaddy, Namecheap, etc.) add a CNAME record:
-     `www  →  <value from Railway>`
-   - For the root (`@`), use ALIAS/ANAME if your registrar supports it, or point to Railway's IP.
+> **This file used to describe deploying `local-server.js` to Railway/Render/a VPS, with a
+> published default admin password of `archery2025`.** That file is deleted and those
+> instructions were dangerous: it was a second admin login with no rate limiting, no 2FA, a
+> non-constant-time password compare, and it minted the same `archery-admin-v1` token the real
+> API accepts. If you ever followed the old instructions, **tear that instance down and rotate
+> `ADMIN_PASSWORD`** — anyone who knew the default had full admin.
 
 ---
 
-## Option 2 — Render (also free to start)
+## Prerequisites
 
-1. Push to GitHub.
-2. https://render.com → New → Web Service → Connect repo.
-3. Build command: (leave blank or `npm install` if you later add packages)
-4. Start command: `node local-server.js`
-5. Add environment variable: `ADMIN_PASSWORD` = your password.
-6. Render gives you a `.onrender.com` URL. Custom domain setup is the same as above.
-
----
-
-## Option 3 — VPS (DigitalOcean / Linode / Contabo)
+The Vercel CLI must be authenticated as **`connectarcheryservices-4339`** (team `archery`) —
+*not* edurankai/quantumeventedu. `vercel login` uses device auth.
 
 ```bash
-# On the server:
-sudo apt update && sudo apt install -y nodejs npm
-git clone https://github.com/YOUR/repo.git archery
-cd archery
-npm install       # only needed if you add packages
-export ADMIN_PASSWORD="ArcheryAdmin2025!"
-node local-server.js &  # runs in background
-
-# For auto-restart on crash, use PM2:
-npm install -g pm2
-ADMIN_PASSWORD="ArcheryAdmin2025!" pm2 start local-server.js --name archery
-pm2 save && pm2 startup
+vercel whoami        # expect: connectarcheryservices-4339
 ```
 
-Then point your domain via A record to the server IP, and optionally set up Nginx as a reverse proxy.
+## Deploy
 
----
+**The domain does NOT auto-follow production.** A deploy alone changes nothing that users see —
+you must re-alias both hosts or the deploy is invisible:
 
-## Data file
+```bash
+vercel deploy --prod --yes --scope archery
+vercel alias set <new-deployment-url> archery.services      --scope archery
+vercel alias set <new-deployment-url> www.archery.services  --scope archery
+```
 
-All your content is saved to `data.json` in the project folder automatically.
-Back this file up regularly (download it, or commit it to a private repo).
-On Railway/Render it lives inside the container — use their file storage or a DB for true persistence.
+Symptoms of a missed re-alias: the live site serves the old build; `/api/razorpay/config`
+returns `{"keyId":""}`; admin login says "wrong password".
 
----
+## Verify after deploying
 
-## Admin login
+```bash
+curl -s https://archery.services/api/razorpay/config     # keyId must be non-empty
+curl -s https://archery.services/api/stats               # real counts, or {} — never invented
+curl -sI https://archery.services/ | grep -i content-security-policy
+```
 
-After deploying, go to `https://yourdomain.com/admin.html`
-Default password: `archery2025`
-**Change it immediately** by setting the `ADMIN_PASSWORD` environment variable.
+## Environment variables
+
+Set in the Vercel dashboard (project `archery`), never in the repo:
+
+| Variable | Purpose |
+|---|---|
+| `DATABASE_URL` | Supabase Postgres, session pooler `:5432` |
+| `ADMIN_PASSWORD` | Owner master password. Signs the owner token. Long + random. |
+| `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` | Payments |
+| `RAZORPAY_WEBHOOK_SECRET` | Webhook signature verification — distinct from the key secret (§1.2) |
+| `ANTHROPIC_API_KEY` | AI coach |
+| `SMTP_*` | Mail |
+
+No secret signs two things (CLAUDE.md §1.2). If a value has ever been pasted into a chat, a
+ticket, or a log, it is burned — rotate it.
+
+## Database
+
+Migrations only, forward-only (ADR-0002). There is no `schema.sql` to run.
+
+```bash
+DATABASE_URL="postgresql://…:5432/postgres" node supabase/apply.js
+```
+
+The data store is Postgres. `data.json` is not used and has not been since the Supabase
+migration.
+
+## Admin access
+
+`/admin.html` is deliberately **not linked from any public page**. Navigate to it directly.
+The owner should enrol 2FA (Team & Roles → Two-factor authentication) — with 2FA off, the
+master password is the only thing standing between an attacker and full control.

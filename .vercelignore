@@ -1,4 +1,12 @@
-# Local development server — never deploy (Vercel must treat this repo as static + api/ functions)
-local-server.js
+# Vercel must treat this repo as static pages + api/ serverless functions.
+#
+# local-server.js used to be listed here because it must never be deployed. It is
+# now deleted outright (ADR-0001) — it was a second admin login with a hardcoded
+# default password.
+#
+# Do NOT add api/_certs/ here: db.js refuses to connect without the pinned
+# Supabase CA (T8), so excluding it takes the whole database offline.
 data.json
 data.old.json
+docs/
+test/

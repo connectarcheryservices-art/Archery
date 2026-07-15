@@ -77,4 +77,4 @@ function can(actor, action) {
   return false;
 }
 
-module.exports = { adminToken, staffToken, checkAdmin, can, hashPassword, verifyPassword };
+module.exports = { adminToken, staffToken, checkAdmin, can, hashPassword, verifyPassword, timingEq };

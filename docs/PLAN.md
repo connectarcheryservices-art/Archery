@@ -11,17 +11,30 @@
 | | |
 |---|---|
 | **Current phase** | **Phase 0 — Stop the bleeding** |
-| **Phase 0 progress** | **0 / 9** — not started (§2 documentation complete) |
-| **Last updated** | 2026-07-13 |
-| **Live** | https://archery.services (feature-rich, **and shipping T1/T5/T10 right now**) |
+| **Phase 0 progress** | **6 / 9** — 0.1 0.2 0.3 0.4 0.7 0.8 0.9 done; **0.5 (money) and 0.6 (AI) remain** |
+| **Last updated** | 2026-07-15 |
+| **Live** | https://archery.services — **Phase 0 work is NOT deployed yet.** Live still serves the old build. |
 
 ### Where we stopped
-§2 of the build directive is **complete**: repo explored, all §3 findings **verified against
-code** (with corrections below), and the seven documents written:
-`CLAUDE.md` · `docs/adr/0001–0008` · `docs/DOMAIN.md` · `docs/THREAT_MODEL.md` · `docs/PLAN.md`.
+Committed so far:
 
-**Awaiting review before any feature code is written** (directive §2: *"stop and show me all
-seven"*).
+| Commit | What |
+|---|---|
+| `1f7002c` | §2 documentation — constitution, ADRs, domain model, threat model, plan |
+| `10edde1` | **0.1 + 0.2** (T10) — every fabricated number deleted |
+| `8c4675b` | **0.3 + 0.4** (T1) — stored-XSS sink closed, one shared escaper, CSP |
+| `34ea1fa` | **0.8** (T8) — Supabase CA pinned; seed rows out of the request path |
+| *(this)* | **0.7 + 0.9** (T5) — login rate limit, owner TOTP, `/admin.html` unlinked, `local-server.js` deleted, `draw.html` fabrication removed, `npm test` covers auth |
+
+**Next: 0.5 (Razorpay webhook — real money is sitting in `pending` orders), then 0.6 (coach),
+then deploy + re-alias.** Nothing in Phase 0 is live until the re-alias runs (`DEPLOY.md`).
+
+### Found in flight — things this plan had wrong
+
+| Plan said | Reality |
+|---|---|
+| `local-server.js` deletion is **Phase 1.5** | **Phase 0.** It was a *second admin login* with a hardcoded default password (`ADMIN_PASSWORD \|\| 'archery2025'`), no rate limit, no 2FA, a `===` compare — minting the **same** `archery-admin-v1` token the real API accepts. `DEPLOY.md` actively instructed deploying it to Railway/Render/a VPS and published the default password. Deleted, and DEPLOY.md rewritten. **If an instance was ever deployed this way, tear it down and rotate `ADMIN_PASSWORD`.** |
+| T10 (fabrication) was finished at `10edde1` | **It was not.** `draw.html` still shipped `HISTORY[]` asserting invented **results against real named athletes** ("World Championship 2025 · Winner: Brady Ellison"; "India Open 2025 · Winner: Deepika Kumari") and `DRAWS[]` attributing five non-existent tournaments to real federations (Archery GB, Archery Australia, AAI). The first T10 pass removed the RNG that *computed* fake winners and missed the table that *asserted* them. Removed 2026-07-15 with a headless test proving none of it renders. **Lesson: grepping for `Math.random` finds computed fiction, not hardcoded fiction.** |
 
 ### Corrections to the directive (§2.2 — findings are a hypothesis, not scripture)
 
@@ -44,22 +57,24 @@ The only occurrence of "arrow" in the schema is a product name.**
 ## Phase 0 — Stop the bleeding
 > Nothing else until this is done. Days, not weeks.
 
-- [ ] **0.1** Delete `liveViewers()` / `soldRecently()` / every synthetic urgency badge; remove
+- [x] **0.1** Delete `liveViewers()` / `soldRecently()` / every synthetic urgency badge; remove
       `liveViewers*2` from `trending()`. Use the real 14-day view counts already computed
       server-side. *(T10 — do this first; it is constitutional and legal.)*
-- [ ] **0.2** Replace every hardcoded stat with `SELECT count(*)`. Kill `{...SEED, ...data}` in
+- [x] **0.2** Replace every hardcoded stat with `SELECT count(*)`. Kill `{...SEED, ...data}` in
       `resource.js:32`. Show the true number, even if zero. *(T10)*
-- [ ] **0.3** Escape the XSS sink (`admin.html:982-984`); audit all `innerHTML` sites; **one**
+- [x] **0.3** Escape the XSS sink (`admin.html:982-984`); audit all `innerHTML` sites; **one**
       shared sanitiser, delete the rest. *(T1)*
-- [ ] **0.4** Strict **CSP** in `vercel.json`. *(T1)*
+- [x] **0.4** Strict **CSP** in `vercel.json`. *(T1)*
 - [ ] **0.5** **Razorpay webhook** as source of truth; authenticate `/api/razorpay/verify`;
       reconcile stuck `pending` orders — **there is real money in them**. *(T6)*
 - [ ] **0.6** `/api/coach`: authenticate + rate limit + spend cap; **Sonnet**; server-held
       history; stream. *(T7, ADR-0008)*
-- [ ] **0.7** Rate limit `/api/admin/login`; **TOTP for owner**; constant-time compare; remove
-      `/admin.html` from 11 public footers. *(T5)*
-- [ ] **0.8** Fix `db.js:13` `rejectUnauthorized:false` → pin the Supabase CA. *(T8)*
-- [ ] **0.9** Username-enumeration: run scrypt even when the row is absent. *(T5)*
+- [x] **0.7** Rate limit `/api/admin/login`; **TOTP for owner**; constant-time compare; remove
+      `/admin.html` from 11 public footers. *(T5)* — blocked at attempt 9; owner enrols 2FA in
+      Team & Roles; `test/auth.test.js` proves all four.
+- [x] **0.8** Fix `db.js:13` `rejectUnauthorized:false` → pin the Supabase CA. *(T8)*
+- [x] **0.9** Username-enumeration: run scrypt even when the row is absent. *(T5)* — measured
+      delta 9.7 ms on a ~1035 ms operation; identical error strings.
 
 **Gate:**
 - External pentest of the admin path finds **no privilege escalation**.
@@ -76,8 +91,9 @@ The only occurrence of "arrow" in the schema is a product name.**
 - [ ] **1.3** Capability layer into **every** write endpoint — `can(actor, action, resource)`,
       **default deny**, with **scope**. Soft-delete replaces hard delete. *(T2, T12, ADR-0003)*
 - [ ] **1.4** **Audit log** on every mutation; first-class admin view. *(T11)*
-- [ ] **1.5** Delete `local-server.js` *(ADR-0001)*; delete root `schema.sql`, baseline
-      migrations, add indexes + FKs *(ADR-0002)*.
+- [ ] **1.5** ~~Delete `local-server.js`~~ **done in Phase 0** — it was a live second admin
+      login, not a cleanup task. Still to do: delete root `schema.sql`, baseline migrations,
+      add indexes + FKs *(ADR-0002)*.
 - [ ] **1.6** Fix `analytics_events.value` polymorphism. *(T14, ADR-0004)*
 - [ ] **1.7** Schema validation at the boundary *(ADR-0004)*; middleware chain *(ADR-0003)*.
 - [ ] **1.8** Tests + CI on **money, auth, RBAC**. Coverage gate. No merge without green.

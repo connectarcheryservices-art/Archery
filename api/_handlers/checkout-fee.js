@@ -4,13 +4,14 @@
 // On successful /api/razorpay/verify the order flips to paid and the admin
 // approves the application to activate access at that level.
 'use strict';
+const crypto = require('crypto');
 const { cors, json, readBody } = require('../_lib/respond');
 const { FEES } = require('../_lib/fees');
 const { q } = require('../_lib/db');
 
 function orderNo() {
   return 'ARC-FED-' + Date.now().toString(36).toUpperCase() + '-' +
-    Math.floor(Math.random() * 1e4).toString(36).toUpperCase();
+    crypto.randomBytes(3).toString('hex').toUpperCase();
 }
 
 async function createRazorpayOrder(amountPaise, receipt) {

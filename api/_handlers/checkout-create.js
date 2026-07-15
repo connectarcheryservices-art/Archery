@@ -2,6 +2,7 @@
 // Re-prices the cart from current DB product prices (anti-tamper), inserts a
 // pending order with the shipping address + geolocation, then opens a Razorpay order.
 'use strict';
+const crypto = require('crypto');
 const { cors, json, readBody } = require('../_lib/respond');
 const { computeQuote } = require('../_lib/pricing');
 const { loadPricingConfig } = require('../_lib/settings');
@@ -9,7 +10,7 @@ const { q } = require('../_lib/db');
 
 function orderNo() {
   return 'ARC-' + Date.now().toString(36).toUpperCase() + '-' +
-    Math.floor(Math.random() * 1e4).toString(36).toUpperCase();
+    crypto.randomBytes(3).toString('hex').toUpperCase();
 }
 
 async function createRazorpayOrder(amountPaise, receipt) {
