@@ -296,20 +296,45 @@
   })();
 
   // ── LOGGED-IN NAV STATE ──
-  // Swaps "Sign In / Join Free" for "Hi, <name> · Sign out" on every page.
-  (function authNav(){
+  // Swaps "Sign In / Join Free" for an account link + Sign out, on every page.
+  //
+  // This USED TO run once, immediately, and give up if it found no nav — which
+  // is exactly what happened on the 11 pages that use nav.js. Those pages inject
+  // nav.js with document.createElement('script'), i.e. ASYNCHRONOUSLY, while
+  // shared.js is a plain <script> that executes during parse. So shared.js
+  // looked for #main-nav before nav.js had built it, found nothing, and returned
+  // silently — and a signed-in user browsing athletes/tournaments/profile was
+  // shown "Sign In / Join Free", as though they had no account. Whether it
+  // worked came down to which script won a network race.
+  //
+  // So: apply now if the nav is there, and otherwise wait for it to appear.
+  (function authNavInit(){
     var user = null;
     try { user = JSON.parse(localStorage.getItem('archery_user') || 'null'); } catch(e){}
     if (!user || !user.name) return;
+
+    if (applyAuthNav(user)) return;
+    var mo = new MutationObserver(function(){
+      if (applyAuthNav(user)) { mo.disconnect(); clearTimeout(stop); }
+    });
+    mo.observe(document.documentElement, { childList: true, subtree: true });
+    // Don't observe forever if a page genuinely has no nav (offline.html, 404).
+    var stop = setTimeout(function(){ mo.disconnect(); }, 8000);
+  })();
+
+  function applyAuthNav(user){
     var right = document.querySelector('#main-nav .nav-right');
+    var nm = document.querySelector('#nav-mobile .nm-actions');
+    if (!right && !nm) return false;
+    // Idempotent: the observer can fire many times as the nav is built.
+    if (document.querySelector('.nav-signout, .nm-signout')) return true;
     if (right) {
-      var hi = document.createElement('a');
-      hi.href = 'account.html';
-      hi.className = 'nav-acct';
-      hi.textContent = 'Hi, ' + String(user.name).split(' ')[0];
-      hi.title = 'My account';
+      // The nav does NOT greet you by name.
+      // It used to render "Hi, <first name>" beside a PROFILE icon that already
+      // linked to the same place — the name added no navigation, only noise, and
+      // put a person's name in the chrome of every page they open. Your details
+      // belong in the profile section, which is what the account link is for.
       var out = document.createElement('button');
-      // Tertiary, not the gold CTA — see .nav-signout in style.css.
       out.className = 'nav-signout';
       out.type = 'button';
       out.textContent = 'Sign out';
@@ -322,16 +347,28 @@
         if (/sign in|join free/i.test(el.textContent)) el.remove();
       });
       right.insertBefore(out, right.querySelector('#nav-burger'));
-      right.insertBefore(hi, out);
+
+      // Only add an account route if this page's nav doesn't already have one.
+      // index.html ships a PROFILE icon; most other pages ship nothing, and
+      // removing "Sign In" from them would otherwise leave a signed-in user with
+      // no way to reach their own account at all.
+      var hasAcct = right.querySelector('a[href*="profile.html"],a[href*="account.html"]');
+      if (!hasAcct) {
+        var acct = document.createElement('a');
+        acct.href = 'account.html';
+        acct.className = 'nav-acct';
+        acct.textContent = 'Account';
+        acct.title = 'Your profile and account';
+        right.insertBefore(acct, out);
+      }
     }
-    var nm = document.querySelector('#nav-mobile .nm-actions');
     if (nm) {
       // "Sign out" used to carry class="nm-join" — the solid-gold JOIN button.
       // Same mistake as the desktop nav: the exit styled as the headline action.
       nm.textContent = '';
-      var acct = document.createElement('a');
-      acct.href = 'account.html';
-      acct.textContent = 'My account';
+      var mAcct = document.createElement('a');
+      mAcct.href = 'account.html';
+      mAcct.textContent = 'My account';
       var mOut = document.createElement('a');
       mOut.href = '#';
       mOut.className = 'nm-signout';
@@ -345,10 +382,11 @@
         localStorage.removeItem('archery_user_token');
         location.reload();
       });
-      nm.appendChild(acct);
+      nm.appendChild(mAcct);
       nm.appendChild(mOut);
     }
-  })();
+    return true;
+  }
 
   // ── TOASTS — branded notifications replacing native alert() on public pages ──
   (function toasts(){
