@@ -97,6 +97,45 @@ The only occurrence of "arrow" in the schema is a product name.**
 
 ---
 
+## Front-end quality — measured 2026-07-15, NOT yet fixed
+
+Reported as "many stubs, bugs, errors and low quality layout which is disconnected".
+That is accurate, and here is the concrete shape of it.
+
+**There are FIVE different primary navigations across 32 public pages**, and the taxonomy
+itself changes as you move around the site:
+
+| Pages | Menu |
+|---|---|
+| `index.html` (the homepage) | Compete · Shop · Rankings · Coaches & Clubs · Train · Federation · Pricing |
+| `pricing.html` | Home · Tournaments · Shop · Rankings · Pricing |
+| `community.html`, `federation.html` | Shop · Knowledge · Community · Tournaments · Athletes · Federation |
+| `jobs.html`, `shop.html` | Shop · Knowledge · Community · Tournaments · Athletes · Jobs |
+| 11 pages via `nav.js` | Shop · Knowledge · Community · Tournaments · Athletes · Jobs · Federation |
+
+The homepage says **Compete**; every other page says **Tournaments**. The homepage says
+**Rankings** and **Train**; the rest say **Athletes** and **Knowledge**. Same destinations,
+different words — so the menu rearranges itself under the user as they navigate. Only 11 of 34
+pages use the shared `nav.js`; 23 hard-code their own. `index.html` is also the only page with
+the SHOP/PROFILE `.nav-ico` icons, and one of 6 that never load `style.css` at all.
+
+This is ADR-0005 ("one design system") and it is the honest root of "disconnected". It is a
+**Phase 1** item, not a paint job:
+
+- [ ] **1.10** ONE nav, one source, every page. Decide the taxonomy first (**a real product
+      decision — ask, do not guess**): the homepage's intent-based words (Compete / Train /
+      Rankings) or the literal page names (Tournaments / Knowledge / Athletes). Then delete the
+      other four navs. Fold `.nav-ico` (Shop + cart, Profile) into it so a signed-in user has
+      the same account route everywhere.
+- [ ] **1.11** Every page loads the same stylesheet. 6 currently do not, which is how a CSS fix
+      can land everywhere except the homepage.
+
+**Already fixed** (2026-07-15, live): the nav no longer greets users by name; `authNav` no
+longer lost a race against `nav.js` (a signed-in user was shown "Sign In / Join Free" on all 11
+`nav.js` pages); Sign out is no longer painted as the primary gold CTA.
+
+---
+
 ## Phase 1 — Make it revocable and knowable
 
 - [ ] **1.1** Split secrets (session ≠ user ≠ admin ≠ webhook). Rotate. **Never sign with a
