@@ -931,10 +931,40 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
 const API = '/api';
 let AUTH_TOKEN = sessionStorage.getItem('archery_admin_token') || '';
 const authH = () => ({'Content-Type':'application/json','Authorization':'Bearer '+AUTH_TOKEN});
+// Every write used to end in `.catch(() => null)`, so ANY failure — an expired
+// session, a payload the platform rejected, a 500 — surfaced to the admin as the
+// same four words: "Could not save". That is why "we can't upload images" could
+// not be diagnosed from the outside: the panel knew the reason and threw it away.
+// A write that fails now says WHY.
+async function send(method, path, data) {
+  let res;
+  try {
+    res = await fetch(`${API}/${path}`, {
+      method,
+      headers: authH(),
+      body: data === undefined ? undefined : JSON.stringify(data),
+    });
+  } catch (e) {
+    return { error: 'No connection to the server. Check your internet and try again.' };
+  }
+  // 413 and friends return HTML/plain text, not JSON — .json() throws on those,
+  // which is exactly how the real reason used to get swallowed.
+  const text = await res.text().catch(() => '');
+  let body = null;
+  try { body = text ? JSON.parse(text) : null; } catch (e) { /* not JSON */ }
+
+  if (res.ok) return body || { ok: true };
+
+  if (res.status === 401) { return { error: 'Your session has expired — please sign in again.', status: 401 }; }
+  if (res.status === 403) { return { error: (body && body.error) || 'Your role cannot make this change.', status: 403 }; }
+  if (res.status === 413) { return { error: 'That photo is too large for the server. Use a smaller image.', status: 413 }; }
+  if (res.status === 429) { return { error: (body && body.error) || 'Too many attempts — wait a moment.', status: 429 }; }
+  return { error: (body && body.error) || `Server error ${res.status}. Nothing was saved.`, status: res.status };
+}
 const get  = r => fetch(`${API}/${r}`,{headers:{'Authorization':'Bearer '+AUTH_TOKEN}}).then(x=>x.json()).catch(()=>null);
-const post = (r,d) => fetch(`${API}/${r}`,{method:'POST',headers:authH(),body:JSON.stringify(d)}).then(x=>x.json()).catch(()=>null);
-const put  = (r,id,d) => fetch(`${API}/${r}/${id}`,{method:'PUT',headers:authH(),body:JSON.stringify(d)}).then(x=>x.json()).catch(()=>null);
-const del  = (r,id) => fetch(`${API}/${r}/${id}`,{method:'DELETE',headers:authH()}).then(x=>x.json()).catch(()=>null);
+const post = (r,d) => send('POST', r, d);
+const put  = (r,id,d) => send('PUT', `${r}/${id}`, d);
+const del  = (r,id) => send('DELETE', `${r}/${id}`);
 
 // ── ADMIN AUTH ──
 let STAFF_MODE=false, ME_ROLE='owner', ME_NAME='Owner';
@@ -1063,7 +1093,13 @@ function handleProductImg(input){
 async function saveProduct(){
   const d={name:document.getElementById('p-name').value,brand:document.getElementById('p-brand').value,category:document.getElementById('p-cat').value,price:+document.getElementById('p-price').value,was:+document.getElementById('p-was').value||null,stock:+document.getElementById('p-stock').value,imgUrl:productImg||null,active:true};
   if(!d.name||!d.price){toast('Fill in name and price');return;}
-  await post('products',d); loadProducts(); toggleInlineForm('product-form'); toast('Product saved');
+  // This used to `await post(...)` and then say "Product saved" unconditionally,
+  // without ever looking at the result — so a failed save (expired session,
+  // rejected payload, server error) still told the admin it had worked, and the
+  // product silently did not exist. Never report an outcome you did not check.
+  const r=await post('products',d);
+  if(!r || r.error){ toast((r&&r.error)||'Could not save the product.'); return; }
+  loadProducts(); toggleInlineForm('product-form'); toast('Product saved');
   productImg=null;
   const pv=document.getElementById('p-img-preview'); if(pv){pv.style.display='none';pv.src='';}
   const dz=document.getElementById('p-img-drop'); if(dz) dz.style.borderColor='rgba(201,162,39,.3)';
@@ -1093,7 +1129,9 @@ async function loadTournaments(){
 async function saveTournament(){
   const d={name:document.getElementById('t-name').value,date:document.getElementById('t-date').value,location:document.getElementById('t-location').value,prize:+document.getElementById('t-prize').value,slots:+document.getElementById('t-slots').value,registered:0,status:document.getElementById('t-status').value,active:true};
   if(!d.name){toast('Enter tournament name');return;}
-  await post('tournaments',d); loadTournaments(); toggleInlineForm('tournament-form'); toast('Tournament added');
+  const r=await post('tournaments',d);
+  if(!r||r.error){ toast((r&&r.error)||'Could not add the tournament.'); return; }
+  loadTournaments(); toggleInlineForm('tournament-form'); toast('Tournament added');
 }
 
 // ── ATHLETES ──
@@ -1118,7 +1156,9 @@ async function loadAthletes(){
 async function saveAthlete(){
   const d={name:document.getElementById('a-name').value,state:document.getElementById('a-state').value,discipline:document.getElementById('a-disc').value,rank:+document.getElementById('a-rank').value,pb:+document.getElementById('a-pb').value,active:true};
   if(!d.name){return;}
-  await post('athletes',d); loadAthletes(); toggleInlineForm('athlete-form'); toast('Athlete added');
+  const r=await post('athletes',d);
+  if(!r||r.error){ toast((r&&r.error)||'Could not add the athlete.'); return; }
+  loadAthletes(); toggleInlineForm('athlete-form'); toast('Athlete added');
 }
 
 // ── JOBS ──
@@ -1143,12 +1183,15 @@ async function loadJobs(){
 async function saveJob(){
   const d={title:document.getElementById('j-title').value,org:document.getElementById('j-org').value,location:document.getElementById('j-loc').value,type:document.getElementById('j-type').value,salary:document.getElementById('j-salary').value,active:true};
   if(!d.title){return;}
-  await post('jobs',d); loadJobs(); toggleInlineForm('job-form'); toast('Job posted');
+  const r=await post('jobs',d);
+  if(!r||r.error){ toast((r&&r.error)||'Could not post the job.'); return; }
+  loadJobs(); toggleInlineForm('job-form'); toast('Job posted');
 }
 
 // ── SHARED ACTIONS ──
 async function toggleItem(resource, id, current){
-  await put(resource, id, {active: !current});
+  const r=await put(resource, id, {active: !current});
+  if(!r||r.error){ toast((r&&r.error)||'Could not change visibility.'); return; }
   const loaders={products:loadProducts,tournaments:loadTournaments,athletes:loadAthletes,jobs:loadJobs};
   if(loaders[resource]) loaders[resource]();
   toast('Status updated');
@@ -1156,7 +1199,8 @@ async function toggleItem(resource, id, current){
 
 async function deleteItem(resource, id){
   if(!confirm('Delete this item?')) return;
-  await del(resource, id);
+  const r=await del(resource, id);
+  if(!r||r.error){ toast((r&&r.error)||'Could not delete.'); return; }
   const loaders={products:loadProducts,tournaments:loadTournaments,athletes:loadAthletes,jobs:loadJobs};
   if(loaders[resource]) loaders[resource]();
   toast('Deleted');
@@ -1182,19 +1226,22 @@ async function loadSettings(){
 
 async function saveSettings(){
   const d={siteName:document.getElementById('set-name').value,tagline:document.getElementById('set-tagline').value,heroTitle:document.getElementById('set-hero').value,heroSubtitle:document.getElementById('set-sub').value};
-  await post('settings',d); toast('Settings saved');
+  const r=await post('settings',d);
+  toast(r&&!r.error ? 'Settings saved' : ((r&&r.error)||'Could not save settings.'));
 }
 
 async function saveToggles(){
   const d={maintenanceMode:document.getElementById('tog-maintenance').checked,shopEnabled:document.getElementById('tog-shop').checked,registrationOpen:document.getElementById('tog-reg').checked,communityEnabled:document.getElementById('tog-community').checked,tournamentsEnabled:document.getElementById('tog-tournaments').checked};
-  await post('settings',d); toast('Toggles saved');
+  const r=await post('settings',d);
+  toast(r&&!r.error ? 'Toggles saved' : ((r&&r.error)||'Could not save toggles.'));
 }
 
 async function saveAnnouncement(){
   const text=document.getElementById('ann-text').value;
   const active=document.getElementById('ann-active').checked;
   document.getElementById('ann-preview').textContent=text||'Preview will appear here';
-  await post('settings',{announcementText:text,announcementActive:active});
+  const r=await post('settings',{announcementText:text,announcementActive:active});
+  if(!r||r.error){ toast((r&&r.error)||'Could not save the announcement.'); return; }
   toast(active?'Announcement published':'Announcement hidden');
 }
 
@@ -1263,8 +1310,8 @@ async function loadOrders(){
     return `<tr><td>#${o.id}</td><td class="td-name">${cust}</td><td style="font-size:12px;line-height:1.6;">${items}</td><td>₹${Number(o.total).toLocaleString('en-IN')}</td><td>${pay}</td><td style="font-size:12px;">${when}</td><td class="td-actions"><span class="td-badge ${sb}">${escA(o.status)}</span> ${nextBtn}${cancel}${map}<button class="btn-delete" onclick="delOrder(${o.id})">Delete</button></td></tr>`;
   }).join(''):'<tr><td colspan="7" style="padding:22px;color:var(--text-2);">No paid orders yet.</td></tr>';
 }
-async function setOrder(id,status){ await put('orders',id,{status}); loadOrders(); toast('Order '+status); }
-async function delOrder(id){ if(!confirm('Delete this order?'))return; await del('orders',id); loadOrders(); toast('Deleted'); }
+async function setOrder(id,status){ const r=await put('orders',id,{status}); if(!r||r.error){ toast((r&&r.error)||'Could not update the order.'); return; } loadOrders(); toast('Order '+status); }
+async function delOrder(id){ if(!confirm('Delete this order?'))return; const r=await del('orders',id); if(!r||r.error){ toast((r&&r.error)||'Could not delete the order.'); return; } loadOrders(); toast('Deleted'); }
 
 // ── ANALYTICS (real revenue series; demo fallback) ──
 async function loadAnalytics(){
@@ -1345,7 +1392,7 @@ async function loadSellers(){
     return `<tr><td class="td-name">${escA(s.businessName||'—')}</td><td>${escA(s.name||'')}<br><span style="color:var(--text-2);font-size:11px;">${escA(s.email||'')}</span></td><td>${escA(s.gst||'—')}</td><td>${escA(s.payoutUpi||'—')}</td><td><span class="td-badge ${badge}">${s.status}</span></td><td class="td-actions">${act}</td></tr>`;
   }).join(''):'<tr><td colspan="6" style="padding:22px;color:var(--text-2);">No seller applications yet.</td></tr>';
 }
-async function setSeller(id,status){ await put('sellers',id,{status}); loadSellers(); toast(status==='approved'?'Seller approved':'Updated'); }
+async function setSeller(id,status){ const r=await put('sellers',id,{status}); if(!r||r.error){ toast((r&&r.error)||'Could not update the seller.'); return; } loadSellers(); toast(status==='approved'?'Seller approved':'Updated'); }
 
 // ── FEDERATION OFFICERS ──
 async function openOfficers(appId,orgName){
@@ -1372,9 +1419,9 @@ async function addOfficer(appId,orgName){
   if(r&&r.ok){ document.getElementById('off-ov').remove(); openOfficers(appId,orgName); toast('Assigned '+(r.name||'officer')); }
   else toast((r&&r.error)||'Could not assign');
 }
-async function delOfficer(id,appId,orgName){ await del('federation-members',id); document.getElementById('off-ov').remove(); openOfficers(appId,orgName); toast('Removed'); }
-async function setInbox(resource,id,status){await put(resource,id,{status});({registrations:loadRegistrations,reports:loadReports,applications:loadApplications}[resource])();toast('Updated');}
-async function delInbox(resource,id){if(!confirm('Delete this item?'))return;await del(resource,id);({registrations:loadRegistrations,reports:loadReports,applications:loadApplications}[resource])();toast('Deleted');}
+async function delOfficer(id,appId,orgName){ const r=await del('federation-members',id); if(!r||r.error){ toast((r&&r.error)||'Could not remove the officer.'); return; } document.getElementById('off-ov').remove(); openOfficers(appId,orgName); toast('Removed'); }
+async function setInbox(resource,id,status){const r=await put(resource,id,{status});if(!r||r.error){toast((r&&r.error)||'Could not update.');return;}({registrations:loadRegistrations,reports:loadReports,applications:loadApplications}[resource])();toast('Updated');}
+async function delInbox(resource,id){if(!confirm('Delete this item?'))return;const r=await del(resource,id);if(!r||r.error){toast((r&&r.error)||'Could not delete.');return;}({registrations:loadRegistrations,reports:loadReports,applications:loadApplications}[resource])();toast('Deleted');}
 
 // ── PROFILES / NEWS ──
 async function loadProfiles(){
@@ -1389,8 +1436,8 @@ async function loadNews(){
   const tb=document.getElementById('news-tbody'); if(!tb)return;
   tb.innerHTML=data.length?data.map(n=>`<tr><td class="td-name">${escA(n.title)}</td><td>${escA(n.category||'')}</td><td>${escA(n.date||'')}</td><td class="td-actions"><span class="td-badge ${n.active!==false?'badge-active':'badge-inactive'}">${n.active!==false?'live':'hidden'}</span> <button class="btn-edit" onclick="openEdit('news',${n.id})">Edit</button><button class="btn-edit" onclick="setContent('news',${n.id},{active:${!(n.active!==false)}})">${n.active!==false?'Hide':'Show'}</button><button class="btn-delete" onclick="delContent('news',${n.id})">Delete</button></td></tr>`).join(''):'<tr><td colspan="4" style="padding:22px;color:var(--text-2);">No posts yet.</td></tr>';
 }
-async function setContent(resource,id,patch){await put(resource,id,patch);({profiles:loadProfiles,news:loadNews}[resource])();toast('Updated');}
-async function delContent(resource,id){if(!confirm('Delete?'))return;await del(resource,id);({profiles:loadProfiles,news:loadNews}[resource])();toast('Deleted');}
+async function setContent(resource,id,patch){const r=await put(resource,id,patch);if(!r||r.error){toast((r&&r.error)||'Could not update.');return;}({profiles:loadProfiles,news:loadNews}[resource])();toast('Updated');}
+async function delContent(resource,id){if(!confirm('Delete?'))return;const r=await del(resource,id);if(!r||r.error){toast((r&&r.error)||'Could not delete.');return;}({profiles:loadProfiles,news:loadNews}[resource])();toast('Deleted');}
 
 // ── COMMUNITY FORUM ──
 async function loadForum(){
@@ -1404,8 +1451,8 @@ async function loadForum(){
     return `<tr><td class="td-name">${escA(p.title)}</td><td>${escA(p.author)}</td><td>${escA(p.category)}</td><td>${replies}</td><td>${p.likes||0}</td><td class="td-actions"><span class="td-badge ${badge}">${label}</span> <button class="btn-toggle" onclick="setPost(${p.id},{pinned:${!p.pinned}})">${p.pinned?'Unpin':'Pin'}</button><button class="btn-edit" onclick="setPost(${p.id},{active:${p.active===false}})">${p.active===false?'Show':'Hide'}</button><button class="btn-delete" onclick="delPost(${p.id})">Delete</button></td></tr>`;
   }).join(''):'<tr><td colspan="6" style="padding:22px;color:var(--text-2);">No discussions yet.</td></tr>';
 }
-async function setPost(id,patch){await put('posts',id,patch);loadForum();toast('Updated');}
-async function delPost(id){if(!confirm('Delete this discussion?'))return;await del('posts',id);loadForum();toast('Deleted');}
+async function setPost(id,patch){const r=await put('posts',id,patch);if(!r||r.error){toast((r&&r.error)||'Could not update.');return;}loadForum();toast('Updated');}
+async function delPost(id){if(!confirm('Delete this discussion?'))return;const r=await del('posts',id);if(!r||r.error){toast((r&&r.error)||'Could not delete.');return;}loadForum();toast('Deleted');}
 
 // ── LIVE CHAT ──
 let chatActive=null;
@@ -1432,7 +1479,9 @@ async function sendChatReply(e){
   e.preventDefault();
   const inp=document.getElementById('chat-reply'); const text=inp.value.trim();
   if(!text||chatActive==null)return false; inp.value='';
-  await post('chat/'+chatActive+'/reply',{text}); openThread(chatActive);
+  const r=await post('chat/'+chatActive+'/reply',{text});
+  if(!r||r.error){ toast((r&&r.error)||'Could not send the reply.'); return; }
+  openThread(chatActive);
   return false;
 }
 
@@ -1449,13 +1498,14 @@ async function loadKnowledge(){
 async function saveKnowledge(){
   const v=id=>document.getElementById(id).value.trim();
   if(!v('kn-title')){toast('Enter a title');return;}
-  await post('knowledge',{title:v('kn-title'),category:document.getElementById('kn-cat').value,level:v('kn-level'),readTime:v('kn-read'),excerpt:v('kn-excerpt'),body:v('kn-body'),published:true,active:true});
+  const r=await post('knowledge',{title:v('kn-title'),category:document.getElementById('kn-cat').value,level:v('kn-level'),readTime:v('kn-read'),excerpt:v('kn-excerpt'),body:v('kn-body'),published:true,active:true});
+  if(!r||r.error){ toast((r&&r.error)||'Could not publish the article.'); return; }
   ['kn-title','kn-level','kn-read','kn-excerpt','kn-body'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('kn-form').style.display='none';
   loadKnowledge(); toast('Article published');
 }
-async function toggleKnowledge(id,cur){ await put('knowledge',id,{published:!cur,active:!cur}); loadKnowledge(); toast('Updated'); }
-async function delKnowledge(id){ if(!confirm('Delete this article?'))return; await del('knowledge',id); loadKnowledge(); toast('Deleted'); }
+async function toggleKnowledge(id,cur){ const r=await put('knowledge',id,{published:!cur,active:!cur}); if(!r||r.error){ toast((r&&r.error)||'Could not update.'); return; } loadKnowledge(); toast('Updated'); }
+async function delKnowledge(id){ if(!confirm('Delete this article?'))return; const r=await del('knowledge',id); if(!r||r.error){ toast((r&&r.error)||'Could not delete.'); return; } loadKnowledge(); toast('Deleted'); }
 
 function loadPanel(name){
   if(name==='dashboard'){loadStats();loadDashboard();}
@@ -1726,8 +1776,8 @@ async function testMail(){
   if(r&&r.ok){ box.innerHTML='<b style="color:#22C55E;">✓ Success</b> — '+(r.detail||'')+'<br>Test email sent to <b>'+(r.sentTo||'')+'</b>. Check the inbox.'; }
   else{ box.innerHTML='<b style="color:#E04653;">✕ '+((r&&r.error)||'Failed')+'</b>'+(r&&r.hint?'<br><span style="color:var(--text-2);">'+r.hint+'</span>':''); }
 }
-async function toggleStaff(id,active){ await put('staff',id,{active:!active}); loadStaff(); toast('Updated'); }
-async function delStaff(id,name){ if(!confirm('Remove '+name+'? They will lose access immediately.'))return; await del('staff',id); loadStaff(); toast('Removed'); }
+async function toggleStaff(id,active){ const r=await put('staff',id,{active:!active}); if(!r||r.error){ toast((r&&r.error)||'Could not update.'); return; } loadStaff(); toast('Updated'); }
+async function delStaff(id,name){ if(!confirm('Remove '+name+'? They will lose access immediately.'))return; const r=await del('staff',id); if(!r||r.error){ toast((r&&r.error)||'Could not remove them.'); return; } loadStaff(); toast('Removed'); }
 
 function boot(){ applyRole(); loadStats(); loadDashboard(); loadOrders(); loadRegistrations(); loadReports(); loadApplications(); loadChat(); }
 if(AUTH_TOKEN){ hideLogin(); boot(); } else { showLogin(); }
