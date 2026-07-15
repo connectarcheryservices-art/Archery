@@ -102,30 +102,28 @@
       return ids.map(id=>byId[id]).filter(Boolean).slice(0,limit||6);
     },
 
-    // Trending = social proof + a live-ish momentum signal.
+    // Local fallback ordering ONLY — used when the server's real trending
+    // (/api/products?sort=trending, computed from actual logged product_views)
+    // is unavailable. Orders by this visitor's OWN observed behaviour, which is
+    // real data we actually hold. It invents nothing.
+    // NOTE: products carry no rating/reviews columns — do not score on them.
     trending(list, limit){
-      const scored = list.map(p=>({p, s:(Number(p.reviews)||0)*0.6 + (Number(p.rating)||0)*30 + this.liveViewers(p.id)*2}));
-      scored.sort((a,z)=>z.s-a.s);
-      return scored.slice(0,limit||8).map(x=>x.p);
+      const b = get();
+      const scored = list.map(p => ({ p, s: (b.views[p.id] || 0) * 2 + (b.cats[p.category] || 0) }));
+      scored.sort((a, z) => z.s - a.s);
+      return scored.slice(0, limit || 8).map(x => x.p);
     },
 
-    // ---- engagement signals (deterministic pseudo-live so it feels alive but is stable within the minute) ----
-    liveViewers(id){
-      const t = Math.floor(now()/60000); // changes each minute
-      let h = (id*97 + t*131) % 1000; h = (h*1103515245 + 12345) & 0x7fffffff;
-      return 6 + (h % 40); // 6–45 people
-    },
-    soldRecently(id){
-      const t = Math.floor(now()/3600000);
-      let h = (id*57 + t*89) % 997; h = (h*22695477 + 1) & 0x7fffffff;
-      return 3 + (h % 22); // 3–24 in last day
-    },
-    // Urgency label from real stock + synthetic momentum.
+    // Urgency from REAL stock only.
+    // Deleted 2026-07-13: liveViewers()/soldRecently() were linear congruential
+    // generators presenting invented "viewers"/"sold today" as fact, and were
+    // blended into trending(). That is prohibited False Urgency under the CCPA
+    // Guidelines for Prevention and Regulation of Dark Patterns, 2023, and
+    // violates CLAUDE.md §1.1 (no fabricated data, ever). Do not reintroduce
+    // them, or any "Selling fast"/"Bestseller" badge, without a real SELECT.
     urgency(prod){
-      const stock = prod.stock!=null ? Number(prod.stock) : null;
-      if(stock!=null && stock>0 && stock<=5) return {t:`Only ${stock} left`, c:'#E0902A'};
-      if(this.liveViewers(prod.id) > 32) return {t:'Selling fast', c:'#D22730'};
-      if((Number(prod.reviews)||0) > 150) return {t:'Bestseller', c:'#39B34A'};
+      const stock = prod.stock != null ? Number(prod.stock) : null;
+      if (stock != null && stock > 0 && stock <= 5) return { t: `Only ${stock} left`, c: '#E0902A' };
       return null;
     },
 

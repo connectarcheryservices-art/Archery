@@ -155,31 +155,31 @@ section.disc-section{margin-bottom:48px;}
 
 <script>
 const TRENDING = [
-  {id:1,title:'Recurve Technique Masterclass',type:'Video',country:'South Korea',style:'Recurve',views:18400,likes:1240,desc:'Full breakdown of the Olympic draw cycle with slow-motion analysis at 240fps.'},
-  {id:2,title:'Mental Archery — Staying Calm Under Pressure',type:'Article',country:'Switzerland',style:'All',views:12800,likes:872,desc:'Sport psychology applied to archery: pre-shot routines, breath control, and focus cues.'},
-  {id:3,title:'3D Archery Hunting Setup Guide',type:'Guide',country:'USA',style:'3D',views:9700,likes:630,desc:'Field points vs broadheads, distance estimation, and ethical hunting distance limits.'},
-  {id:4,title:'Compound Tuning for Beginners',type:'Article',country:'Germany',style:'Compound',views:8200,likes:544,desc:'Peep sight alignment, draw length, and arrow spine selection explained step by step.'},
-  {id:5,title:'Junior Olympic Archery Development',type:'Video',country:'USA',style:'Recurve',views:7100,likes:492,desc:'Age-appropriate training progressions for under-18 recurve athletes aiming for national selection.'},
-  {id:6,title:'Arrow Spine Calculator Deep Dive',type:'Guide',country:'UK',style:'All',views:6500,likes:431,desc:'How spine affects grouping, when to go stiffer or weaker, and the affect of point weight.'},
-  {id:7,title:'Field Archery Course Design',type:'Article',country:'Australia',style:'Field',views:5900,likes:380,desc:'How to design a 28-target field course that challenges all ability levels.'},
-  {id:8,title:'Olympic Archery Finals — Tactical Breakdown',type:'Video',country:'Switzerland',style:'Recurve',views:5200,likes:321,desc:'Shot-by-shot analysis of Paris 2024 finals: wind calls, timing, and pressure management.'},
-  {id:9,title:'Indoor 18m Season Preparation',type:'Guide',country:'Netherlands',style:'Recurve',views:4800,likes:298,desc:'12-week training block to peak for indoor World Archery series events.'},
-  {id:10,title:'Adaptive Archery — Inclusive Range Design',type:'Article',country:'UK',style:'All',views:4400,likes:265,desc:'Designing ranges, equipment, and training programmes for athletes with disabilities.'},
-  {id:11,title:'String Making for Compound Archers',type:'Video',country:'USA',style:'Compound',views:3900,likes:214,desc:'FastFlight and BCY materials, serving techniques, and break-in procedures.'},
-  {id:12,title:'Youth Club Setup — Complete Guide',type:'Guide',country:'India',style:'All',views:3500,likes:188,desc:'How to start an archery club from scratch: insurance, equipment, coaching, and liability.'},
+  {id:1,title:'Recurve Technique Masterclass',type:'Video',country:'South Korea',style:'Recurve',desc:'Full breakdown of the Olympic draw cycle with slow-motion analysis at 240fps.'},
+  {id:2,title:'Mental Archery — Staying Calm Under Pressure',type:'Article',country:'Switzerland',style:'All',desc:'Sport psychology applied to archery: pre-shot routines, breath control, and focus cues.'},
+  {id:3,title:'3D Archery Hunting Setup Guide',type:'Guide',country:'USA',style:'3D',desc:'Field points vs broadheads, distance estimation, and ethical hunting distance limits.'},
+  {id:4,title:'Compound Tuning for Beginners',type:'Article',country:'Germany',style:'Compound',desc:'Peep sight alignment, draw length, and arrow spine selection explained step by step.'},
+  {id:5,title:'Junior Olympic Archery Development',type:'Video',country:'USA',style:'Recurve',desc:'Age-appropriate training progressions for under-18 recurve athletes aiming for national selection.'},
+  {id:6,title:'Arrow Spine Calculator Deep Dive',type:'Guide',country:'UK',style:'All',desc:'How spine affects grouping, when to go stiffer or weaker, and the affect of point weight.'},
+  {id:7,title:'Field Archery Course Design',type:'Article',country:'Australia',style:'Field',desc:'How to design a 28-target field course that challenges all ability levels.'},
+  {id:8,title:'Olympic Archery Finals — Tactical Breakdown',type:'Video',country:'Switzerland',style:'Recurve',desc:'Shot-by-shot analysis of Paris 2024 finals: wind calls, timing, and pressure management.'},
+  {id:9,title:'Indoor 18m Season Preparation',type:'Guide',country:'Netherlands',style:'Recurve',desc:'12-week training block to peak for indoor World Archery series events.'},
+  {id:10,title:'Adaptive Archery — Inclusive Range Design',type:'Article',country:'UK',style:'All',desc:'Designing ranges, equipment, and training programmes for athletes with disabilities.'},
+  {id:11,title:'String Making for Compound Archers',type:'Video',country:'USA',style:'Compound',desc:'FastFlight and BCY materials, serving techniques, and break-in procedures.'},
+  {id:12,title:'Youth Club Setup — Complete Guide',type:'Guide',country:'India',style:'All',desc:'How to start an archery club from scratch: insurance, equipment, coaching, and liability.'},
 ];
 
 const RANGES = [
-  {id:1,name:'Seoul Olympic Archery Centre',city:'Seoul',country:'South Korea',style:'Recurve',members:320,rating:5.0,founded:1988,region:'Asia'},
-  {id:2,name:'Lancaster Archery',city:'Lancaster',country:'USA',style:'All',members:485,rating:4.9,founded:1984,region:'Americas'},
-  {id:3,name:'World Archery Excellence Centre',city:'Lausanne',country:'Switzerland',style:'All',members:140,rating:4.9,founded:2010,region:'Europe'},
-  {id:4,name:'National Archery Academy',city:'Mumbai',country:'India',style:'Recurve',members:210,rating:4.7,founded:2004,region:'Asia'},
-  {id:5,name:'German Archery Federation HQ',city:'Stuttgart',country:'Germany',style:'Compound',members:175,rating:4.6,founded:1972,region:'Europe'},
-  {id:6,name:'Bhutan National Archery Club',city:'Thimphu',country:'Bhutan',style:'Traditional',members:95,rating:4.8,founded:1971,region:'Asia'},
-  {id:7,name:'Sydney Archery Club',city:'Sydney',country:'Australia',style:'Field',members:130,rating:4.5,founded:1998,region:'Oceania'},
-  {id:8,name:'Paris Archery Centre',city:'Paris',country:'France',style:'Recurve',members:190,rating:4.7,founded:1985,region:'Europe'},
-  {id:9,name:'Sao Paulo Archery Academy',city:'Sao Paulo',country:'Brazil',style:'Compound',members:115,rating:4.4,founded:2007,region:'Americas'},
-  {id:10,name:'Cape Town Bowmen',city:'Cape Town',country:'South Africa',style:'Field',members:72,rating:4.3,founded:2012,region:'Africa'},
+  {id:1,name:'Seoul Olympic Archery Centre',city:'Seoul',country:'South Korea',style:'Recurve',founded:1988,region:'Asia'},
+  {id:2,name:'Lancaster Archery',city:'Lancaster',country:'USA',style:'All',founded:1984,region:'Americas'},
+  {id:3,name:'World Archery Excellence Centre',city:'Lausanne',country:'Switzerland',style:'All',founded:2010,region:'Europe'},
+  {id:4,name:'National Archery Academy',city:'Mumbai',country:'India',style:'Recurve',founded:2004,region:'Asia'},
+  {id:5,name:'German Archery Federation HQ',city:'Stuttgart',country:'Germany',style:'Compound',founded:1972,region:'Europe'},
+  {id:6,name:'Bhutan National Archery Club',city:'Thimphu',country:'Bhutan',style:'Traditional',founded:1971,region:'Asia'},
+  {id:7,name:'Sydney Archery Club',city:'Sydney',country:'Australia',style:'Field',founded:1998,region:'Oceania'},
+  {id:8,name:'Paris Archery Centre',city:'Paris',country:'France',style:'Recurve',founded:1985,region:'Europe'},
+  {id:9,name:'Sao Paulo Archery Academy',city:'Sao Paulo',country:'Brazil',style:'Compound',founded:2007,region:'Americas'},
+  {id:10,name:'Cape Town Bowmen',city:'Cape Town',country:'South Africa',style:'Field',founded:2012,region:'Africa'},
 ];
 
 const EVENTS = [
@@ -209,9 +209,9 @@ function renderTrending(){
         <div class="card-type">${t.type} · ${t.country}</div>
         <div class="card-title">${t.title}</div>
         <div class="card-desc">${t.desc}</div>
+        <!-- View/like counts removed 2026-07-13: they were invented (CLAUDE.md
+             §1.1). Reinstate only from real analytics_events. -->
         <div class="card-meta">
-          <span>👁 ${(t.views/1000).toFixed(1)}k</span>
-          <span>♥ ${t.likes}</span>
           <span>🏷 ${t.style}</span>
         </div>
       </div>
@@ -227,12 +227,13 @@ function renderRanges(){
         <div>
           <div class="range-name">${r.name}</div>
           <div class="range-loc">📍 ${r.city}, ${r.country}</div>
-          <div class="stars">${'★'.repeat(Math.round(r.rating))}${'☆'.repeat(5-Math.round(r.rating))}<span class="rating-num">${r.rating}</span></div>
+          <!-- Star rating removed 2026-07-13: invented, and attached to real named
+               organisations. We hold no ratings (CLAUDE.md §1.1). -->
         </div>
       </div>
       <div class="range-stats">
-        <div><div class="rs-val">${r.members}</div><div class="rs-label">Members</div></div>
-        <div><div class="rs-val">${r.founded}</div><div class="rs-label">Founded</div></div>
+        <!-- Member counts removed 2026-07-13: invented for real organisations. -->
+        <div><div class="rs-val">${r.country}</div><div class="rs-label">Country</div></div>
         <div><div class="rs-val">${r.style}</div><div class="rs-label">Discipline</div></div>
       </div>
     </div>`).join('');

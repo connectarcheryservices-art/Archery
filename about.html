@@ -103,9 +103,9 @@
 fetch('/api/stats').then(r=>r.json()).then(s=>{
   if(!s)return;
   const fmt=n=>Number(n).toLocaleString('en-US');
-  if(s.totalAthletes) document.getElementById('s-athletes').textContent=fmt(s.totalAthletes)+'+';
-  if(s.totalClubs) document.getElementById('s-clubs').textContent=fmt(s.totalClubs)+'+';
-  if(s.totalTournaments) document.getElementById('s-tournaments').textContent=fmt(s.totalTournaments)+'+';
+  if(s.athletes!=null) document.getElementById('s-athletes').textContent=fmt(s.athletes);
+  if(s.members!=null) document.getElementById('s-clubs').textContent=fmt(s.members);
+  if(s.tournaments!=null) document.getElementById('s-tournaments').textContent=fmt(s.tournaments);
 }).catch(()=>{});
 </script>
 </body></html>

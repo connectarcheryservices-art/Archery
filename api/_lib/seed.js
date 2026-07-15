@@ -60,10 +60,8 @@ const SETTINGS = {
   registrationOpen:true, announcementText:'', announcementActive:false, heroImage:'',
 };
 
-// Homepage stat band reads totalAthletes / totalClubs / totalTournaments.
-const STATS = {
-  totalAthletes:52000, totalClubs:1400, totalTournaments:142,
-  pageViews:0, orders:0, revenue:0,
-};
+// STATS deleted 2026-07-13: totalAthletes:52000 / totalClubs:1400 were invented
+// and were served as fact by /api/stats via {...SEED, ...data} (CLAUDE.md §1.1).
+// /api/stats now returns COUNT(*) from real tables. Do not reintroduce.
 
-module.exports = { ROWS, SETTINGS, STATS };
+module.exports = { ROWS, SETTINGS };

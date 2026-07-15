@@ -264,15 +264,17 @@ function renderBracket(athletes){
     }
     html+=`<div class="bracket-round"><div class="bracket-round-label">${label}</div><div class="bracket-matches">`;
     matches.forEach(m=>{
-      const winA=m.b&&Math.random()>.5;
+      // No result exists until real arrows are scored (docs/DOMAIN.md §1).
+      // Show the pairing with an empty score slot. Never invent a winner.
       html+=`<div class="bracket-match">
-        <div class="bracket-athlete ${winA?'winner':''}">${m.a.a} <span class="ba-score">${winA?Math.floor(Math.random()*30+170):Math.floor(Math.random()*20+155)}</span></div>
-        ${m.b?`<div class="bracket-athlete ${!winA?'winner':''}">${m.b.a} <span class="ba-score">${!winA?Math.floor(Math.random()*30+170):Math.floor(Math.random()*20+155)}</span></div>`:
+        <div class="bracket-athlete">${m.a.a} <span class="ba-score">–</span></div>
+        ${m.b?`<div class="bracket-athlete">${m.b.a} <span class="ba-score">–</span></div>`:
         `<div class="bracket-bye">— BYE —</div>`}
       </div>`;
     });
     html+='</div></div><div class="connector"></div>';
-    currentRound=matches.map(m=>m.b?(Math.random()>.5?m.a:m.b):m.a);
+    // Only a BYE advances without a match. Everything else is TBD until scored.
+    currentRound=matches.map(m=>m.b?{a:'TBD'}:m.a);
   }
   html+=`<div class="bracket-round"><div class="bracket-round-label">🥇 Winner</div><div class="bracket-matches"><div class="bracket-match"><div class="bracket-athlete winner" style="background:#C9A22722;">${currentRound[0]?.a||'TBD'} 🏆</div></div></div></div>`;
   bracket.innerHTML=html;
@@ -282,6 +284,9 @@ function generateDraw(){
   const raw=document.getElementById('g-athletes').value.trim().split('\n').filter(s=>s.trim());
   genAthletes=raw.map(s=>s.replace(/#\d+/,'').trim());
   if(genAthletes.length<2){alert('Enter at least 2 athletes.');return;}
+  // NOTE: WA seeds elimination from qualification ranking (1v64, 2v63) — see
+  // docs/DOMAIN.md §3. No qualification scores exist yet, so this is an
+  // UNSEEDED random pairing tool, and says so. It is not a WA-conformant draw.
   const shuffled=[...genAthletes].sort(()=>Math.random()-.5);
   const hash=Math.random().toString(36).slice(2,10);
   document.getElementById('gen-result').innerHTML=`

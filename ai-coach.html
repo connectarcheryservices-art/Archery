@@ -131,11 +131,15 @@ body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;margin
 
 <script>
 const MESSAGES = [
-  {role:'ai',content:'Hello! I\'m your Archery AI Coach. I\'ve reviewed your recent session data — your grouping at 18m has improved 11% this month. Your biggest opportunity right now is anchor point consistency. Would you like me to walk through a drill sequence for that?',confidence:null},
+  // Was: "I've reviewed your recent session data — your grouping at 18m has improved
+  // 11% this month." That was fabricated: no scoring data exists (no arrows table —
+  // see docs/DOMAIN.md). Claiming to have analysed an athlete's performance we have
+  // never held violates CLAUDE.md §1.1. Say what is true instead.
+  {role:'ai',content:'Hello! I\'m your Archery AI Coach. I can help with technique, equipment setup, competition rules and training structure. I don\'t have your scoring history yet — once shot-by-shot scoring is live I\'ll be able to coach against your real arrows.',confidence:null},
   {role:'user',content:'Yes, my arrows keep hitting left of centre even when my aim feels perfect.'},
-  {role:'ai',content:'Left-of-centre hits (for a right-handed archer) are almost always one of four things:\n\n1. Anchor point drifting — your string hand is contacting your face in a slightly different position each shot. Check that your index finger knuckle is touching the same spot under your chin every time.\n\n2. Grip torque — your bow hand is pushing left at the shot. The bow grip should contact only the fleshy pad at the base of your thumb, not the palm. A wrist sling will show you if you\'re gripping.\n\n3. Clicker timing — if you\'re using a clicker, drawing through it at an angle rather than straight back causes a left deflection.\n\n4. Wind drift — at 18m this is minor, but at 50m+ significant. Check your grouping on a calm day first.\n\nStart with grip: shoot three ends with a wrist sling and your hand completely open after the clicker fires. Report the grouping position back to me.',confidence:96},
+  {role:'ai',content:'Left-of-centre hits (for a right-handed archer) are almost always one of four things:\n\n1. Anchor point drifting — your string hand is contacting your face in a slightly different position each shot. Check that your index finger knuckle is touching the same spot under your chin every time.\n\n2. Grip torque — your bow hand is pushing left at the shot. The bow grip should contact only the fleshy pad at the base of your thumb, not the palm. A wrist sling will show you if you\'re gripping.\n\n3. Clicker timing — if you\'re using a clicker, drawing through it at an angle rather than straight back causes a left deflection.\n\n4. Wind drift — at 18m this is minor, but at 50m+ significant. Check your grouping on a calm day first.\n\nStart with grip: shoot three ends with a wrist sling and your hand completely open after the clicker fires. Report the grouping position back to me.',confidence:null},
   {role:'user',content:'I use a clicker. The sling test actually helped — groups moved right by about 5cm.'},
-  {role:'ai',content:'That confirms grip torque as the primary cause. Your bow hand was pushing left by approximately 5-6cm at 18m — at 70m this would produce 15-20cm left deviation.\n\nFix protocol:\n\n• Bow hand: press only with the base-of-thumb pad. Fingers should curl naturally away from the bow.\n• After the shot: let the bow fall forward freely. If your hand closes on it, you were gripping.\n• Drill: 20 arrows at 9m, target removed. Focus entirely on the hand position, not the result. The blank bale removes the visual distraction.\n• After 3 sessions: return to target at 18m and record your horizontal spread.\n\nTarget benchmark: your horizontal group diameter should reduce by at least 60% within 2 weeks of consistent application.',confidence:98},
+  {role:'ai',content:'That confirms grip torque as the primary cause. Your bow hand was pushing left by approximately 5-6cm at 18m — at 70m this would produce 15-20cm left deviation.\n\nFix protocol:\n\n• Bow hand: press only with the base-of-thumb pad. Fingers should curl naturally away from the bow.\n• After the shot: let the bow fall forward freely. If your hand closes on it, you were gripping.\n• Drill: 20 arrows at 9m, target removed. Focus entirely on the hand position, not the result. The blank bale removes the visual distraction.\n• After 3 sessions: return to target at 18m and record your horizontal spread.\n\nTarget benchmark: your horizontal group diameter should reduce by at least 60% within 2 weeks of consistent application.',confidence:null},
 ];
 
 const TECHNIQUES = [
@@ -233,7 +237,7 @@ async function sendMsg(){
       body:JSON.stringify({message:text,history:window.__coachHistory.slice(0,-1)})});
     const d=await r.json();
     if(d&&d.ok&&d.reply){
-      addMsg('ai',d.reply,Math.floor(Math.random()*8)+90);
+      addMsg('ai',d.reply);   // no confidence score: we do not have one (CLAUDE.md §1.1)
       window.__coachHistory.push({role:'assistant',text:d.reply});
       replied=true;
     }
@@ -255,7 +259,7 @@ async function sendMsg(){
       else if(lower.includes('distance')||lower.includes('50m')||lower.includes('70m')||lower.includes('30m'))resp=AI_RESPONSES['distance'];
       else if(lower.includes('mental')||lower.includes('pressure')||lower.includes('nervous'))resp=AI_RESPONSES['mental'];
       else if(lower.includes('warm')||lower.includes('injur')||lower.includes('shoulder'))resp=AI_RESPONSES['warmup'];
-      addMsg('ai',resp,Math.floor(Math.random()*12)+86);
+      addMsg('ai',resp);      // no confidence score: we do not have one (CLAUDE.md §1.1)
       window.__coachHistory.push({role:'assistant',text:resp});
     },700);
   }

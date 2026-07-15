@@ -280,10 +280,10 @@ html.day .news-date{color:#8A8FA0;}
 <!-- ── STATS ── -->
 <section class="stats">
   <div class="stats-in">
-    <div class="stat"><div class="stat-v" id="st-athletes">50K<em>+</em></div><div class="stat-l">Registered Athletes</div></div>
-    <div class="stat"><div class="stat-v" id="st-clubs">1K<em>+</em></div><div class="stat-l">Active Clubs</div></div>
-    <div class="stat"><div class="stat-v" id="st-tournaments">142</div><div class="stat-l">Tournaments This Year</div></div>
-    <div class="stat"><div class="stat-v" id="st-countries">78</div><div class="stat-l">Countries</div></div>
+    <div class="stat"><div class="stat-v" id="st-athletes">—</div><div class="stat-l">Registered Athletes</div></div>
+    <div class="stat"><div class="stat-v" id="st-members">—</div><div class="stat-l">Registered Members</div></div>
+    <div class="stat"><div class="stat-v" id="st-tournaments">—</div><div class="stat-l">Tournaments Listed</div></div>
+    <div class="stat"><div class="stat-v" id="st-products">—</div><div class="stat-l">Products Listed</div></div>
   </div>
 </section>
 
@@ -447,9 +447,16 @@ const INR=n=>'₹'+Number(n||0).toLocaleString('en-IN');
 /* Stats from API */
 fetch('/api/stats').then(r=>r.json()).then(s=>{
   const set=(id,v)=>{const el=document.getElementById(id);if(el&&v!=null)el.innerHTML=v;};
-  if(s.totalAthletes)set('st-athletes',(s.totalAthletes/1000).toFixed(0)+'K<em>+</em>');
-  if(s.totalClubs)set('st-clubs',(s.totalClubs>=1000?(s.totalClubs/1000).toFixed(0)+'K':s.totalClubs)+'<em>+</em>');
-  if(s.totalTournaments)set('st-tournaments',s.totalTournaments);
+  // Real COUNT(*) values only. A tile with no number hides itself rather than
+  // showing an invented one (CLAUDE.md §1.1).
+  const inr=n=>Number(n).toLocaleString('en-IN');
+  const tile=(id,v)=>{const el=document.getElementById(id);if(!el)return;
+    if(v==null){const t=el.closest('.stat');if(t)t.style.display='none';return;}
+    el.textContent=inr(v);};
+  tile('st-athletes', s.athletes);
+  tile('st-members', s.members);
+  tile('st-tournaments', s.tournaments);
+  tile('st-products', s.products);
 }).catch(()=>{});
 
 /* Featured products */
