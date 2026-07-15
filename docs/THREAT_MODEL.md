@@ -66,6 +66,18 @@ numeric". No CSP (verified: 0 occurrences in `vercel.json`, while 5 other header
 *Note the irony:* `admin.html:1307` (profiles) **does** use `escA`. The helper exists; the
 highest-value sink doesn't use it. → **Fix + CSP + one sanitiser (ADR-0005).**
 
+**Status: fixed** (`8c4675b`) — sink escaped, one shared `esc.js`, CSP added.
+
+**On the CSP in `vercel.json` — read before touching it.** It is defence-in-depth, *not* the
+fix; the fix is escaping. `object-src`/`base-uri`/`form-action`/`frame-ancestors` are hard
+blocks. But `script-src` still carries **`'unsafe-inline'`**, because ~30 pages use inline
+`<script>` and `onclick=` attributes. That means **an injected inline handler is NOT blocked by
+CSP today** — which is exactly why escaping is mandatory and why ADR-0005 (build step) exists.
+Removing `'unsafe-inline'` is a **Phase 1 gate item**; do not consider CSP complete until it is
+gone. (This note lived as a `"comment"` key inside `vercel.json` until 2026-07-15 — Vercel's
+schema rejects unknown properties, so that file could not deploy at all. JSON has no comments;
+rationale for `vercel.json` belongs here.)
+
 ### T2 — No capability enforcement · **CRITICAL**
 `can()` called in **2 of 24** handlers (`mail.js`, `staff.js`). The other 22 use `checkAdmin()`
 = *"is some admin logged in"*. **A support-role hire can hard-delete the entire catalogue.**
@@ -111,6 +123,17 @@ jailbreak, **on our card**.
 
 ### T8 — TLS not verified to the database · **HIGH**
 `db.js:13` `ssl: { rejectUnauthorized: false }` → MITM-able. → **Pin the Supabase CA.**
+
+**Status: fixed** (`34ea1fa`) — CA pinned at `api/_certs/supabase-prod-ca-2021.crt`, verified
+against production on 2026-07-15 (a real connection with `rejectUnauthorized: true`).
+
+**Why `vercel.json` has a `functions.includeFiles` entry — do not remove it.** `db.js` now
+*refuses to connect* without the pinned CA, which is the point of the fix but makes that `.crt`
+load-bearing for the whole site: if it is not bundled into the function, production comes up
+with **no database at all**. It is read via `fs.readFileSync(CA_PATH)` where `CA_PATH` is a
+`const` built with `path.join` — the pattern Vercel's automatic file tracing is least reliable
+at detecting. A file whose absence is a total outage does not get left to static analysis.
+Correspondingly, **never add `api/_certs/` to `.vercelignore`.**
 
 ### T9 — Minors unprotected · **CRITICAL (legal, A3)**
 `registrations` takes `dob`/`gender`/`club`/`fedNumber` with only "a name exists". **No age
