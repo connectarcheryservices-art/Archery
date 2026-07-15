@@ -11,7 +11,7 @@
 | | |
 |---|---|
 | **Current phase** | **Phase 0 — Stop the bleeding** |
-| **Phase 0 progress** | **7 / 9** — only **0.6 (AI coach)** remains |
+| **Phase 0 progress** | **9 / 9 code complete** — gate needs the deploy + an external pentest |
 | **Last updated** | 2026-07-15 |
 | **Live** | https://archery.services — **Phase 0 work is NOT deployed yet.** Live still serves the old build. |
 
@@ -71,8 +71,11 @@ The only occurrence of "arrow" in the schema is a product name.**
       price); verify is now a convenience layer that can no longer mark an order failed
       without a signature; `/api/razorpay/reconcile` + admin UI recovers the backlog.
       **Needs `RAZORPAY_WEBHOOK_SECRET` set and migration 008 applied — see DEPLOY.md.**
-- [ ] **0.6** `/api/coach`: authenticate + rate limit + spend cap; **Sonnet**; server-held
-      history; stream. *(T7, ADR-0008)*
+- [x] **0.6** `/api/coach`: authenticate + rate limit + spend cap; **Sonnet**; server-held
+      history; stream. *(T7, ADR-0008)* — all six ADR-0008 conditions enforced; caps and
+      the kill switch live in `ai_config` so they change without a deploy.
+      **Needs migration 009 applied. `ANTHROPIC_API_KEY` is NOT set in Vercel prod** —
+      until it is, the coach serves its built-in knowledge base (honestly labelled).
 - [x] **0.7** Rate limit `/api/admin/login`; **TOTP for owner**; constant-time compare; remove
       `/admin.html` from 11 public footers. *(T5)* — blocked at attempt 9; owner enrols 2FA in
       Team & Roles; `test/auth.test.js` proves all four.

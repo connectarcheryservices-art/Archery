@@ -9,25 +9,7 @@ const { hashPassword, verifyPassword } = require('../_lib/auth');
 const { generateSecret, verifyTotp, otpauthUri, generateBackupCodes, consumeBackupCode } = require('../_lib/totp');
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
-const secret = () => 'archery-users-v1:' + (process.env.ADMIN_PASSWORD || 'set-admin-password');
-
-function sign(user) {
-  const payload = Buffer.from(JSON.stringify({ id: user.id, name: user.name, email: user.email })).toString('base64url');
-  const sig = crypto.createHmac('sha256', secret()).update(payload).digest('base64url');
-  return payload + '.' + sig;
-}
-function verifyToken(token) {
-  const [payload, sig] = String(token || '').split('.');
-  if (!payload || !sig) return null;
-  const want = crypto.createHmac('sha256', secret()).update(payload).digest('base64url');
-  const a = Buffer.from(sig), b = Buffer.from(want);
-  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
-  try { return JSON.parse(Buffer.from(payload, 'base64url').toString()); } catch { return null; }
-}
-function authedUser(req) {
-  const h = req.headers['authorization'] || '';
-  return verifyToken(h.startsWith('Bearer ') ? h.slice(7) : '');
-}
+const { sign, verifyToken, authedUser } = require('../_lib/userauth');
 // A unique, URL-safe handle for the public profile (archery.services/<handle>).
 async function uniqueHandle(name) {
   const base = String(name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'archer';

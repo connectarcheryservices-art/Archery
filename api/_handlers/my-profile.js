@@ -6,17 +6,7 @@ const crypto = require('crypto');
 const { cors, json, readBody } = require('../_lib/respond');
 const { q } = require('../_lib/db');
 
-const secret = () => 'archery-users-v1:' + (process.env.ADMIN_PASSWORD || 'set-admin-password');
-function authedUser(req) {
-  const h = req.headers['authorization'] || '';
-  const token = h.startsWith('Bearer ') ? h.slice(7) : '';
-  const [payload, sig] = String(token || '').split('.');
-  if (!payload || !sig) return null;
-  const want = crypto.createHmac('sha256', secret()).update(payload).digest('base64url');
-  const a = Buffer.from(sig), b = Buffer.from(want);
-  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
-  try { return JSON.parse(Buffer.from(payload, 'base64url').toString()); } catch { return null; }
-}
+const { authedUser } = require('../_lib/userauth');
 const rowToObj = row => { const o = {}; for (const [k, v] of Object.entries(row)) o[k.replace(/_([a-z])/g, (_, c) => c.toUpperCase())] = v; return o; };
 async function uniqueHandle(name) {
   const base = String(name || 'archer').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'archer';
