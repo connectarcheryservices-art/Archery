@@ -1,8 +1,11 @@
-// Seed content served by the public API when the database is unavailable
-// (no DATABASE_URL yet) or a content table is still empty. The moment real
-// rows exist in Supabase, those take precedence — seed only fills the gap so
-// the live site is never blank. Objects are camelCase (matches rowToObj + the
-// front-end); all money is INR.
+// Initial content for SEEDING THE DATABASE (supabase/apply.js). These rows are
+// INSERTed once so a fresh install has a catalogue an admin can then manage.
+//
+// They are NOT a runtime fallback and MUST NOT be served to users:
+//   • an empty table returns an empty list (pages render honest empty states)
+//   • a DB outage returns 503, not fabricated inventory
+// Serving invented rows to real users as real is prohibited — CLAUDE.md §1.1.
+// ROWS is therefore not imported by any request handler. Keep it that way.
 'use strict';
 
 const ROWS = {

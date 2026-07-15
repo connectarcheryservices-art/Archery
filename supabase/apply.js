@@ -7,6 +7,13 @@
 const fs = require('fs');
 const path = require('path');
 const { Client } = require('pg');
+// TLS: verify against Supabase's pinned root rather than disabling verification
+// (THREAT_MODEL T8). This script carries the DB password.
+const CA = (() => {
+  try { return fs.readFileSync(path.join(__dirname, '..', 'api', '_certs', 'supabase-prod-ca-2021.crt'), 'utf8'); }
+  catch (e) { try { return fs.readFileSync(path.join(__dirname, 'api', '_certs', 'supabase-prod-ca-2021.crt'), 'utf8'); } catch (e2) { return null; } }
+})();
+if (!CA) { console.error('Supabase CA cert not found — refusing to connect unverified.'); process.exit(1); }
 
 async function runFile(client, file) {
   const sql = fs.readFileSync(file, 'utf8');
@@ -18,7 +25,7 @@ async function runFile(client, file) {
 (async () => {
   const cs = process.env.DATABASE_URL;
   if (!cs) { console.error('DATABASE_URL not set'); process.exit(1); }
-  const client = new Client({ connectionString: cs, ssl: { rejectUnauthorized: false }, connectionTimeoutMillis: 15000 });
+  const client = new Client({ connectionString: cs, ssl: { rejectUnauthorized: true, ca: CA }, connectionTimeoutMillis: 15000 });
   await client.connect();
   console.log('Connected to Supabase.');
 

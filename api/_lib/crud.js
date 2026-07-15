@@ -5,8 +5,7 @@
 const { q } = require('./db');
 const { checkAdmin } = require('./auth');
 const { json, readBody } = require('./respond');
-const { ROWS: SEED_ROWS } = require('./seed');
-const { buildListQuery, applyToSeed } = require('./query');
+const { buildListQuery } = require('./query');
 
 const TABLES = {
   products:    ['name','brand','description','price','was','category','stock','img_url','active'],
@@ -57,13 +56,19 @@ async function listOrCreate(table, req, res) {
         params = qy.params;
       }
       const r = await q(sql, params);
-      // DB reachable but the table is still empty and no filters applied → seed so the page isn't blank.
-      if (!r.rows.length && !admin && !qy.hasFilters && SEED_ROWS[table]) return json(res, SEED_ROWS[table]);
+      // An empty table returns an empty list. It does NOT return seed rows.
+      // Serving invented rows to real users as real is prohibited by CLAUDE.md
+      // §1.1 ("no seeded demo rows served to real users as real") — an empty
+      // shop is a design problem, not a data problem. The pages render honest
+      // empty states.
       return json(res, r.rows.map(rowToObj));
     } catch (e) {
-      // DB unavailable (e.g. DATABASE_URL not set yet) → seed, filtered/sorted in-memory so search still works offline.
-      if (SEED_ROWS[table]) return json(res, applyToSeed(table, SEED_ROWS[table], query));
-      throw e;
+      // DB unavailable: fail loudly. Previously this served seed rows, i.e. a
+      // database outage silently turned into fabricated inventory with real
+      // prices and a working Add-to-Cart. 503 lets the page say "we can't reach
+      // our catalogue right now" instead of lying.
+      console.error(`crud ${table}:`, e?.message);
+      return json(res, { error: 'Catalogue temporarily unavailable', unavailable: true }, 503);
     }
   }
   if (req.method === 'POST') {

@@ -11,7 +11,7 @@ if (!DATABASE_URL) {
   process.exit(1);
 }
 
-const pool = new Pool({ connectionString: DATABASE_URL, ssl: { rejectUnauthorized: false } });
+const pool = new Pool({ connectionString: DATABASE_URL, ssl: { rejectUnauthorized: true, ca: CA } });
 const DATA_FILE = path.join(__dirname, 'data.json');
 
 async function run() {

@@ -608,6 +608,7 @@ footer{background:var(--ink-2);border-top:.5px solid rgba(255,255,255,.06);paddi
 // serving invented rows to real users as real violates CLAUDE.md §1.1.
 // If the API returns nothing, the shop says so (renderProducts empty state).
 let PRODUCTS = [];
+let CATALOGUE_DOWN = false;   // true when /api/products is unreachable (503)
 
 const BRAND_INFO = {};
 
@@ -708,6 +709,19 @@ function renderProducts(list) {
   grid.className = 'products-grid reveal visible' + (isList ? ' list-view' : '');
   document.getElementById('results-num').textContent = list.length;
   renderPagination(list.length);
+  // Honest empty state. We no longer fall back to a fabricated catalogue, so the
+  // shop must say what is true: nothing here, or we can't reach the catalogue.
+  if (!list.length) {
+    grid.className = 'products-grid';
+    grid.innerHTML = CATALOGUE_DOWN
+      ? '<div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:#B9BEC9;">'
+        + '<div style="font-family:Oswald,sans-serif;font-size:18px;color:#fff;text-transform:uppercase;margin-bottom:8px;">Catalogue unavailable</div>'
+        + '<div style="font-size:14px;">We can’t reach our catalogue right now. Please try again in a moment.</div></div>'
+      : '<div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:#B9BEC9;">'
+        + '<div style="font-family:Oswald,sans-serif;font-size:18px;color:#fff;text-transform:uppercase;margin-bottom:8px;">No products match</div>'
+        + '<div style="font-size:14px;">Try clearing your filters or searching for something else.</div></div>';
+    return;
+  }
   list = list.slice((currentPage-1)*PAGE_SIZE, currentPage*PAGE_SIZE);
 
   grid.innerHTML = list.map(p => {
@@ -953,7 +967,9 @@ updateCartUI();
 // Load live products from the API (Supabase). Falls back to the demo list when empty/offline.
 (async function loadLiveProducts(){
   try{
-    const data = await fetch('/api/products').then(r => r.json());
+    const res = await fetch('/api/products');
+    const data = await res.json();
+    if (!res.ok || (data && data.unavailable)) { CATALOGUE_DOWN = true; renderProducts([]); return; }
     if(Array.isArray(data) && data.length){
       const CAT = {
         'Recurve Bows':['recurve','#C9A227'], 'Compound Bows':['compound','#22C55E'],
@@ -978,7 +994,7 @@ updateCartUI();
       const rc = document.getElementById('results-num'); if(rc) rc.textContent = PRODUCTS.length;
       paintRealCounts();
     }
-  }catch(e){ /* keep demo products on any error */ }
+  }catch(e){ CATALOGUE_DOWN = true; renderProducts([]); }   // never invent a catalogue
 })();
 
 // Real counts only: hero total + per-category sidebar counts computed from the
