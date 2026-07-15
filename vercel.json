@@ -5,6 +5,12 @@
   "outputDirectory": null,
   "cleanUrls": true,
   "trailingSlash": false,
+  "functions": {
+    "api/**/*.js": {
+      "comment": "T8: db.js REFUSES to connect without the pinned Supabase CA, so if that .crt is not bundled into the function the entire site loses its database. It is read via `fs.readFileSync(CA_PATH)` where CA_PATH is a const — the pattern Vercel's automatic file tracing is least reliable at detecting. Do not rely on tracing for a file whose absence is an outage: include it explicitly.",
+      "includeFiles": "api/_certs/**"
+    }
+  },
   "headers": [
     {
       "source": "/(.*)",
