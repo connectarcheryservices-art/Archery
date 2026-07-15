@@ -79,6 +79,7 @@
 </style>
 </head>
 <body>
+<script src="esc.js"></script>
 <div class="wrap">
   <div class="top">
     <div class="brand">ARCHERY<span>.</span>SERVICES</div>
@@ -196,7 +197,7 @@ function renderItems(){
       <div class="it-price">${INR(it.price*it.qty)}</div>
     </div>`).join('');
 }
-function esc(s){return String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+// esc() comes from esc.js — one shared, correct escaper (CLAUDE.md §1.7).
 
 async function refreshQuote(){
   const items = cart.map(i=>({id:i.id,name:i.name,price:i.price,qty:i.qty}));

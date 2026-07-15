@@ -37,6 +37,7 @@
 </style>
 </head>
 <body>
+<script src="esc.js"></script>
 <div class="ac-wrap" id="ac-root">
   <div class="ac-signin"><h1 style="font-family:'Oswald';text-transform:uppercase;color:#fff;">My Account</h1><p style="color:var(--text-2);margin:12px 0 24px;">Sign in to manage your account, security and profile.</p><a class="ac-btn" href="signin.html?next=account.html" style="text-decoration:none;">Sign in</a></div>
 </div>
@@ -53,7 +54,7 @@ async function boot(){
   DASH=d;
   render();
 }
-function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+// esc() comes from esc.js — one shared, correct escaper (CLAUDE.md §1.7).
 
 function render(){
   const d=DASH, u=d.user, p=d.profile||{};

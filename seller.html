@@ -30,6 +30,7 @@
 </style>
 </head>
 <body>
+<script src="esc.js"></script>
 <div class="sd-wrap" id="sd-root">
   <div class="sd-gate"><h1>Seller Dashboard</h1><p>Loading…</p></div>
 </div>
@@ -37,7 +38,7 @@
 <script src="auth.js"></script>
 <script>
 const T=()=>ArcheryAuth.token();
-function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+// esc() comes from esc.js — one shared, correct escaper (CLAUDE.md §1.7).
 const INR=n=>'₹'+Number(n||0).toLocaleString('en-IN');
 
 async function boot(){

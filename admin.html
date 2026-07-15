@@ -234,6 +234,7 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
 </style>
 </head>
 <body>
+<script src="esc.js"></script>
 
 <!-- TOAST -->
 <div class="toast-admin" id="admin-toast">
@@ -979,9 +980,9 @@ async function loadProducts(){
   if(!data) return;
   document.getElementById('products-tbody').innerHTML = data.map(p=>`
     <tr>
-      <td class="td-name">${p.name}</td>
-      <td>${p.brand}</td>
-      <td>${p.category}</td>
+      <td class="td-name">${escA(p.name)}</td>
+      <td>${escA(p.brand)}</td>
+      <td>${escA(p.category)}</td>
       <td>₹${Number(p.price).toLocaleString('en-IN')}</td>
       <td>${p.stock}</td>
       <td><span class="td-badge ${p.active?'badge-active':'badge-inactive'}">${p.active?'Active':'Hidden'}</span></td>
@@ -1165,7 +1166,7 @@ function loadAnalyticsChart(){
 
 // ── PANEL LOADER ──
 // ── SHOP ORDERS ──
-function escA(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+// escA now comes from esc.js — one shared, correct escaper (CLAUDE.md §1.7).
 const ORD_FLOW={new:'confirmed',confirmed:'packed',packed:'shipped',shipped:'delivered'};
 async function loadOrders(){
   const data=await get('orders'); if(!Array.isArray(data)) return;

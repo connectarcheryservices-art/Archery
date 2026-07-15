@@ -28,6 +28,11 @@
         {
           "key": "Strict-Transport-Security",
           "value": "max-age=63072000; includeSubDomains"
+        },
+        {
+          "comment": "T1 defence-in-depth. The REAL fix for stored XSS is escaping (esc.js) — this is the second layer. object-src/base-uri/form-action/frame-ancestors are hard blocks. script-src still carries 'unsafe-inline' because ~30 pages use inline <script> and onclick= attributes; that means an injected inline handler is NOT blocked by CSP today, which is exactly why escaping is mandatory and why ADR-0005 (build step) exists. Removing 'unsafe-inline' is a Phase 1 gate item — do not consider CSP complete until it is gone.",
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://checkout.razorpay.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://api.razorpay.com https://api.bigdatacloud.net; frame-src https://api.razorpay.com https://checkout.razorpay.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; upgrade-insecure-requests"
         }
       ]
     },
