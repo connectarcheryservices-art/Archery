@@ -13,7 +13,7 @@
 | **Current phase** | **Phase 0 — Stop the bleeding** |
 | **Phase 0 progress** | **9 / 9 code complete** — gate needs the deploy + an external pentest |
 | **Last updated** | 2026-07-15 |
-| **Live** | https://archery.services — **Phase 0 work is NOT deployed yet.** Live still serves the old build. |
+| **Live** | https://archery.services — **Phase 0 IS DEPLOYED** (2026-07-15) and verified live: real `/api/stats` counts, CSP header present, pinned CA serving the DB, webhook rejects forged signatures (400), coach requires sign-in (401). |
 
 ### Where we stopped
 Committed so far:
