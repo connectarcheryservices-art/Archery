@@ -253,11 +253,33 @@
         '#nav-mobile .nm-actions{display:flex;gap:10px;margin-top:14px;}' +
         '#nav-mobile .nm-actions a{flex:1;text-align:center;border:1px solid rgba(201,162,39,.4);border-radius:9px;padding:11px;color:#C9A227;font-weight:600;font-size:14px;}' +
         '#nav-mobile .nm-actions a.nm-join{background:#C9A227;color:#131316;border-color:#C9A227;}' +
+        // ── SIGNED-IN NAV ──
+        // Styled here, not in style.css: this nav is injected on every page, but
+        // 6 of the 34 pages (index.html among them) never load style.css, so a
+        // rule there silently did nothing on the homepage.
+        //
+        // "Sign out" used to render with .btn-primary-nav / .nm-join — the solid
+        // gold CTA, the same paint as "Join Free". That put the least important
+        // action on the page in the loudest colour we own, shouting over Compete
+        // and Shop, right next to the user's name. Gold marks the one action we
+        // want; leaving is not it. Identity reads gold, leaving reads quiet.
+        '.nav-acct{display:inline-flex;align-items:center;gap:7px;color:#C9A227;font-family:"Oswald",sans-serif;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;white-space:nowrap;padding:8px 2px;}' +
+        '.nav-acct::before{content:"";width:6px;height:6px;border-radius:50%;background:#C9A227;opacity:.85;flex-shrink:0;}' +
+        '.nav-acct:hover{color:#D9B33A;}' +
+        '.nav-signout{background:transparent;border:1px solid rgba(255,255,255,.18);color:rgba(255,255,255,.55);padding:7px 14px;border-radius:3px;font-family:"Oswald",sans-serif;font-size:11px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;white-space:nowrap;transition:border-color .2s,color .2s;}' +
+        '.nav-signout:hover{border-color:rgba(255,255,255,.45);color:#fff;}' +
+        '.nav-signout:focus-visible{outline:2px solid #C9A227;outline-offset:2px;}' +
+        '#nav-mobile .nm-actions a.nm-signout{background:transparent;border-color:rgba(255,255,255,.18);color:rgba(255,255,255,.55);font-weight:500;}' +
+        '#nav-mobile .nm-actions a.nm-signout:hover{border-color:rgba(255,255,255,.45);color:#fff;}' +
         'nav.nav-open #nav-mobile{display:block;}' +
         '@media(max-width:900px){' +
           '#main-nav .nav-links{display:none!important;}' +
           '#nav-burger{display:inline-flex;}' +
           '#main-nav .nav-right>.btn-ghost,#main-nav .nav-right>a.btn-ghost{display:none!important;}' +
+          // The burger menu already carries "My account" and "Sign out", so the
+          // top bar repeating them just crowds a 360px phone until it wraps.
+          // Same reasoning as .btn-ghost directly above.
+          '#main-nav .nav-right>.nav-acct,#main-nav .nav-right>.nav-signout{display:none!important;}' +
           '#main-nav .nav-logo-sub{display:none;}' +
           '#main-nav:not(.scrolled){background:rgba(16,17,22,.9);backdrop-filter:blur(14px);}' +
         '}';
@@ -283,13 +305,14 @@
     if (right) {
       var hi = document.createElement('a');
       hi.href = 'account.html';
-      hi.style.cssText = 'color:#C9A227;font-size:13px;font-weight:600;white-space:nowrap;text-decoration:none;';
+      hi.className = 'nav-acct';
       hi.textContent = 'Hi, ' + String(user.name).split(' ')[0];
       hi.title = 'My account';
       var out = document.createElement('button');
-      out.className = 'btn-primary-nav';
+      // Tertiary, not the gold CTA — see .nav-signout in style.css.
+      out.className = 'nav-signout';
+      out.type = 'button';
       out.textContent = 'Sign out';
-      out.style.cursor = 'pointer';
       out.addEventListener('click', function(){
         localStorage.removeItem('archery_user');
         localStorage.removeItem('archery_user_token');
@@ -302,8 +325,29 @@
       right.insertBefore(hi, out);
     }
     var nm = document.querySelector('#nav-mobile .nm-actions');
-    if (nm) nm.innerHTML = '<a href="account.html">My account</a>'
-      + '<a href="#" class="nm-join" onclick="localStorage.removeItem(\'archery_user\');localStorage.removeItem(\'archery_user_token\');location.reload();return false;">Sign out</a>';
+    if (nm) {
+      // "Sign out" used to carry class="nm-join" — the solid-gold JOIN button.
+      // Same mistake as the desktop nav: the exit styled as the headline action.
+      nm.textContent = '';
+      var acct = document.createElement('a');
+      acct.href = 'account.html';
+      acct.textContent = 'My account';
+      var mOut = document.createElement('a');
+      mOut.href = '#';
+      mOut.className = 'nm-signout';
+      mOut.textContent = 'Sign out';
+      // Listener, not an inline onclick= handler: inline handlers are what force
+      // 'unsafe-inline' into script-src, and removing that is a Phase 1 gate item
+      // (docs/THREAT_MODEL.md T1). Don't add new ones.
+      mOut.addEventListener('click', function (e) {
+        e.preventDefault();
+        localStorage.removeItem('archery_user');
+        localStorage.removeItem('archery_user_token');
+        location.reload();
+      });
+      nm.appendChild(acct);
+      nm.appendChild(mOut);
+    }
   })();
 
   // ── TOASTS — branded notifications replacing native alert() on public pages ──

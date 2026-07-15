@@ -54,6 +54,10 @@ nav.scrolled{background:#131316;border-bottom:1px solid rgba(201,162,39,.35);}
 .btn-primary-nav{background:var(--gold);border:none;color:#131316;padding:9px 18px;border-radius:3px;font-family:'Oswald',sans-serif;font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;transition:all .2s;}
 .btn-primary-nav:hover{background:var(--gold-light);}
 
+/* Signed-in nav (.nav-acct / .nav-signout) is styled in shared.js, next to the
+   code that creates it — 6 of the 34 pages (index.html included) never load this
+   stylesheet, so a rule here would silently not apply on the homepage. */
+
 /* ── SECTION FURNITURE ── */
 .section-eyebrow{font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--gold);margin-bottom:14px;display:flex;align-items:center;gap:10px;font-weight:500;}
 .section-eyebrow::before{content:'';display:block;width:26px;height:2px;background:var(--gold);}
