@@ -122,11 +122,14 @@ the SHOP/PROFILE `.nav-ico` icons, and one of 6 that never load `style.css` at a
 This is ADR-0005 ("one design system") and it is the honest root of "disconnected". It is a
 **Phase 1** item, not a paint job:
 
-- [ ] **1.10** ONE nav, one source, every page. Decide the taxonomy first (**a real product
-      decision — ask, do not guess**): the homepage's intent-based words (Compete / Train /
-      Rankings) or the literal page names (Tournaments / Knowledge / Athletes). Then delete the
-      other four navs. Fold `.nav-ico` (Shop + cart, Profile) into it so a signed-in user has
-      the same account route everywhere.
+- [x] **1.10** ONE nav, one source, every page. **DONE 2026-07-16** (live). shared.js builds a
+      single canonical nav on every page (**Tournaments · Shop · Athletes · Coaches & Clubs ·
+      Knowledge · Federation · Pricing** — literal page-name labels), replacing the five that
+      existed. Self-styled so it is identical even on the 2 pages that never load style.css;
+      sticky so it can't hide content; cart icon from localStorage; burger + mobile menu; auth
+      states verified. The 16 pages that had NO nav (account, checkout, sign-in, seller, …) now
+      have one. Taxonomy chosen as literal labels (system of record favours clarity over
+      marketing verbs); revisit with the user if the brand voice should win instead.
 - [ ] **1.11** Every page loads the same stylesheet. 6 currently do not, which is how a CSS fix
       can land everywhere except the homepage.
 
