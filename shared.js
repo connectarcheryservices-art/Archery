@@ -5,6 +5,136 @@
   const API = '/api';   // relative so it works on Vercel and locally alike
   const page = location.pathname.split('/').pop() || 'index.html';
 
+  // ── ONE CANONICAL NAV, ON EVERY PAGE ─────────────────────────────────────
+  // The site used to carry FIVE different primary navigations: some pages had a
+  // proper .nav-links bar, 11 had a bespoke <nav>, and 16 (account, checkout,
+  // sign-in, seller, …) had no top nav at all. The same destination was even
+  // relabelled per page — tournaments.html was "Compete" on the homepage and
+  // "Tournaments" elsewhere — so the menu renamed itself as you moved. That is
+  // the "disconnected" feeling, made concrete.
+  //
+  // This builds ONE nav, self-styled (so it looks identical even on the pages
+  // that never load style.css), and replaces whatever each page shipped. Sticky,
+  // never fixed, so it can never hide the content beneath it. One taxonomy, one
+  // source of truth, honest labels that match each page's own <h1>.
+  (function buildNav(){
+    if (window.__asNav) return; window.__asNav = true;
+
+    var LINKS = [
+      { href: 'tournaments.html', label: 'Tournaments' },
+      { href: 'shop.html',        label: 'Shop' },
+      { href: 'athletes.html',    label: 'Athletes' },
+      { href: 'discover.html',    label: 'Coaches & Clubs' },
+      { href: 'knowledge.html',   label: 'Knowledge' },
+      { href: 'federation.html',  label: 'Federation' },
+      { href: 'pricing.html',     label: 'Pricing' }
+    ];
+    var linkHTML = LINKS.map(function(l){
+      var active = (l.href === page) ? ' class="active"' : '';
+      return '<li><a href="' + l.href + '"' + active + '>' + l.label + '</a></li>';
+    }).join('');
+
+    // Remove any nav the page shipped (but never a <nav> inside a <footer>).
+    document.querySelectorAll('nav').forEach(function(n){
+      if (!n.closest('footer')) n.remove();
+    });
+
+    var logoSvg = '<svg viewBox="0 0 42 42" fill="none" aria-hidden="true"><circle cx="21" cy="21" r="20" stroke="#C9A227" stroke-width="1"/><circle cx="21" cy="21" r="14" stroke="#C9A227" stroke-width=".5" stroke-dasharray="2 3"/><circle cx="21" cy="21" r="7" stroke="#C9A227" stroke-width="1"/><circle cx="21" cy="21" r="2.5" fill="#C9A227"/><line x1="4" y1="21" x2="19" y2="21" stroke="#C9A227" stroke-width="1.2" stroke-linecap="round"/><polygon points="16,18.5 19,21 16,23.5" fill="#C9A227"/></svg>';
+
+    var navHTML =
+      '<nav id="main-nav"><div class="as-nav-inner">'
+      + '<a href="index.html" class="as-nav-logo">' + logoSvg
+      +   '<span class="as-nav-word">'
+      +     '<span class="as-nav-name">Archery<span class="as-nav-dot">.</span>Services</span>'
+      +     '<span class="as-nav-sub">Global Archery Infrastructure</span>'
+      +   '</span>'
+      + '</a>'
+      + '<ul class="nav-links">' + linkHTML + '</ul>'
+      + '<div class="nav-right">'
+      +   '<a class="as-nav-ico" href="shop.html" aria-label="Shop and cart">'
+      +     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>'
+      +     '<span id="as-cart-badge"></span></a>'
+      +   '<a class="btn-ghost as-nav-signin" href="signin.html">Sign In</a>'
+      +   '<a class="btn-primary-nav as-nav-join" href="signup.html">Join Free</a>'
+      +   '<button id="nav-burger" aria-label="Open menu" aria-expanded="false">'
+      +     '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>'
+      +   '</button>'
+      + '</div></div>'
+      + '<div id="nav-mobile"><ul>' + linkHTML + '</ul>'
+      +   '<div class="nm-actions"><a href="signin.html">Sign In</a><a href="signup.html" class="nm-join">Join Free</a></div>'
+      + '</div></nav>';
+
+    document.body.insertAdjacentHTML('afterbegin', navHTML);
+
+    // Fully self-contained styling — explicit colours, no dependency on style.css
+    // (index.html and shop.html never load it), so the nav is byte-identical
+    // everywhere.
+    var css = document.createElement('style');
+    css.id = 'as-nav-css';
+    css.textContent =
+      '#main-nav{position:sticky;top:0;z-index:500;background:#131316;border-bottom:1px solid rgba(255,255,255,.08);font-family:"Oswald",sans-serif;}' +
+      '.as-nav-inner{display:flex;align-items:center;gap:22px;height:64px;max-width:1440px;margin:0 auto;padding:0 clamp(16px,4vw,40px);}' +
+      '.as-nav-logo{display:flex;align-items:center;gap:11px;text-decoration:none;flex-shrink:0;}' +
+      '.as-nav-logo svg{width:34px;height:34px;flex-shrink:0;}' +
+      '.as-nav-word{display:flex;flex-direction:column;gap:3px;line-height:1;}' +
+      '.as-nav-name{font-family:"Oswald",sans-serif;font-size:18px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;color:#F5F6F8;white-space:nowrap;}' +
+      '.as-nav-dot{color:#C9A227;}' +
+      '.as-nav-sub{font-family:"Oswald",sans-serif;font-size:8.5px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:#B79A2E;white-space:nowrap;}' +
+      '.nav-links{list-style:none;display:flex;align-items:center;gap:clamp(10px,1.6vw,24px);margin:0 auto 0 12px;padding:0;}' +
+      '.nav-links a{font-family:"Oswald",sans-serif;font-size:12.5px;font-weight:500;letter-spacing:.09em;text-transform:uppercase;color:#C9CBD4;text-decoration:none;white-space:nowrap;transition:color .18s;}' +
+      '.nav-links a:hover{color:#C9A227;}' +
+      '.nav-links a.active{color:#C9A227;}' +
+      '.nav-right{display:flex;align-items:center;gap:12px;margin-left:auto;flex-shrink:0;}' +
+      '.as-nav-ico{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;color:#C9CBD4;text-decoration:none;transition:color .18s;}' +
+      '.as-nav-ico svg{width:19px;height:19px;}' +
+      '.as-nav-ico:hover{color:#C9A227;}' +
+      '#as-cart-badge{display:none;position:absolute;top:-6px;right:-8px;min-width:15px;height:15px;padding:0 4px;border-radius:8px;background:#D22730;color:#fff;font-family:"Oswald",sans-serif;font-size:10px;font-weight:600;line-height:15px;text-align:center;}' +
+      '.btn-ghost{background:transparent;border:1px solid rgba(255,255,255,.22);color:#F5F6F8;padding:8px 15px;border-radius:3px;font-family:"Oswald",sans-serif;font-size:12px;font-weight:500;letter-spacing:.09em;text-transform:uppercase;text-decoration:none;transition:border-color .2s,color .2s;white-space:nowrap;}' +
+      '.btn-ghost:hover{border-color:#C9A227;color:#C9A227;}' +
+      '.btn-primary-nav{background:#C9A227;border:none;color:#131316;padding:9px 17px;border-radius:3px;font-family:"Oswald",sans-serif;font-size:12px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;text-decoration:none;transition:background .2s;white-space:nowrap;}' +
+      '.btn-primary-nav:hover{background:#D9B33A;}' +
+      '#nav-burger{display:none;background:none;border:1px solid rgba(201,162,39,.35);color:#C9A227;border-radius:8px;width:40px;height:38px;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}' +
+      '#nav-mobile{display:none;background:#16171B;border-bottom:1px solid rgba(201,162,39,.2);padding:8px 18px 18px;}' +
+      '#nav-mobile ul{list-style:none;margin:0;padding:0;}' +
+      '#nav-mobile li{border-bottom:1px solid rgba(255,255,255,.06);}' +
+      '#nav-mobile a{display:block;padding:13px 4px;color:#E6E8EE;text-decoration:none;font-family:"Oswald",sans-serif;font-size:14px;letter-spacing:.05em;text-transform:uppercase;}' +
+      '#nav-mobile a.active{color:#C9A227;}' +
+      '#nav-mobile .nm-actions{display:flex;gap:10px;margin-top:14px;}' +
+      '#nav-mobile .nm-actions a{flex:1;text-align:center;border:1px solid rgba(201,162,39,.4);border-radius:9px;padding:11px;color:#C9A227;font-family:"Oswald",sans-serif;font-weight:600;font-size:13px;letter-spacing:.06em;text-transform:uppercase;text-decoration:none;}' +
+      '#nav-mobile .nm-actions a.nm-join{background:#C9A227;color:#131316;border-color:#C9A227;}' +
+      '#nav-mobile .nm-actions a.nm-signout{border-color:rgba(255,255,255,.18);color:rgba(255,255,255,.55);font-weight:500;}' +
+      '.nav-acct{display:inline-flex;align-items:center;gap:7px;color:#C9A227;font-family:"Oswald",sans-serif;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;white-space:nowrap;padding:8px 2px;}' +
+      '.nav-acct::before{content:"";width:6px;height:6px;border-radius:50%;background:#C9A227;opacity:.85;flex-shrink:0;}' +
+      '.nav-acct:hover{color:#D9B33A;}' +
+      '.nav-signout{background:transparent;border:1px solid rgba(255,255,255,.18);color:rgba(255,255,255,.55);padding:7px 14px;border-radius:3px;font-family:"Oswald",sans-serif;font-size:11px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;white-space:nowrap;transition:border-color .2s,color .2s;}' +
+      '.nav-signout:hover{border-color:rgba(255,255,255,.45);color:#fff;}' +
+      'nav.nav-open #nav-mobile{display:block;}' +
+      '@media(max-width:940px){' +
+        '.nav-links{display:none!important;}' +
+        '#nav-burger{display:inline-flex;}' +
+        '.as-nav-signin,.as-nav-join{display:none!important;}' +
+        '.as-nav-sub{display:none;}' +
+      '}';
+    document.head.appendChild(css);
+
+    var nav = document.getElementById('main-nav');
+    var burger = document.getElementById('nav-burger');
+    burger.addEventListener('click', function(){
+      var open = nav.classList.toggle('nav-open');
+      burger.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    document.querySelectorAll('#nav-mobile a').forEach(function(a){
+      a.addEventListener('click', function(){ nav.classList.remove('nav-open'); });
+    });
+
+    // Cart badge from localStorage (per-browser; never invented).
+    try {
+      var cart = JSON.parse(localStorage.getItem('archery_cart') || '[]');
+      var n = cart.reduce(function(s, x){ return s + (x.qty || 1); }, 0);
+      if (n > 0) { var b = document.getElementById('as-cart-badge'); b.textContent = n; b.style.display = 'block'; }
+    } catch (e) {}
+  })();
+
   // ── VIDEO-FAITHFUL THEME (approved homepage standard) ──
   // Flat bands: royal blue · gold #C9A227 · red #D22730 · black · white, Oswald type.
   // Injected last on every page so it overrides each page's own inline tokens.
