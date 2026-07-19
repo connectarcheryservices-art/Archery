@@ -298,7 +298,6 @@ function render(p){
   const meta=CAT_META[p.category]||['recurve','#C9A227'];
   const svg=p.imgUrl?`<img src="${p.imgUrl}" alt="${p.name}">`:`<svg viewBox="0 0 80 80" fill="none" stroke="${p.color}" stroke-width="1.2" stroke-linecap="round">${getProductSVG(p.icon,p.color)}</svg>`;
   const thumbBg=['#17181D','#1D1E24','#131316'];
-  const dist=[0,0,0,0,0];reviews.forEach(r=>dist[5-r.rating]++);
   const relatedList=CATALOG.filter(x=>x.category===p.category&&x.id!==p.id).slice(0,4);
   const related=(relatedList.length?relatedList:CATALOG.filter(x=>x.id!==p.id).slice(0,4));
 
