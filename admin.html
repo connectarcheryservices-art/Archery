@@ -1070,25 +1070,64 @@ async function loadProducts(){
     </tr>`).join('');
 }
 
-// Product photo: read + downscale to <=640px JPEG so it stores compactly in the DB.
-let productImg=null;
-function handleProductImg(input){
-  const file=input.files[0]; if(!file) return;
-  const reader=new FileReader();
-  reader.onload=e=>{
-    const img=new Image();
-    img.onload=()=>{
-      const scale=Math.min(1,640/img.width);
-      const cv=document.createElement('canvas');
-      cv.width=Math.round(img.width*scale); cv.height=Math.round(img.height*scale);
-      cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);
-      productImg=cv.toDataURL('image/jpeg',.82);
-      const pv=document.getElementById('p-img-preview'); pv.src=productImg; pv.style.display='block';
-      document.getElementById('p-img-drop').style.borderColor='#22C55E';
+// ── ONE image reader for every upload on this page ──────────────────────────
+// Reads a chosen file, downscales it to <=maxW px, and returns a compact JPEG
+// data URL. Calls onError with a CLEAR, actionable message on any failure.
+//
+// Why this exists: the old handlers had no onerror path, so an image the browser
+// cannot decode (an iPhone HEIC — the DEFAULT iPhone photo format — a corrupt
+// file, or a non-image) failed SILENTLY. The picker did nothing, no preview, no
+// message; the admin saved and the product had no photo. That is why "can't
+// upload images in any section" and "shop is all static" (every product showing
+// the generic SVG because none has a photo) were the same bug. Silent failure is
+// the disease this whole codebase keeps catching; here it says what went wrong.
+function readImageFile(file, maxW, onDone, onError){
+  onError = onError || function(){};
+  if (!file) { onError('No file was selected.'); return; }
+  var name = String(file.name || '').toLowerCase();
+  var type = String(file.type || '').toLowerCase();
+  var isHeic = /\.(heic|heif)$/.test(name) || /heic|heif/.test(type);
+  var looksImage = /^image\//.test(type) || /\.(jpe?g|png|webp|gif|bmp|avif)$/.test(name);
+  if (!looksImage && !isHeic) { onError('That file is not an image. Please choose a JPG, PNG or WebP.'); return; }
+
+  var reader = new FileReader();
+  reader.onerror = function(){ onError('That file could not be read. Please try another image.'); };
+  reader.onload = function(e){
+    var img = new Image();
+    img.onerror = function(){
+      onError(isHeic
+        ? 'iPhone “HEIC” photos can’t be opened in this browser. On the iPhone: Settings → Camera → Formats → “Most Compatible”, then re-take or re-export the photo — or upload a JPG/PNG.'
+        : 'That image couldn’t be opened. Please try a JPG, PNG or WebP.');
     };
-    img.src=e.target.result;
+    img.onload = function(){
+      try {
+        if (!img.width || !img.height) { onError('That image appears to be empty or corrupt.'); return; }
+        var scale = Math.min(1, maxW / img.width);
+        var cv = document.createElement('canvas');
+        cv.width = Math.round(img.width * scale); cv.height = Math.round(img.height * scale);
+        cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+        onDone(cv.toDataURL('image/jpeg', 0.82));
+      } catch (err) { onError('That image couldn’t be processed. Please try a smaller JPG or PNG.'); }
+    };
+    img.src = e.target.result;
   };
   reader.readAsDataURL(file);
+}
+
+// Product photo (Add New form): downscale to <=640px JPEG.
+let productImg=null;
+function handleProductImg(input){
+  var drop = document.getElementById('p-img-drop');
+  readImageFile(input.files[0], 640, function(data){
+    productImg = data;
+    var pv = document.getElementById('p-img-preview'); pv.src = data; pv.style.display = 'block';
+    if (drop) drop.style.borderColor = '#22C55E';
+  }, function(msg){
+    productImg = null;
+    if (drop) drop.style.borderColor = '#EF4444';
+    var pv = document.getElementById('p-img-preview'); if (pv) { pv.style.display = 'none'; pv.src = ''; }
+    toast(msg);
+  });
 }
 async function saveProduct(){
   const d={name:document.getElementById('p-name').value,brand:document.getElementById('p-brand').value,category:document.getElementById('p-cat').value,price:+document.getElementById('p-price').value,was:+document.getElementById('p-was').value||null,stock:+document.getElementById('p-stock').value,imgUrl:productImg||null,active:true};
@@ -1603,22 +1642,16 @@ async function saveEdit(){
   if(r && (r.ok||r.id!==undefined)){ closeEdit(); RELOAD[resource]&&RELOAD[resource](); if(typeof loadStats==='function')loadStats(); toast('Saved'); }
   else toast((r&&r.error)||'Could not save');
 }
-// Image upload inside the edit modal — compresses to ≤800px JPEG and stores a data URL.
+// Image upload inside the edit modal — compresses to ≤800px JPEG. Uses the same
+// readImageFile() helper so it reports the real reason on failure instead of
+// silently doing nothing (see readImageFile above).
 function edPickImg(input,fid){
-  const file=input.files[0]; if(!file) return;
-  const r=new FileReader();
-  r.onload=e=>{ const img=new Image(); img.onload=()=>{
-    const scale=Math.min(1,800/img.width);
-    const cv=document.createElement('canvas');
-    cv.width=Math.round(img.width*scale); cv.height=Math.round(img.height*scale);
-    cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);
-    const data=cv.toDataURL('image/jpeg',.8);
-    document.getElementById(fid).value=data;
-    const u=document.getElementById(fid+'-url'); if(u) u.value='';
-    const pv=document.getElementById(fid+'-prev'); if(pv){ pv.src=data; pv.style.display=''; }
+  readImageFile(input.files[0], 800, function(data){
+    document.getElementById(fid).value = data;
+    var u = document.getElementById(fid+'-url'); if (u) u.value = '';
+    var pv = document.getElementById(fid+'-prev'); if (pv) { pv.src = data; pv.style.display = ''; }
     toast('Photo attached — Save to apply');
-  }; img.src=e.target.result; };
-  r.readAsDataURL(file);
+  }, function(msg){ toast(msg); });
 }
 function edClearImg(fid){ document.getElementById(fid).value=''; const pv=document.getElementById(fid+'-prev'); if(pv){pv.src='';pv.style.display='none';} const u=document.getElementById(fid+'-url'); if(u)u.value=''; }
 
