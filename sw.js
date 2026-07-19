@@ -6,7 +6,10 @@
  *   • Other static assets: stale-while-revalidate.
  *   • Never caches POST/PUT/DELETE or admin — those require the network.
  * Bump CACHE to ship an update (old caches are purged on activate). */
-const CACHE = 'archery-v3';
+// v4 (2026-07-16): the nav was unified into shared.js and nav.js became a no-op.
+// Browsers holding the v3 cache kept running the OLD nav.js and rendered TWO
+// navigation bars. Bumping this purges the old cache on activate.
+const CACHE = 'archery-v4';
 const SHELL = [
   '/', '/index.html', '/offline.html',
   '/shop', '/tournaments', '/athletes', '/knowledge', '/community',

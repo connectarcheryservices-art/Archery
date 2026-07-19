@@ -127,6 +127,22 @@
       a.addEventListener('click', function(){ nav.classList.remove('nav-open'); });
     });
 
+    // DEFENCE AGAINST A STALE CACHED nav.js.
+    // nav.js is a no-op now, but a browser holding an old service-worker cache
+    // can still execute the previous version, which appends its own <nav> —
+    // giving the user TWO stacked navigation bars. Bumping the SW cache fixes it
+    // going forward; this makes the page self-correct even on a stale cache.
+    var guard = new MutationObserver(function(muts){
+      muts.forEach(function(m){
+        Array.prototype.forEach.call(m.addedNodes || [], function(node){
+          if (node.nodeType !== 1) return;
+          if (node.tagName === 'NAV' && node.id !== 'main-nav' && !node.closest('footer')) node.remove();
+        });
+      });
+    });
+    guard.observe(document.body, { childList: true });
+    setTimeout(function(){ guard.disconnect(); }, 10000);
+
     // Cart badge from localStorage (per-browser; never invented).
     try {
       var cart = JSON.parse(localStorage.getItem('archery_cart') || '[]');

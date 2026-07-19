@@ -275,26 +275,12 @@ function buildDetail(p){
 }
 
 // ── Review pool (deterministic per product) ──
-const REV_NAMES=['Arjun Mehta','Priya Nair','Rohit Sharma','Sneha Iyer','Vikram Rao','Ananya Das','Karan Singh','Meera Pillai','Aditya Bose','Divya Menon'];
-const REV_TITLES=['Excellent quality','Exactly as described','Great value for money','Highly recommended','Perfect for competition','Impressed with the finish'];
-const REV_TEXTS=[
-  'Arrived well-packed and exactly as described. Quality is genuinely competition standard — you can feel the difference the moment you shoot it.',
-  'Been using it for a few weeks now across training and a ranking shoot. Consistent, well-made, and the finish is excellent. Worth every rupee.',
-  'Fast PAN-India delivery and the product is spot on. My coach was impressed with the build quality. Will be ordering again.',
-  'Great value compared to what I paid earlier elsewhere. Setup was simple and it performed perfectly right out of the box.',
-  'Solid, precise, and clearly made for serious archers. Grouping improved noticeably after switching to this. Very happy with the purchase.',
-];
-function seededReviews(p){
-  const n=Math.min(3,Math.max(2,Math.round(p.rating)));
-  const out=[];
-  for(let i=0;i<n;i++){
-    const idx=(p.id*7+i*3);
-    const rt=Math.max(4,Math.round(p.rating)-(i===n-1&&p.rating<4.7?1:0));
-    out.push({name:REV_NAMES[idx%REV_NAMES.length],rating:rt,title:REV_TITLES[idx%REV_TITLES.length],text:REV_TEXTS[idx%REV_TEXTS.length],date:['2 weeks ago','1 month ago','3 weeks ago','2 months ago'][i%4],verified:true});
-  }
-  return out;
-}
-function starStr(r){const full=Math.round(r);return '★'.repeat(full)+'☆'.repeat(5-full);}
+// Fabricated reviews removed 2026-07-16 (CLAUDE.md §1.1).
+// seededReviews() manufactured reviewer names, titles, review text and dates from
+// the product id, and stamped each one "✓ Verified purchase". None of it was real:
+// there is no reviews table and no purchase to verify against. Inventing reviews is
+// also independently unlawful, not merely against this constitution.
+// Reinstate only from real reviews left by verified purchasers.
 function inr(n){return '₹'+Number(n).toLocaleString('en-IN');}
 function relCard(r){const u=ArcheryReco.urgency(r);return `<a class="pd-rel" href="product.html?id=${r.id}">
   <div class="pd-rel-img" style="background:${r.bg};position:relative;">${u?`<div class="pd-urgency" style="background:${u.c};top:8px;right:8px;font-size:9px;padding:3px 7px;">${u.t}</div>`:''}<svg viewBox="0 0 80 80" fill="none" stroke="${r.color}" stroke-width="1.2" stroke-linecap="round">${getProductSVG(r.icon,r.color)}</svg></div>
@@ -312,7 +298,6 @@ function render(p){
   const meta=CAT_META[p.category]||['recurve','#C9A227'];
   const svg=p.imgUrl?`<img src="${p.imgUrl}" alt="${p.name}">`:`<svg viewBox="0 0 80 80" fill="none" stroke="${p.color}" stroke-width="1.2" stroke-linecap="round">${getProductSVG(p.icon,p.color)}</svg>`;
   const thumbBg=['#17181D','#1D1E24','#131316'];
-  const reviews=seededReviews(p);
   const dist=[0,0,0,0,0];reviews.forEach(r=>dist[5-r.rating]++);
   const relatedList=CATALOG.filter(x=>x.category===p.category&&x.id!==p.id).slice(0,4);
   const related=(relatedList.length?relatedList:CATALOG.filter(x=>x.id!==p.id).slice(0,4));
@@ -329,11 +314,11 @@ function render(p){
       <div class="pd-buybox">
         <div class="pd-brand">${p.brand||p.category}</div>
         <h1 class="pd-title">${p.name}</h1>
-        <div class="pd-ratingline">
-          <span class="pd-rating-pill">${p.rating.toFixed(1)} ★</span>
-          <span class="pd-stars">${starStr(p.rating)}</span>
-          <span class="pd-rating-count"><a href="#reviews">${p.reviews.toLocaleString('en-IN')} ratings</a></span>
-        </div>
+        <!-- Ratings removed 2026-07-16: there is no reviews table, so p.rating was
+             null and p.rating.toFixed(1) threw, leaving EVERY product page stuck on
+             "Loading product…". The fabricated ratings were deleted in the §1.1 pass;
+             this is the code that still read them. Do not re-add a rating display
+             until real reviews exist. -->
         <div class="pd-divider"></div>
         <div class="pd-price-row">
           <span class="pd-price">${inr(p.price)}</span>
@@ -383,27 +368,11 @@ function render(p){
       <div class="pd-about"><p>${det.about}</p></div>
     </div>
 
-    <div class="pd-section" id="reviews">
-      <div class="pd-h2">Ratings &amp; Reviews</div>
-      <div class="pd-rev-top">
-        <div class="pd-rev-score">
-          <div class="pd-rev-big">${p.rating.toFixed(1)}</div>
-          <div class="pd-stars">${starStr(p.rating)}</div>
-          <div class="pd-rev-of">${p.reviews.toLocaleString('en-IN')} verified ratings</div>
-        </div>
-        <div class="pd-rev-bars">
-          ${[5,4,3,2,1].map(st=>{const pct=st===Math.round(p.rating)?68:st===Math.round(p.rating)-1?20:st>Math.round(p.rating)?6:2;return `<div class="pd-rev-bar"><span>${st}★</span><div class="pd-rev-bar-track"><div class="pd-rev-bar-fill" style="width:${pct}%"></div></div></div>`;}).join('')}
-        </div>
-      </div>
-      <div class="pd-rev-list">
-        ${reviews.map(r=>`<div class="pd-rev">
-          <div class="pd-rev-head"><div class="pd-rev-av">${r.name.split(' ').map(x=>x[0]).join('')}</div><span class="pd-rev-name">${r.name}</span>${r.verified?'<span class="pd-rev-verif">✓ Verified purchase</span>':''}<span class="pd-rev-date">${r.date}</span></div>
-          <div class="pd-rev-stars">${starStr(r.rating)}</div>
-          <div class="pd-rev-title">${r.title}</div>
-          <div class="pd-rev-text">${r.text}</div>
-        </div>`).join('')}
-      </div>
-    </div>
+    <!-- "Ratings & Reviews" removed 2026-07-16. It rendered p.rating (null since
+         the fabricated ratings were deleted) and a HARDCODED star distribution
+         (68% / 20% / 6% / 2%) plus invented reviewer names and quotes. There is no
+         reviews table, so none of it was real (CLAUDE.md §1.1). Reinstate only when
+         reviews are genuinely collected from verified purchases. -->
 
     <div class="pd-section">
       <div class="pd-h2">Because you viewed this</div>
