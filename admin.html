@@ -270,10 +270,10 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
       <h1 class="lg-title">Admin Sign In</h1>
       <p class="lg-sub" id="login-sub">Sign in with the owner password, or your staff username.</p>
       <div id="login-user-wrap" style="display:none;">
-        <label class="lg-label" for="login-user">Staff username</label>
+        <label class="lg-label" for="login-user">Staff sign-in address</label>
         <div class="lg-inputwrap">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 016-6h4a6 6 0 016 6v1"/></svg>
-          <input id="login-user" type="text" autocomplete="username" placeholder="your.username">
+          <input id="login-user" type="text" autocomplete="username" placeholder="you@archery.services">
         </div>
       </div>
       <label class="lg-label" for="login-pw">Password</label>
@@ -711,7 +711,7 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
 
       <div class="card">
         <table class="data-table">
-          <thead><tr><th>Name</th><th>Username</th><th>Role</th><th>2FA</th><th>Last login</th><th>Status</th><th>Actions</th></tr></thead>
+          <thead><tr><th>ID</th><th>Name</th><th>Sign-in address</th><th>Role</th><th>2FA</th><th>Last login</th><th>Status</th><th>Actions</th></tr></thead>
           <tbody id="staff-tbody"></tbody>
         </table>
       </div>
@@ -1393,7 +1393,7 @@ async function loadOrders(){
     const cancel=(o.status!=='cancelled'&&o.status!=='delivered')?`<button class="btn-edit" onclick="setOrder(${o.id},'cancelled')">Cancel</button>`:'';
     const map=(o.geoLat&&o.geoLng)?`<a class="btn-edit" href="https://www.google.com/maps?q=${o.geoLat},${o.geoLng}" target="_blank" style="text-decoration:none;">Map</a>`:'';
     return `<tr><td>#${o.id}</td><td class="td-name">${cust}</td><td style="font-size:12px;line-height:1.6;">${items}</td><td>₹${Number(o.total).toLocaleString('en-IN')}</td><td>${pay}</td><td style="font-size:12px;">${when}</td><td class="td-actions"><span class="td-badge ${sb}">${escA(o.status)}</span> ${nextBtn}${cancel}${map}<button class="btn-delete" onclick="delOrder(${o.id})">Delete</button></td></tr>`;
-  }).join(''):'<tr><td colspan="7" style="padding:22px;color:var(--text-2);">No paid orders yet.</td></tr>';
+  }).join(''):'<tr><td colspan="8" style="padding:22px;color:var(--text-2);">No paid orders yet.</td></tr>';
 }
 async function setOrder(id,status){ const r=await put('orders',id,{status}); if(!r||r.error){ toast((r&&r.error)||'Could not update the order.'); return; } loadOrders(); toast('Order '+status); }
 async function delOrder(id){ if(!confirm('Delete this order?'))return; const r=await del('orders',id); if(!r||r.error){ toast((r&&r.error)||'Could not delete the order.'); return; } loadOrders(); toast('Deleted'); }
@@ -1798,11 +1798,12 @@ async function disable2fa(){
 async function loadStaff(){
   load2fa();
   const data=await get('staff'); const tb=document.getElementById('staff-tbody'); if(!tb)return;
-  if(!Array.isArray(data)){ tb.innerHTML='<tr><td colspan="7" style="padding:22px;color:var(--text-2);">'+((data&&data.error)||'Only the owner or a manager can view the team.')+'</td></tr>'; return; }
+  if(!Array.isArray(data)){ tb.innerHTML='<tr><td colspan="8" style="padding:22px;color:var(--text-2);">'+((data&&data.error)||'Only the owner or a manager can view the team.')+'</td></tr>'; return; }
   tb.innerHTML=data.length?data.map(s=>`
     <tr>
+      <td style="font-family:ui-monospace,Menlo,monospace;color:var(--text-2);">#${s.id}</td>
       <td class="td-name">${escA(s.name)}</td>
-      <td>${escA(s.username)}</td>
+      <td style="font-family:ui-monospace,Menlo,monospace;font-size:12.5px;">${escA(s.loginId||s.username)}</td>
       <td><span class="td-badge badge-soon">${escA(s.role)}</span></td>
       <td>${s.twoFactor?'<span class="td-badge badge-active">On</span>':'<span class="td-badge badge-inactive">Off</span>'}</td>
       <td style="font-size:12px;">${s.lastLogin?new Date(s.lastLogin).toLocaleString('en-IN'):'never'}</td>
@@ -1812,7 +1813,7 @@ async function loadStaff(){
         <button class="btn-toggle ${s.active!==false?'':'off'}" onclick="toggleStaff(${s.id},${s.active!==false})">${s.active!==false?'Disable':'Enable'}</button>
         <button class="btn-delete" onclick="delStaff(${s.id},'${escA(s.name)}')">Remove</button>
       </td>
-    </tr>`).join(''):'<tr><td colspan="7" style="padding:22px;color:var(--text-2);">No team members yet — add your first employee.</td></tr>';
+    </tr>`).join(''):'<tr><td colspan="8" style="padding:22px;color:var(--text-2);">No team members yet — add your first employee.</td></tr>';
 }
 function openStaffForm(s){
   s=s||{};
@@ -1822,8 +1823,13 @@ function openStaffForm(s){
   ov.style.cssText='position:fixed;inset:0;z-index:9998;background:rgba(7,15,34,.75);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:18px;';
   ov.innerHTML='<div style="background:#17181D;border:1px solid rgba(255,255,255,.1);border-radius:14px;width:100%;max-width:440px;padding:24px;">'+
     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;"><div style="font-family:Oswald,sans-serif;font-size:17px;color:#fff;text-transform:uppercase;letter-spacing:.04em;">'+(editing?'Edit team member':'Add team member')+'</div><button onclick="document.getElementById(\'staff-ov\').remove()" style="background:none;border:none;color:#7E8290;font-size:24px;cursor:pointer;">&times;</button></div>'+
-    '<label class="form-label">Full name</label><input id="sf-name" style="'+IN+'" value="'+escA(s.name||'')+'">'+
-    '<label class="form-label" style="margin-top:10px;display:block;">Username '+(editing?'(cannot change)':'')+'</label><input id="sf-user" style="'+IN+(editing?'opacity:.6;':'')+'" value="'+escA(s.username||'')+'" '+(editing?'disabled':'')+'>'+
+    '<label class="form-label">Full name</label><input id="sf-name" style="'+IN+'" value="'+escA(s.name||'')+'" oninput="sfSuggestFromName()">'+
+    '<label class="form-label" style="margin-top:10px;display:block;">Sign-in address '+(editing?'(cannot change)':'')+'</label>'+
+    '<div style="display:flex;align-items:center;gap:0;">'+
+      '<input id="sf-user" style="'+IN+(editing?'opacity:.6;':'')+'border-top-right-radius:0;border-bottom-right-radius:0;" value="'+escA(s.username||'')+'" '+(editing?'disabled':'')+' placeholder="firstname" oninput="sfSyncUser()">'+
+      '<span style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-left:none;border-radius:0 6px 6px 0;padding:9px 12px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px;color:var(--text-2);white-space:nowrap;">@archery.services</span>'+
+    '</div>'+
+    '<div id="sf-user-hint" style="font-size:11.5px;color:var(--text-2);margin-top:5px;">They sign in with this address. Letters, numbers, dot, dash and underscore only.</div>'+
     '<label class="form-label" style="margin-top:10px;display:block;">Email (optional)</label><input id="sf-email" style="'+IN+'" value="'+escA(s.email||'')+'">'+
     '<label class="form-label" style="margin-top:10px;display:block;">Role</label><select id="sf-role" style="'+IN+'">'+['manager','editor','support'].map(r=>'<option '+(s.role===r?'selected':'')+'>'+r+'</option>').join('')+'</select>'+
     '<label class="form-label" style="margin-top:10px;display:block;">'+(editing?'New password (leave blank to keep)':'Password')+'</label><input id="sf-pass" type="password" style="'+IN+'" placeholder="min 8 characters">'+
@@ -1832,6 +1838,22 @@ function openStaffForm(s){
     '</div>';
   document.body.appendChild(ov);
   ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
+}
+// Suggest the sign-in address from the person's first name, and show the exact
+// address that will be created. Mirrors normalizeStaffUsername() on the server.
+function sfClean(v){ return String(v||'').trim().toLowerCase().replace(/@archery\.services$/,'').replace(/[^a-z0-9._-]/g,'').slice(0,40); }
+function sfSyncUser(){
+  const u=document.getElementById('sf-user'); if(!u) return;
+  const clean=sfClean(u.value);
+  if(u.value!==clean) u.value=clean;
+  const h=document.getElementById('sf-user-hint');
+  if(h) h.textContent = clean ? ('Signs in as: '+clean+'@archery.services') : 'They sign in with this address. Letters, numbers, dot, dash and underscore only.';
+}
+function sfSuggestFromName(){
+  const n=document.getElementById('sf-name'), u=document.getElementById('sf-user');
+  if(!n||!u||u.disabled||u.dataset.touched==='1') return;
+  u.value=sfClean(String(n.value||'').split(/\s+/)[0]);
+  sfSyncUser();
 }
 async function saveStaff(id){
   const v=x=>{const el=document.getElementById(x);return el?el.value.trim():'';};

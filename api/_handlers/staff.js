@@ -3,12 +3,12 @@
 // secure their own login.
 'use strict';
 const { cors, json, readBody } = require('../_lib/respond');
-const { checkAdmin, can, hashPassword } = require('../_lib/auth');
+const { checkAdmin, can, hashPassword, normalizeStaffUsername, staffLoginId } = require('../_lib/auth');
 const { generateSecret, verifyTotp, otpauthUri, generateBackupCodes } = require('../_lib/totp');
 const { q } = require('../_lib/db');
 
 const ROLES = ['manager', 'editor', 'support'];
-const rowOut = r => ({ id: r.id, name: r.name, username: r.username, email: r.email, role: r.role, active: r.active, twoFactor: !!r.totp_enabled, lastLogin: r.last_login, createdAt: r.created_at });
+const rowOut = r => ({ id: r.id, name: r.name, username: r.username, loginId: staffLoginId(r.username), email: r.email, role: r.role, active: r.active, twoFactor: !!r.totp_enabled, lastLogin: r.last_login, createdAt: r.created_at });
 
 module.exports = async (req, res) => {
   cors(res);
@@ -86,7 +86,8 @@ module.exports = async (req, res) => {
     if (!id && req.method === 'POST') {
       const b = readBody(req);
       const name = String(b.name || '').trim().slice(0, 80);
-      const username = String(b.username || '').trim().toLowerCase().replace(/[^a-z0-9._-]/g, '').slice(0, 40);
+      // Stored as the local part; presented as <username>@archery.services.
+      const username = normalizeStaffUsername(b.username);
       const password = String(b.password || '');
       const role = ROLES.includes(b.role) ? b.role : 'support';
       if (!name || !username || !password) return json(res, { error: 'Name, username and password are required.' }, 400);

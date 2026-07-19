@@ -11,7 +11,7 @@
 //      valid username can't be identified with a stopwatch.
 'use strict';
 const { cors, json, readBody } = require('../_lib/respond');
-const { adminToken, staffToken, verifyPassword, timingEq, hashPassword } = require('../_lib/auth');
+const { adminToken, staffToken, verifyPassword, timingEq, hashPassword, normalizeStaffUsername } = require('../_lib/auth');
 const { verifyTotp, consumeBackupCode } = require('../_lib/totp');
 const { guard, record } = require('../_lib/ratelimit');
 const { q } = require('../_lib/db');
@@ -27,7 +27,9 @@ module.exports = async (req, res) => {
 
   const b = readBody(req);
   const isOwner = !b.username;
-  const identity = isOwner ? 'owner' : String(b.username || '').trim().toLowerCase();
+  // Staff may type either "sid" or their full work identity
+  // "sid@archery.services" — both resolve to the same account.
+  const identity = isOwner ? 'owner' : normalizeStaffUsername(b.username);
 
   // 1. Rate limit BEFORE doing any work.
   const blocked = await guard(req, identity, { idMax: 8, ipMax: 20, windowMin: 15 });

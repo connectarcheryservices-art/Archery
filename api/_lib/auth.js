@@ -18,6 +18,31 @@ function timingEq(x, y) {
   return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
+// ── STAFF IDENTITY ───────────────────────────────────────────────────────────
+// Staff sign in with a work identity, "<name>@archery.services", instead of an
+// arbitrary username. Only the LOCAL PART is stored in staff.username, so every
+// account created before this keeps working unchanged; the domain is presentation
+// and is accepted (but not required) at sign-in.
+const STAFF_DOMAIN = 'archery.services';
+
+/** "Sid@Archery.Services" | "sid" -> "sid".  Safe, lowercase, no separators abuse. */
+function normalizeStaffUsername(input) {
+  let v = String(input || '').trim().toLowerCase();
+  const at = v.indexOf('@');
+  if (at > -1) {
+    const domain = v.slice(at + 1);
+    // Only strip OUR domain. A different domain is a typo, not an identity.
+    if (domain === STAFF_DOMAIN) v = v.slice(0, at);
+  }
+  return v.replace(/[^a-z0-9._-]/g, '').slice(0, 40);
+}
+
+/** The address a human sees and types: "sid" -> "sid@archery.services". */
+function staffLoginId(username) {
+  const u = normalizeStaffUsername(username);
+  return u ? u + '@' + STAFF_DOMAIN : '';
+}
+
 // ── password hashing (scrypt salt:hash) — shared with staff + user accounts ──
 function hashPassword(pw) {
   const salt = crypto.randomBytes(16).toString('hex');
@@ -77,4 +102,5 @@ function can(actor, action) {
   return false;
 }
 
-module.exports = { adminToken, staffToken, checkAdmin, can, hashPassword, verifyPassword, timingEq };
+module.exports = { adminToken, staffToken, checkAdmin, can, hashPassword, verifyPassword, timingEq,
+                   STAFF_DOMAIN, normalizeStaffUsername, staffLoginId };
