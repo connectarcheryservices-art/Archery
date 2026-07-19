@@ -1,0 +1,22 @@
+-- Archery.Services — migration 012
+-- Drop public.athlete_rankings.
+--
+-- TWO reasons, either of which is sufficient:
+--
+-- 1. SECURITY. Supabase's advisor flagged it CRITICAL: the view was created
+--    without `security_invoker`, so it runs with the CREATOR's permissions and
+--    enforces the creator's row-level security rather than the querying user's.
+--
+-- 2. IT IS NOT A RANKING, AND THE CONSTITUTION SAYS SO EXPLICITLY.
+--    The view computed  rank() OVER (PARTITION BY discipline ORDER BY pb DESC)
+--    and published that as "computed_rank". CLAUDE.md §3 and docs/DOMAIN.md:
+--      "PB is not a rank. Never sort a ranking by `pb desc`."
+--    A World Archery ranking is base_points x position_% x period_multiplier over
+--    best-7 results in a 24-month window — a computation over ARROWS, which this
+--    database does not yet store. Ordering athletes by personal best and calling
+--    the row number a rank invents a standing that does not exist.
+--
+-- The view is referenced nowhere in the application (grep: only its own CREATE in
+-- migration 002), so dropping it removes a critical advisory and a false ranking
+-- at zero cost. Real rankings arrive in Phase 2, from the arrow table.
+drop view if exists public.athlete_rankings;

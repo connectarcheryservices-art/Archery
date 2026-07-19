@@ -134,47 +134,51 @@
 </div>
 
 <footer><div class="footer-inner"><div class="footer-top"><div><div class="footer-brand-name">Archery<span>.</span>Services</div><p class="footer-tagline">India's complete virtual archery infrastructure.</p></div><div class="footer-col"><h4>Athletes</h4><ul><li><a href="athletes.html">Rankings</a></li><li><a href="signup.html">Create Profile</a></li><li><a href="tournaments.html">Events</a></li></ul></div><div class="footer-col"><h4>Platform</h4><ul><li><a href="index.html">Home</a></li><li><a href="shop.html">Shop</a></li><li><a href="community.html">Community</a></li></ul></div><div class="footer-col"><h4>Company</h4><ul><li><a href="about.html">About</a></li></ul></div></div><div class="footer-bottom"><p class="footer-copy">© 2025 Archery.Services</p><div class="footer-legal"><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a></div></div></div></footer>
+<script src="esc.js"></script>
 <script src="shared.js"></script>
 <script>
-const ATHLETES=[
-  {rank:1,disc:'Recurve Open',init:'DS',name:'Deepika Singh',state:'Jharkhand',club:'SAI Ranchi',avg:672,pb:687,events:18,trend:'eq',color:'#C8601A',bg:'rgba(200,96,26,.15)'},
-  {rank:2,disc:'Recurve Open',init:'AB',name:'Atanu Bora',state:'Assam',club:'SSAC Guwahati',avg:668,pb:679,events:14,trend:'up',color:'#3B82F6',bg:'rgba(59,130,246,.15)'},
-  {rank:3,disc:'Recurve Open',init:'PD',name:'Priya Das',state:'West Bengal',club:'ATA Kolkata',avg:661,pb:674,events:16,trend:'up',color:'#A855F7',bg:'rgba(168,85,247,.15)'},
-  {rank:4,disc:'Compound Open',init:'RK',name:'Rohit Krishnan',state:'Tamil Nadu',club:'Archery TN',avg:658,pb:669,events:12,trend:'dn',color:'#22C55E',bg:'rgba(46,94,53,.2)'},
-  {rank:5,disc:'Recurve Open',init:'NK',name:'Neha Kumari',state:'Bihar',club:'Bihar Arch.',avg:654,pb:665,events:20,trend:'up',color:'#F97316',bg:'rgba(249,115,22,.15)'},
-  {rank:6,disc:'Compound Open',init:'AK',name:'Arjun Kumar',state:'Delhi',club:'DDA Archery',avg:651,pb:662,events:15,trend:'eq',color:'#EC4899',bg:'rgba(236,72,153,.15)'},
-  {rank:7,disc:'Recurve Open',init:'SM',name:'Sunil Mahato',state:'Jharkhand',club:'SAI Ranchi',avg:648,pb:659,events:11,trend:'up',color:'#14B8A6',bg:'rgba(20,184,166,.15)'},
-  {rank:8,disc:'U-21',init:'RV',name:'Ritu Verma',state:'Haryana',club:'Haryana Arch.',avg:645,pb:656,events:17,trend:'dn',color:'#EF4444',bg:'rgba(239,68,68,.15)'},
-  {rank:9,disc:'U-21',init:'MG',name:'Manish Gogoi',state:'Assam',club:'SSAC Guwahati',avg:642,pb:654,events:13,trend:'up',color:'#C9A227',bg:'rgba(201,162,39,.15)'},
-  {rank:10,disc:'Para',init:'SB',name:'Sneha Bhatt',state:'Gujarat',club:'GAS Ahmedabad',avg:639,pb:651,events:9,trend:'eq',color:'#3B82F6',bg:'rgba(59,130,246,.15)'},
-];
+// Fabricated athletes removed 2026-07-16 (CLAUDE.md §1.1).
+// This array held 10 invented people — names, states, clubs, personal bests,
+// averages, event counts and up/down 'trends' — rendered under the heading
+// "National Rankings". They were cleared only AFTER the API answered, so they
+// were shown on every first paint and stayed forever if the API failed.
+// The database is the only source of athletes. If it is empty, the page says so.
+const ATHLETES=[];
 function renderRankings(list){
+  // Honest empty state — an empty athlete table says so rather than showing
+  // invented people (CLAUDE.md §1.1).
+  if(!list.length){
+    document.getElementById('rankings-body').innerHTML =
+      '<div style="padding:48px 20px;text-align:center;color:var(--ivory-3);">'
+      + '<div style="font-family:Oswald,sans-serif;font-size:16px;color:var(--ivory);text-transform:uppercase;margin-bottom:8px;">No athletes listed yet</div>'
+      + '<div style="font-size:13.5px;line-height:1.7;">Athlete profiles appear here once they are created on the platform. '
+      + '<a href="signup.html" style="color:#C9A227;">Create yours</a>.</div></div>';
+    return;
+  }
   document.getElementById('rankings-body').innerHTML=list.map(a=>{
-    const rc=a.rank===1?'r1':a.rank===2?'r2':a.rank===3?'r3':'';
-    const tc=a.trend==='up'?'up':a.trend==='dn'?'dn':'eq';
-    const ti=a.trend==='up'?'↑':a.trend==='dn'?'↓':'—';
-    return `<div class="rt-row${a.rank<=3?' top3':''}">
-      <div class="rank-n ${rc}">${a.rank}</div>
-      <div class="ath-cell"><div class="ath-av" style="background:${a.bg};color:${a.color};">${a.init}</div><div><div class="ath-n">${a.name}</div><div class="ath-club">${a.club}</div></div></div>
-      <div class="rt-cell">${a.state}</div>
-      <div class="rt-cell score">${a.avg}</div>
-      <div class="rt-cell pb">${a.pb}</div>
+    return `<div class="rt-row">
+      <div class="rank-n">${a.pos}</div>
+      <div class="ath-cell"><div class="ath-av" style="background:${a.bg};color:${a.color};">${escA(a.init)}</div><div><div class="ath-n">${escA(a.name)}</div><div class="ath-club">${escA(a.club)}</div></div></div>
+      <div class="rt-cell">${escA(a.state)}</div>
+      <div class="rt-cell">${escA(a.disc)}</div>
+      <div class="rt-cell pb">${a.pb!=null?a.pb:'—'}</div>
       <div><button class="view-btn" onclick="location.href='profile.html'">Profile</button></div>
     </div>`;
   }).join('');
 }
-// Discipline tabs are real filters; ranks renumber within the selected discipline.
+// Discipline tabs are real filters; the position column renumbers within the filter.
 let activeDisc='Recurve Open';
 function currentList(){
   const key=activeDisc.toLowerCase();
   let list=ATHLETES.filter(a=>((a.disc||'')+' '+(a.club||'')).toLowerCase().includes(key)||((a.disc||'').toLowerCase().includes(key.replace(' open',''))));
-  return list.slice().sort((a,b)=>a.rank-b.rank).map((a,i)=>({...a,rank:i+1}));
+  return list.slice().sort((a,b)=>(Number(b.pb)||0)-(Number(a.pb)||0)).map((a,i)=>({...a,pos:i+1}));
 }
 function filterAthletes(q){
   const base=currentList();
   const list=q?base.filter(a=>a.name.toLowerCase().includes(q.toLowerCase())||a.state.toLowerCase().includes(q.toLowerCase())||a.club.toLowerCase().includes(q.toLowerCase())):base;
+  // renderRankings owns the empty state; a second one here used to overwrite it
+  // (and still said "ranked athletes", the vocabulary this page no longer uses).
   renderRankings(list);
-  if(!list.length)document.getElementById('rankings-body').innerHTML='<div style="padding:26px;color:var(--ivory-3);font-size:13px;">No ranked athletes in this discipline yet.</div>';
 }
 document.querySelectorAll('.r-tab').forEach(b=>b.addEventListener('click',function(){
   document.querySelectorAll('.r-tab').forEach(x=>x.classList.remove('active'));
@@ -189,9 +193,13 @@ fetch('/api/athletes')
     // Database is the source of truth — real athletes REPLACE the sample list.
     const PAL=[['#C9A227','rgba(201,162,39,.15)'],['#1F3E9C','rgba(31,62,156,.15)'],['#D22730','rgba(210,39,48,.15)'],['#3AA45B','rgba(58,164,91,.15)']];
     ATHLETES.length=0;
-    data.slice().sort((a,b)=>(a.rank||999)-(b.rank||999)).forEach((a,i)=>{const[c,bg]=PAL[i%4];ATHLETES.push({rank:a.rank||i+1,disc:a.discipline||'Recurve Open',init:(a.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase(),name:a.name,state:a.state||'',club:a.club||'',avg:a.pb?a.pb-(8+i):0,pb:a.pb||0,events:a.events||12,trend:'eq',color:c,bg:bg,img:a.imgUrl});});
+    // Only real columns. This used to invent an "average" (a.pb-(8+i)), an event
+    // count (|| 12) and a rank (|| i+1) — three fabricated statistics on a page
+    // headed "rankings" (CLAUDE.md §1.1). Position is the row number within the
+    // current filter, labelled as such; it is NOT a ranking.
+    data.slice().sort((a,b)=>(Number(b.pb)||0)-(Number(a.pb)||0)).forEach((a,i)=>{const[c,bg]=PAL[i%4];ATHLETES.push({pos:i+1,disc:a.discipline||'',init:(a.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase(),name:a.name,state:a.state||'',club:a.club||'',pb:a.pb||null,color:c,bg:bg,img:a.imgUrl});});
   }filterAthletes('');})
-  .catch(()=>filterAthletes(''));
+  .catch(()=>{ ATHLETES.length=0; filterAthletes(''); });
 // Animate bars when in view
 const barObs=new IntersectionObserver(e=>e.forEach(x=>{if(x.isIntersecting){setTimeout(()=>{document.getElementById('b1').style.width='91.4%';document.getElementById('b2').style.width='88.7%';document.getElementById('b3').style.width='94.1%';},200);barObs.disconnect();}}),{threshold:.3});
 const pc=document.querySelector('.profile-card');if(pc)barObs.observe(pc);

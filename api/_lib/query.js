@@ -11,7 +11,11 @@ const SORTABLE = {
                 discount:'(coalesce(was,price)-price) desc', name:'name asc', relevance:null, trending:null },
   knowledge:  { newest:'id desc', title:'title asc', relevance:null },
   tournaments:{ soonest:'date asc nulls last', prize:'prize desc', newest:'id desc' },
-  athletes:   { rank:'pb desc nulls last', name:'name asc' },
+  // 'rank' removed 2026-07-16 — it sorted by `pb desc` and called the result a
+  // rank. CLAUDE.md §3 / DOMAIN.md: "PB is not a rank. Never sort a ranking by
+  // pb desc." A real ranking is a computation over arrows (Phase 2). Personal
+  // best remains sortable, honestly labelled as personal best.
+  athletes:   { pb:'pb desc nulls last', name:'name asc' },
   jobs:       { newest:'id desc', title:'title asc' },
   news:       { newest:'date desc nulls last' },
   // Team is a curated, hand-ordered list — sort_order first, then id.
