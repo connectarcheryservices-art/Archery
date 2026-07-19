@@ -281,7 +281,7 @@ function buildDetail(p){
 // there is no reviews table and no purchase to verify against. Inventing reviews is
 // also independently unlawful, not merely against this constitution.
 // Reinstate only from real reviews left by verified purchasers.
-function inr(n){return '₹'+Number(n).toLocaleString('en-IN');}
+function inr(n){return 'CHF '+Number(n).toLocaleString('de-CH');}
 function relCard(r){const u=ArcheryReco.urgency(r);return `<a class="pd-rel" href="product.html?id=${r.id}">
   <div class="pd-rel-img" style="background:${r.bg};position:relative;">${u?`<div class="pd-urgency" style="background:${u.c};top:8px;right:8px;font-size:9px;padding:3px 7px;">${u.t}</div>`:''}<svg viewBox="0 0 80 80" fill="none" stroke="${r.color}" stroke-width="1.2" stroke-linecap="round">${getProductSVG(r.icon,r.color)}</svg></div>
   <div class="pd-rel-body"><div class="pd-rel-name">${r.name}</div><div class="pd-rel-price">${inr(r.price)}</div></div>
@@ -333,7 +333,7 @@ function render(p){
             <input id="pd-pin-input" inputmode="numeric" maxlength="6" placeholder="Enter 6-digit pincode">
             <button onclick="pdCheckPin()">Check</button>
           </div>
-          <div class="pd-deliver-out" id="pd-deliver-out">${p.price>=999?'<b>Free standard delivery</b> across India · Same-day available in metro pincodes':'Standard delivery <b>₹49</b> · Free on orders over ₹999'}</div>
+          <div class="pd-deliver-out" id="pd-deliver-out">${p.price>=999?'<b>Free standard delivery</b> across India · Same-day available in metro pincodes':'Standard delivery <b>CHF 49</b> · Free on orders over CHF 999'}</div>
         </div>
         <div class="pd-qty-row">
           <span class="pd-qty-label">Quantity</span>
@@ -402,7 +402,7 @@ function pdCheckPin(){
   const metro=['11','40','56','60','70','50','38','80'].some(x=>v.startsWith(x));
   const d=new Date();d.setDate(d.getDate()+(metro?2:4));
   const day=d.toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'});
-  out.innerHTML=`Deliver to <b>${v}</b> — ${CURRENT.price>=999?'<b>Free delivery</b>':'Delivery ₹49'} by <b>${day}</b>${metro?' · Same-day available':''}`;
+  out.innerHTML=`Deliver to <b>${v}</b> — ${CURRENT.price>=999?'<b>Free delivery</b>':'Delivery CHF 49'} by <b>${day}</b>${metro?' · Same-day available':''}`;
 }
 function cartItem(){return {id:CURRENT.id,name:CURRENT.name,brand:CURRENT.brand,price:CURRENT.price,was:CURRENT.was,color:CURRENT.color,bg:CURRENT.bg,icon:CURRENT.icon,qty:QTY};}
 function pdAdd(){

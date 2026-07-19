@@ -8,20 +8,20 @@ function eq(label, got, want) {
   else { fail++; console.log(`  FAIL ${label}: got ${got}, want ${want}`); }
 }
 
-console.log('1) goods 500, standard (below free threshold 999)');
-let q = computeQuote([{ id:1, name:'Arrow set', price:250, qty:2 }], { delivery:'standard' });
-eq('goods', q.goods, 500); eq('delivery', q.deliveryFee, 49);
-eq('tax(10%)', q.tax, 50); eq('platformFee(5%)', q.platformFee, 25);
-eq('total', q.total, 624); eq('totalPaise', q.totalPaise, 62400);
+console.log('1) goods 50 CHF, standard (below free threshold 99)');
+let q = computeQuote([{ id:1, name:'Arrow set', price:25, qty:2 }], { delivery:'standard' });
+eq('goods', q.goods, 50); eq('delivery', q.deliveryFee, 5);
+eq('tax(10%)', q.tax, 5); eq('platformFee(5%)', q.platformFee, 2.5);
+eq('total', q.total, 62.5); eq('totalMinor', q.totalPaise, 6250);
 
-console.log('2) goods 1200, standard (>= threshold -> free delivery)');
-q = computeQuote([{ id:2, name:'Riser', price:1200, qty:1 }], { delivery:'standard' });
-eq('delivery(free)', q.deliveryFee, 0); eq('tax', q.tax, 120);
-eq('platformFee', q.platformFee, 60); eq('total', q.total, 1380);
+console.log('2) goods 120 CHF, standard (>= threshold -> free delivery)');
+q = computeQuote([{ id:2, name:'Riser', price:120, qty:1 }], { delivery:'standard' });
+eq('delivery(free)', q.deliveryFee, 0); eq('tax', q.tax, 12);
+eq('platformFee', q.platformFee, 6); eq('total', q.total, 138);
 
-console.log('3) goods 500, same-day delivery');
-q = computeQuote([{ id:1, name:'Arrow set', price:500, qty:1 }], { delivery:'sameday' });
-eq('delivery(sameday)', q.deliveryFee, 149); eq('total', q.total, 724);
+console.log('3) goods 50 CHF, express delivery');
+q = computeQuote([{ id:1, name:'Arrow set', price:50, qty:1 }], { delivery:'sameday' });
+eq('delivery(express)', q.deliveryFee, 15); eq('total', q.total, 72.5);
 
 console.log('4) empty cart -> all zero');
 q = computeQuote([], { delivery:'standard' });

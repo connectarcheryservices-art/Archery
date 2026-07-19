@@ -13,14 +13,16 @@ function orderNo() {
     crypto.randomBytes(3).toString('hex').toUpperCase();
 }
 
-async function createRazorpayOrder(amountPaise, receipt) {
+// Currency comes from the priced quote, never a literal — display and charge
+// must agree (§1.6).
+async function createRazorpayOrder(amountPaise, receipt, quoteCurrency) {
   const id = process.env.RAZORPAY_KEY_ID, secret = process.env.RAZORPAY_KEY_SECRET;
   if (!id || !secret) return { ok: false, error: 'Razorpay keys not configured' };
   const auth = 'Basic ' + Buffer.from(`${id}:${secret}`).toString('base64');
   const r = await fetch('https://api.razorpay.com/v1/orders', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: auth },
-    body: JSON.stringify({ amount: amountPaise, currency: 'INR', receipt, payment_capture: 1 }),
+    body: JSON.stringify({ amount: amountPaise, currency: quoteCurrency, receipt, payment_capture: 1 }),
   });
   const data = await r.json().catch(() => ({}));
   if (!r.ok) return { ok: false, error: data?.error?.description || 'Razorpay order failed' };
@@ -73,7 +75,7 @@ module.exports = async (req, res) => {
     );
     const orderId = ins.rows[0].id;
 
-    const rp = await createRazorpayOrder(quote.totalPaise, no);
+    const rp = await createRazorpayOrder(quote.totalPaise, no, quote.currency);
     if (!rp.ok) return json(res, { ok: false, error: rp.error, orderId }, 502);
     await q('update orders set razorpay_order_id=$1, updated_at=now() where id=$2', [rp.order.id, orderId]);
 
@@ -83,7 +85,7 @@ module.exports = async (req, res) => {
       ok: true, orderId, orderNo: no, quote,
       razorpay: {
         keyId: process.env.PUBLIC_RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID,
-        orderId: rp.order.id, amount: quote.totalPaise, currency: 'INR',
+        orderId: rp.order.id, amount: quote.totalPaise, currency: quote.currency,
       },
     });
   } catch (e) {

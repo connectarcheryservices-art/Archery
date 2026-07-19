@@ -290,8 +290,8 @@ html.day .news-date{color:#8A8FA0;}
 <!-- ── LIVE TICKER ── -->
 <a class="ticker" href="tournaments.html" aria-label="Live tournament updates">
   <span class="ticker-track" id="ticker-track">
-    <span class="dot"></span><b>Live</b> — National Ranking Tournament Round 3, Pune &nbsp;·&nbsp; Registrations open for Assam Open 2025 &nbsp;·&nbsp; <b>₹45,00,000</b> prize pool at India International Grand Prix &nbsp;·&nbsp; Same-day equipment delivery now in 7 metros
-    <span class="dot"></span><b>Live</b> — National Ranking Tournament Round 3, Pune &nbsp;·&nbsp; Registrations open for Assam Open 2025 &nbsp;·&nbsp; <b>₹45,00,000</b> prize pool at India International Grand Prix &nbsp;·&nbsp; Same-day equipment delivery now in 7 metros
+    <span class="dot"></span><b>Live</b> — National Ranking Tournament Round 3, Pune &nbsp;·&nbsp; Registrations open for Assam Open 2025 &nbsp;·&nbsp; <b>CHF 45,00,000</b> prize pool at India International Grand Prix &nbsp;·&nbsp; Same-day equipment delivery now in 7 metros
+    <span class="dot"></span><b>Live</b> — National Ranking Tournament Round 3, Pune &nbsp;·&nbsp; Registrations open for Assam Open 2025 &nbsp;·&nbsp; <b>CHF 45,00,000</b> prize pool at India International Grand Prix &nbsp;·&nbsp; Same-day equipment delivery now in 7 metros
   </span>
 </a>
 
@@ -438,7 +438,7 @@ html.day .news-date{color:#8A8FA0;}
 
 <script>
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const INR=n=>'₹'+Number(n||0).toLocaleString('en-IN');
+const INR=n=>'CHF '+Number(n||0).toLocaleString('de-CH');
 
 /* Cart dot */
 (function(){try{const c=JSON.parse(localStorage.getItem('archery_cart')||'[]');const n=c.reduce((s,x)=>s+(x.qty||1),0);if(n){const d=document.getElementById('cart-dot');d.textContent=n;d.style.display='flex';}}catch(e){}})();
@@ -448,7 +448,7 @@ fetch('/api/stats').then(r=>r.json()).then(s=>{
   const set=(id,v)=>{const el=document.getElementById(id);if(el&&v!=null)el.innerHTML=v;};
   // Real COUNT(*) values only. A tile with no number hides itself rather than
   // showing an invented one (CLAUDE.md §1.1).
-  const inr=n=>Number(n).toLocaleString('en-IN');
+  const inr=n=>Number(n).toLocaleString('de-CH');
   const tile=(id,v)=>{const el=document.getElementById(id);if(!el)return;
     if(v==null){const t=el.closest('.stat');if(t)t.style.display='none';return;}
     el.textContent=inr(v);};

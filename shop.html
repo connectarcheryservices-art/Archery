@@ -335,9 +335,9 @@ footer{background:var(--ink-2);border-top:.5px solid rgba(255,255,255,.06);paddi
   </div>
   <div class="cart-items" id="cart-items-container"></div>
   <div class="cart-footer" id="cart-footer" style="display:none;">
-    <div class="cart-subtotal"><span class="cart-subtotal-label">Subtotal</span><span class="cart-subtotal-val" id="cart-subtotal">₹0</span></div>
-    <div class="cart-discount"><span class="cart-discount-label">Platform Member Discount (5%)</span><span class="cart-discount-val" id="cart-discount">-₹0</span></div>
-    <div class="cart-total-line"><span class="cart-total-label">Total</span><span class="cart-total-val" id="cart-total">₹0</span></div>
+    <div class="cart-subtotal"><span class="cart-subtotal-label">Subtotal</span><span class="cart-subtotal-val" id="cart-subtotal">CHF 0</span></div>
+    <div class="cart-discount"><span class="cart-discount-label">Platform Member Discount (5%)</span><span class="cart-discount-val" id="cart-discount">-CHF 0</span></div>
+    <div class="cart-total-line"><span class="cart-total-label">Total</span><span class="cart-total-val" id="cart-total">CHF 0</span></div>
     <div class="coupon-row">
       <input class="coupon-input" placeholder="Enter coupon code" id="coupon-input">
       <button class="coupon-apply" onclick="applyCoupon()">Apply</button>
@@ -458,9 +458,9 @@ footer{background:var(--ink-2);border-top:.5px solid rgba(255,255,255,.06);paddi
       </div>
       <div class="price-range">
         <div class="price-inputs">
-          <input class="price-input" type="number" placeholder="Min ₹" value="500" id="price-min">
+          <input class="price-input" type="number" placeholder="Min CHF" value="500" id="price-min">
           <span class="price-sep">—</span>
-          <input class="price-input" type="number" placeholder="Max ₹" value="150000" id="price-max">
+          <input class="price-input" type="number" placeholder="Max CHF" value="150000" id="price-max">
         </div>
         <input class="range-slider" type="range" min="500" max="200000" value="150000">
       </div>
@@ -648,7 +648,7 @@ function stripCard(p){
   const save=(p.was&&p.was>p.price)?Math.round((1-p.price/p.was)*100):0;
   return `<a class="reco-card" href="product.html?id=${p.id}" onclick="if(window.ArcheryReco){var _p=PRODUCTS.find(function(x){return x.id==${p.id};});if(_p)ArcheryReco.trackView(_p);}">
     <div class="reco-card-img" style="background:${p.bg||'#17181D'};"><svg viewBox="0 0 80 80" fill="none" stroke="${p.color||'#C9A227'}" stroke-width="1.2" stroke-linecap="round">${getProductSVG(p.icon||'recurve',p.color||'#C9A227')}</svg></div>
-    <div class="reco-card-body"><div class="reco-card-name">${p.name}</div><div class="reco-card-price">₹${Number(p.price).toLocaleString('en-IN')}${save>0?` <span>${save}% off</span>`:''}</div></div>
+    <div class="reco-card-body"><div class="reco-card-name">${p.name}</div><div class="reco-card-price">CHF ${Number(p.price).toLocaleString('de-CH')}${save>0?` <span>${save}% off</span>`:''}</div></div>
   </a>`;
 }
 function strip(title, sub, items){
@@ -729,7 +729,7 @@ function renderProducts(list) {
     const urgHTML = urg ? `<span class="badge" style="background:${urg.c};color:#fff;">${urg.t}</span>` : '';
     const badgeHTML = (p.badge || urg) ? `<div class="product-badges">${p.badge?`<span class="badge badge-${p.badge}">${p.badge === 'sale' ? `-${p.save}%` : p.badge.toUpperCase()}</span>`:''}${urgHTML}</div>` : '';
     const saveHTML = p.save > 0 ? `<span class="p-price-save">Save ${p.save}%</span>` : '';
-    const wasHTML = p.was ? `<span class="p-price-was">₹${p.was.toLocaleString('en-IN')}</span>` : '';
+    const wasHTML = p.was ? `<span class="p-price-was">CHF ${p.was.toLocaleString('de-CH')}</span>` : '';
     const stars = '★'.repeat(p.rating) + '☆'.repeat(5 - p.rating);
     const tagsHTML = p.tags.map(t => `<span class="p-tag">${t}</span>`).join('');
 
@@ -742,7 +742,7 @@ function renderProducts(list) {
         <div class="product-info">
           <div class="p-brand">${p.brand}</div>
           <div class="p-name" style="cursor:pointer;" onclick="goProduct(${p.id})">${p.name}</div>
-          <div class="p-price"><span class="p-price-now">₹${p.price.toLocaleString('en-IN')}</span>${wasHTML}${saveHTML}</div>
+          <div class="p-price"><span class="p-price-now">CHF ${p.price.toLocaleString('de-CH')}</span>${wasHTML}${saveHTML}</div>
           <div class="p-tags">${tagsHTML}</div>
           <div class="p-delivery"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>${p.delivery}</div>${liveLine(p)}
         </div>
@@ -762,7 +762,7 @@ function renderProducts(list) {
         <div class="product-info">
           <div class="p-brand">${p.brand}</div>
           <div class="p-name" style="cursor:pointer;" onclick="goProduct(${p.id})">${p.name}</div>
-          <div class="p-price"><span class="p-price-now">₹${p.price.toLocaleString('en-IN')}</span>${wasHTML}${saveHTML}</div>
+          <div class="p-price"><span class="p-price-now">CHF ${p.price.toLocaleString('de-CH')}</span>${wasHTML}${saveHTML}</div>
           <div class="p-delivery"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>${p.delivery}</div>${liveLine(p)}
           <div class="p-actions">
             <button class="btn-add-cart" onclick="addToCart(${p.id})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add</button>
@@ -821,7 +821,7 @@ function updateCartUI() {
         <div class="cart-item-brand">${item.brand}</div>
         <div class="cart-item-name">${item.name}</div>
         <div class="cart-item-bottom">
-          <div class="cart-item-price">₹${(item.price * item.qty).toLocaleString('en-IN')}</div>
+          <div class="cart-item-price">CHF ${(item.price * item.qty).toLocaleString('de-CH')}</div>
           <div class="qty-control">
             <button class="qty-btn" onclick="changeQty(${item.id},-1)">−</button>
             <div class="qty-num">${item.qty}</div>
@@ -834,9 +834,9 @@ function updateCartUI() {
 
   const subtotal = cart.reduce((s, x) => s + x.price * x.qty, 0);
   const discount = Math.round(subtotal * 0.05);
-  document.getElementById('cart-subtotal').textContent = '₹' + subtotal.toLocaleString('en-IN');
-  document.getElementById('cart-discount').textContent = '-₹' + discount.toLocaleString('en-IN');
-  document.getElementById('cart-total').textContent = '₹' + (subtotal - discount).toLocaleString('en-IN');
+  document.getElementById('cart-subtotal').textContent = 'CHF ' + subtotal.toLocaleString('de-CH');
+  document.getElementById('cart-discount').textContent = '-CHF ' + discount.toLocaleString('de-CH');
+  document.getElementById('cart-total').textContent = 'CHF ' + (subtotal - discount).toLocaleString('de-CH');
 }
 
 function openCart() {
@@ -984,7 +984,7 @@ updateCartUI();
           reviews: null, badge: was ? 'sale' : null,   // no rating/reviews columns exist — render none
           save: (was && was>price) ? Math.round((1-price/was)*100) : 0,
           tags:[p.category||'Equipment'], color:c[1], bg:'rgba(255,255,255,.04)', icon:c[0],
-          img:p.imgUrl||null, delivery: price>=999 ? 'Free delivery' : '₹49 delivery',
+          img:p.imgUrl||null, delivery: price>=999 ? 'Free delivery' : 'CHF 49 delivery',
           inCart:false, wished:false
         };
       });
@@ -1001,7 +1001,7 @@ updateCartUI();
 // actual loaded catalogue. No invented figures (CLAUDE.md §1.1).
 function paintRealCounts(){
   const hero = document.getElementById('sh-products');
-  if(hero) hero.textContent = PRODUCTS.length.toLocaleString('en-IN');
+  if(hero) hero.textContent = PRODUCTS.length.toLocaleString('de-CH');
   document.querySelectorAll('.filter-opt').forEach(opt=>{
     const label = opt.querySelector('.filter-opt-label');
     const count = opt.querySelector('[data-cat-count]');

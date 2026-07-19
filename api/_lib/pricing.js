@@ -1,17 +1,21 @@
 // api/_lib/pricing.js
-// Comprehensive checkout pricing for Archery.Services (INR).
+// Comprehensive checkout pricing for Archery.Services (CHF).
 // Single source of truth for the order total so the client display and the
 // Razorpay charge can never disagree. All rates are admin-configurable
 // (loaded from the `settings` row) and fall back to these defaults.
 'use strict';
 
+// Currency changed INR -> CHF on 2026-07-16 at the owner's instruction. The
+// stored product prices were converted in the same change (migration 011), so
+// the displayed price and the amount charged stay in the same currency — showing
+// one and charging the other would be a lie about money (§1.6).
 const DEFAULTS = {
-  currency: 'INR',
+  currency: 'CHF',
   taxRate: 0.10,             // 10% tax, applied to the goods subtotal
   platformFeeRate: 0.05,     // 5% platform fee, applied to the goods subtotal
-  deliveryStandard: 49,      // standard PAN-India delivery (INR)
-  deliverySameDay: 149,      // super-fast same-day PAN-India delivery (INR)
-  freeDeliveryThreshold: 999,// standard delivery is free at/above this goods value
+  deliveryStandard: 5,       // standard delivery (CHF)
+  deliverySameDay: 15,       // express delivery (CHF)
+  freeDeliveryThreshold: 99, // standard delivery is free at/above this goods value
 };
 
 function round2(n) { return Math.round((Number(n) + Number.EPSILON) * 100) / 100; }

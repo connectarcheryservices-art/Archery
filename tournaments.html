@@ -136,7 +136,7 @@
   <div class="page-hero-grid reveal">
     <div class="stat-card"><div class="stat-val">142<em>+</em></div><div class="stat-label">Events This Year</div></div>
     <div class="stat-card"><div class="stat-val">28,400<em>+</em></div><div class="stat-label">Registrations</div></div>
-    <div class="stat-card"><div class="stat-val">₹2.4<em>Cr</em></div><div class="stat-label">Prize Money Distributed</div></div>
+    <div class="stat-card"><div class="stat-val">CHF 2.4<em>Cr</em></div><div class="stat-label">Prize Money Distributed</div></div>
   </div>
 </div>
 
@@ -221,12 +221,12 @@ function renderTournaments(list){
           <div><div class="t-name">${t.name}</div><div class="t-meta">
             <span class="t-meta-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>${t.location}</span>
             <span class="t-meta-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${t.slots} slots · ${t.registered} registered</span>
-            <span class="t-meta-item">Entry: ₹${t.fee?.toLocaleString('en-IN')||'—'}</span>
+            <span class="t-meta-item">Entry: CHF ${t.fee?.toLocaleString('de-CH')||'—'}</span>
           </div></div>
         </div>
         <div class="t-right">
           <span class="t-status ${statusMap[t.status]||'s-soon'}">${statusLabel[t.status]||t.status}</span>
-          <div class="t-prize" style="${isDone?'color:var(--ivory-3);':''}">₹${Number(t.prize).toLocaleString('en-IN')}</div>
+          <div class="t-prize" style="${isDone?'color:var(--ivory-3);':''}">CHF ${Number(t.prize).toLocaleString('de-CH')}</div>
         </div>
       </div>
       <div class="t-body">
@@ -288,7 +288,7 @@ function tDetails(id){
     +'<div style="font-size:12px;color:var(--ivory-3);margin:6px 0 16px;">Organised by '+esc(t.org)+'</div>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:13px;color:var(--ivory-2);">'
     +'<div><strong style="color:var(--ivory);">Date</strong><br>'+esc(t.date)+'</div><div><strong style="color:var(--ivory);">Location</strong><br>'+esc(t.location)+'</div>'
-    +'<div><strong style="color:var(--ivory);">Prize Pool</strong><br>₹'+Number(t.prize).toLocaleString('en-IN')+'</div><div><strong style="color:var(--ivory);">Entry Fee</strong><br>'+(t.fee?'₹'+t.fee.toLocaleString('en-IN'):'—')+'</div>'
+    +'<div><strong style="color:var(--ivory);">Prize Pool</strong><br>CHF '+Number(t.prize).toLocaleString('de-CH')+'</div><div><strong style="color:var(--ivory);">Entry Fee</strong><br>'+(t.fee?'CHF '+t.fee.toLocaleString('de-CH'):'—')+'</div>'
     +'<div><strong style="color:var(--ivory);">Slots</strong><br>'+t.registered+' / '+t.slots+' filled</div><div><strong style="color:var(--ivory);">Status</strong><br>'+esc(t.status)+'</div></div>'
     +'<div style="margin-top:14px;font-size:12px;color:var(--ivory-3);">Disciplines: '+(t.disciplines||[]).map(esc).join(', ')+'</div>'
     +regBtn;

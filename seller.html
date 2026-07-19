@@ -39,7 +39,7 @@
 <script>
 const T=()=>ArcheryAuth.token();
 // esc() comes from esc.js — one shared, correct escaper (CLAUDE.md §1.7).
-const INR=n=>'₹'+Number(n||0).toLocaleString('en-IN');
+const INR=n=>'CHF '+Number(n||0).toLocaleString('de-CH');
 
 async function boot(){
   if(!T()){ gate('Sign in required','Sign in to your seller account.','<a class="sd-btn" href="signin.html?next=seller.html" style="text-decoration:none;">Sign in</a>'); return; }
@@ -80,7 +80,7 @@ function openProd(p){
     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><div style="font-family:Oswald,sans-serif;font-size:17px;color:#fff;text-transform:uppercase;letter-spacing:.04em;">'+(p.id?'Edit product':'Add product')+'</div><button onclick="document.getElementById(\'prod-ov\').remove()" style="background:none;border:none;color:#7E8290;font-size:24px;cursor:pointer;">&times;</button></div>'+
     '<div style="display:flex;gap:12px;align-items:center;margin-bottom:6px;"><img id="pd-prev" alt="Product photo" src="'+esc(p.imgUrl||'')+'" style="width:60px;height:60px;object-fit:cover;border-radius:9px;border:1px solid rgba(255,255,255,.14);background:#101116;'+(p.imgUrl?'':'display:none;')+'"><button type="button" class="s-btn" onclick="document.getElementById(\'pd-file\').click()">📷 Photo</button><input type="file" id="pd-file" accept="image/*" style="display:none;" onchange="pdImg(this)"><input type="hidden" id="pd-imgUrl" value="'+esc(p.imgUrl||'')+'"></div>'+
     '<label>Product name</label><input id="pd-name" value="'+esc(p.name||'')+'">'+
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;"><div><label>Brand</label><input id="pd-brand" value="'+esc(p.brand||'')+'"></div><div><label>Category</label><input id="pd-cat" value="'+esc(p.category||'')+'"></div><div><label>Price (₹)</label><input id="pd-price" type="number" value="'+esc(p.price||'')+'"></div><div><label>MRP / was (₹)</label><input id="pd-was" type="number" value="'+esc(p.was||'')+'"></div><div><label>Stock</label><input id="pd-stock" type="number" value="'+esc(p.stock||'')+'"></div></div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;"><div><label>Brand</label><input id="pd-brand" value="'+esc(p.brand||'')+'"></div><div><label>Category</label><input id="pd-cat" value="'+esc(p.category||'')+'"></div><div><label>Price (CHF)</label><input id="pd-price" type="number" value="'+esc(p.price||'')+'"></div><div><label>MRP / was (CHF)</label><input id="pd-was" type="number" value="'+esc(p.was||'')+'"></div><div><label>Stock</label><input id="pd-stock" type="number" value="'+esc(p.stock||'')+'"></div></div>'+
     '<label style="margin-top:10px;display:block;">Description</label><textarea id="pd-desc" rows="2">'+String(p.description||'').replace(/</g,'&lt;')+'</textarea>'+
     '<div style="display:flex;gap:10px;margin-top:18px;"><button class="sd-btn" onclick="saveProd('+(p.id||0)+')">Save</button><button class="s-btn" onclick="document.getElementById(\'prod-ov\').remove()">Cancel</button></div>'+
     '</div>';
