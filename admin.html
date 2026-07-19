@@ -362,6 +362,10 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 22h16a2 2 0 002-2V4a2 2 0 00-2-2H8a2 2 0 00-2 2v16a2 2 0 01-2 2zm0 0a2 2 0 01-2-2v-9h4"/><line x1="10" y1="7" x2="18" y2="7"/><line x1="10" y1="11" x2="18" y2="11"/></svg>
       News &amp; Results
     </button>
+    <button class="nav-item" onclick="showPanel('team-public',this);loadTeamPublic();">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/></svg>
+      Team (public)
+    </button>
     <button class="nav-item" onclick="showPanel('forum',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 11.5a8.5 8.5 0 01-12.6 7.4L3 20l1.1-5.4A8.5 8.5 0 1121 11.5z"/></svg>
       Community Forum
@@ -826,6 +830,48 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
     </div>
 
     <!-- ── NEWS & RESULTS ── -->
+    <!-- ── TEAM (public "who runs this platform") ── -->
+    <div class="panel" id="panel-team-public">
+      <div class="breadcrumb">Admin <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg> <span>Team</span></div>
+      <button class="btn-add-new" onclick="toggleInlineForm('tm-form')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Team Member</button>
+      <div class="inline-form" id="tm-form">
+        <div class="form-grid">
+          <div class="form-group"><label class="form-label">Full name *</label><input class="form-input" id="tm-name" maxlength="80" placeholder="e.g. Siddharth Prasad"></div>
+          <div class="form-group"><label class="form-label">Role / title</label><input class="form-input" id="tm-role" maxlength="80" placeholder="e.g. Founder"></div>
+          <div class="form-group" style="grid-column:1/-1;"><label class="form-label">Short bio</label><textarea class="form-input" id="tm-bio" rows="3" maxlength="400" placeholder="One or two lines."></textarea></div>
+          <div class="form-group"><label class="form-label">Public link (optional)</label><input class="form-input" id="tm-link" maxlength="200" placeholder="https://…"></div>
+          <div class="form-group"><label class="form-label">Order (lower shows first)</label><input class="form-input" id="tm-order" type="number" value="100"></div>
+          <div class="form-group" style="grid-column:1/-1;">
+            <label class="form-label">Photo</label>
+            <div id="tm-img-drop" onclick="document.getElementById('tm-img-file').click()" style="border:2px dashed rgba(201,162,39,.3);border-radius:10px;padding:20px;text-align:center;cursor:pointer;background:rgba(201,162,39,.04);">
+              <div style="font-size:13px;color:var(--text-2);">Click to upload a photo (JPG/PNG — auto-compressed)</div>
+              <img id="tm-img-preview" alt="Photo preview" style="display:none;max-width:110px;max-height:110px;margin:12px auto 0;border-radius:8px;">
+            </div>
+            <input type="file" id="tm-img-file" accept="image/*" style="display:none;" onchange="handleTeamImg(this)">
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn-cancel" onclick="toggleInlineForm('tm-form')">Cancel</button>
+          <button class="btn-save" onclick="saveTeamMember()">Save member</button>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:16px;">
+        <div style="font-size:12.5px;color:var(--text-2);line-height:1.7;">
+          These are the people shown publicly on the <b style="color:var(--text);">About</b> page under
+          “Who runs Archery.Services”. Nobody is listed until you add them — the public section stays
+          hidden while this is empty, so the site never claims a team it doesn't have.
+          <br><b style="color:var(--text);">This is not “Team &amp; Roles”</b>, which is admin login accounts and is never public.
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Team <span class="td-badge badge-active" style="font-size:11px;" id="tm-count">0</span></div>
+        <table class="data-table">
+          <thead><tr><th>Name</th><th>Role</th><th>Order</th><th>Status / Actions</th></tr></thead>
+          <tbody id="tm-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
     <div class="panel" id="panel-news">
       <div class="breadcrumb">Admin <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg> <span>News &amp; Results</span></div>
       <div class="card">
@@ -1475,8 +1521,58 @@ async function loadNews(){
   const tb=document.getElementById('news-tbody'); if(!tb)return;
   tb.innerHTML=data.length?data.map(n=>`<tr><td class="td-name">${escA(n.title)}</td><td>${escA(n.category||'')}</td><td>${escA(n.date||'')}</td><td class="td-actions"><span class="td-badge ${n.active!==false?'badge-active':'badge-inactive'}">${n.active!==false?'live':'hidden'}</span> <button class="btn-edit" onclick="openEdit('news',${n.id})">Edit</button><button class="btn-edit" onclick="setContent('news',${n.id},{active:${!(n.active!==false)}})">${n.active!==false?'Hide':'Show'}</button><button class="btn-delete" onclick="delContent('news',${n.id})">Delete</button></td></tr>`).join(''):'<tr><td colspan="4" style="padding:22px;color:var(--text-2);">No posts yet.</td></tr>';
 }
-async function setContent(resource,id,patch){const r=await put(resource,id,patch);if(!r||r.error){toast((r&&r.error)||'Could not update.');return;}({profiles:loadProfiles,news:loadNews}[resource])();toast('Updated');}
-async function delContent(resource,id){if(!confirm('Delete?'))return;const r=await del(resource,id);if(!r||r.error){toast((r&&r.error)||'Could not delete.');return;}({profiles:loadProfiles,news:loadNews}[resource])();toast('Deleted');}
+async function setContent(resource,id,patch){const r=await put(resource,id,patch);if(!r||r.error){toast((r&&r.error)||'Could not update.');return;}({profiles:loadProfiles,news:loadNews,team:loadTeamPublic}[resource])();toast('Updated');}
+async function delContent(resource,id){if(!confirm('Delete?'))return;const r=await del(resource,id);if(!r||r.error){toast((r&&r.error)||'Could not delete.');return;}({profiles:loadProfiles,news:loadNews,team:loadTeamPublic}[resource])();toast('Deleted');}
+
+// ── TEAM (public "who runs this platform") ──
+// Real people only. Nothing is seeded and nothing is invented (CLAUDE.md §1.1) —
+// the public section on about.html stays hidden until a real member is added.
+let teamImg=null;
+function handleTeamImg(input){
+  var drop=document.getElementById('tm-img-drop');
+  readImageFile(input.files[0], 600, function(data){
+    teamImg=data;
+    var pv=document.getElementById('tm-img-preview'); pv.src=data; pv.style.display='block';
+    if(drop) drop.style.borderColor='#22C55E';
+  }, function(msg){
+    teamImg=null;
+    if(drop) drop.style.borderColor='#EF4444';
+    var pv=document.getElementById('tm-img-preview'); if(pv){pv.style.display='none';pv.src='';}
+    toast(msg);
+  });
+}
+async function saveTeamMember(){
+  const v=id=>document.getElementById(id).value.trim();
+  if(!v('tm-name')){ toast('A name is required.'); return; }
+  const d={ name:v('tm-name'), role:v('tm-role'), bio:v('tm-bio'), link:v('tm-link'),
+            sortOrder:Number(document.getElementById('tm-order').value)||100,
+            imgUrl:teamImg||null, active:true };
+  const r=await post('team',d);
+  if(!r||r.error){ toast((r&&r.error)||'Could not save the team member.'); return; }
+  ['tm-name','tm-role','tm-bio','tm-link'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('tm-order').value='100';
+  teamImg=null;
+  const pv=document.getElementById('tm-img-preview'); if(pv){pv.style.display='none';pv.src='';}
+  const dz=document.getElementById('tm-img-drop'); if(dz) dz.style.borderColor='rgba(201,162,39,.3)';
+  toggleInlineForm('tm-form'); loadTeamPublic(); toast('Team member saved');
+}
+async function loadTeamPublic(){
+  const data=await get('team');
+  const tb=document.getElementById('tm-tbody'); if(!tb) return;
+  if(!Array.isArray(data)){ tb.innerHTML='<tr><td colspan="4" style="padding:22px;color:var(--text-2);">Could not load the team.</td></tr>'; return; }
+  const c=document.getElementById('tm-count'); if(c) c.textContent=data.length+(data.length===1?' person':' people');
+  tb.innerHTML=data.length?data.map(m=>`<tr>
+      <td class="td-name">${escA(m.name)}</td>
+      <td>${escA(m.role||'')}</td>
+      <td>${m.sortOrder==null?100:m.sortOrder}</td>
+      <td class="td-actions">
+        <span class="td-badge ${m.active!==false?'badge-active':'badge-inactive'}">${m.active!==false?'shown':'hidden'}</span>
+        <button class="btn-edit" onclick="openEdit('team',${m.id})">Edit</button>
+        <button class="btn-edit" onclick="setContent('team',${m.id},{active:${!(m.active!==false)}})">${m.active!==false?'Hide':'Show'}</button>
+        <button class="btn-delete" onclick="delContent('team',${m.id})">Remove</button>
+      </td></tr>`).join('')
+    :'<tr><td colspan="4" style="padding:22px;color:var(--text-2);">Nobody added yet — the public Team section on the About page stays hidden until you add someone.</td></tr>';
+}
 
 // ── COMMUNITY FORUM ──
 async function loadForum(){
@@ -1600,9 +1696,10 @@ const EDIT_SCHEMA={
   jobs:[{k:'title',l:'Title'},{k:'org',l:'Organisation'},{k:'location',l:'Location'},{k:'type',l:'Type'},{k:'salary',l:'Salary'},{k:'active',l:'Open',t:'bool'}],
   knowledge:[{k:'title',l:'Title'},{k:'category',l:'Category'},{k:'level',l:'Level'},{k:'readTime',l:'Read time'},{k:'excerpt',l:'Excerpt',t:'area'},{k:'body',l:'Body',t:'area'},{k:'published',l:'Published',t:'bool'},{k:'active',l:'Active',t:'bool'}],
   news:[{k:'title',l:'Title'},{k:'category',l:'Category'},{k:'date',l:'Date',t:'date'},{k:'excerpt',l:'Excerpt',t:'area'},{k:'imgUrl',l:'Cover photo',t:'image'},{k:'active',l:'Visible',t:'bool'}],
+  team:[{k:'name',l:'Full name'},{k:'role',l:'Role / title'},{k:'bio',l:'Short bio',t:'area'},{k:'link',l:'Public link'},{k:'sortOrder',l:'Order (lower first)',t:'number'},{k:'imgUrl',l:'Photo',t:'image'},{k:'active',l:'Shown publicly',t:'bool'}],
   profiles:[{k:'handle',l:'Handle'},{k:'name',l:'Name'},{k:'headline',l:'Headline'},{k:'location',l:'Location'},{k:'discipline',l:'Discipline'},{k:'bio',l:'Bio',t:'area'},{k:'imgUrl',l:'Photo',t:'image'},{k:'pb',l:'Personal best',t:'number'},{k:'rank',l:'Rank',t:'number'},{k:'verified',l:'Verified',t:'bool'},{k:'active',l:'Visible',t:'bool'}]
 };
-const RELOAD={products:()=>loadProducts(),tournaments:()=>loadTournaments(),athletes:()=>loadAthletes(),jobs:()=>loadJobs(),knowledge:()=>loadKnowledge(),news:()=>loadNews(),profiles:()=>loadProfiles()};
+const RELOAD={products:()=>loadProducts(),tournaments:()=>loadTournaments(),athletes:()=>loadAthletes(),jobs:()=>loadJobs(),knowledge:()=>loadKnowledge(),news:()=>loadNews(),profiles:()=>loadProfiles(),team:()=>loadTeamPublic()};
 async function openEdit(resource,id){
   const row=await get(resource+'/'+id);
   if(!row||row.error){toast('Could not load that item');return;}

@@ -14,6 +14,8 @@ const SORTABLE = {
   athletes:   { rank:'pb desc nulls last', name:'name asc' },
   jobs:       { newest:'id desc', title:'title asc' },
   news:       { newest:'date desc nulls last' },
+  // Team is a curated, hand-ordered list — sort_order first, then id.
+  team:       { order:'sort_order asc, id asc', name:'name asc' },
 };
 
 // A resource supports free-text search if it has a `search` tsvector column.

@@ -15,6 +15,9 @@ const TABLES = {
   knowledge:   ['title','category','level','read_time','excerpt','body','published','active'],
   news:        ['title','category','date','excerpt','img_url','active'],
   profiles:    ['handle','name','headline','location','discipline','bio','pb','rank','events','years','links','achievements','experience','certifications','img_url','verified','active'],
+  // Public "who runs this platform" list (migration 010). NOT `staff` — that
+  // holds admin login credentials and is never public.
+  team:        ['name','role','bio','img_url','link','sort_order','active'],
 };
 
 const toSnake = o => { const out = {}; for (const [k, v] of Object.entries(o)) out[k.replace(/([A-Z])/g, c => '_' + c.toLowerCase())] = v; return out; };
