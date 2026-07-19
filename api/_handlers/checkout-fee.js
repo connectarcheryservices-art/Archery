@@ -6,7 +6,7 @@
 'use strict';
 const crypto = require('crypto');
 const { cors, json, readBody } = require('../_lib/respond');
-const { FEES } = require('../_lib/fees');
+const { FEES, CURRENCY } = require('../_lib/fees');
 const { q } = require('../_lib/db');
 
 function orderNo() {
@@ -14,14 +14,15 @@ function orderNo() {
     crypto.randomBytes(3).toString('hex').toUpperCase();
 }
 
-async function createRazorpayOrder(amountPaise, receipt) {
+// amountMinor = the amount in the currency's smallest unit (rappen for CHF).
+async function createRazorpayOrder(amountMinor, receipt) {
   const id = process.env.RAZORPAY_KEY_ID, secret = process.env.RAZORPAY_KEY_SECRET;
   if (!id || !secret) return { ok: false, notConfigured: true };
   const auth = 'Basic ' + Buffer.from(`${id}:${secret}`).toString('base64');
   const r = await fetch('https://api.razorpay.com/v1/orders', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: auth },
-    body: JSON.stringify({ amount: amountPaise, currency: 'INR', receipt, payment_capture: 1 }),
+    body: JSON.stringify({ amount: amountMinor, currency: CURRENCY, receipt, payment_capture: 1 }),
   });
   const data = await r.json().catch(() => ({}));
   if (!r.ok) return { ok: false, error: data?.error?.description || 'Payment gateway error' };
@@ -56,10 +57,10 @@ module.exports = async (req, res) => {
       `insert into orders (order_no, customer_name, customer_email, customer_phone,
          address_line1, pincode, country, delivery_type, items,
          goods, delivery_fee, tax, platform_fee, total, currency, payment_status, status)
-       values ($1,$2,$3,$4,$5,$6,'India','registration',$7,$8,0,0,0,$8,'INR','pending','new')
+       values ($1,$2,$3,$4,$5,$6,'India','registration',$7,$8,0,0,0,$8,$9,'pending','new')
        returning id`,
       [no, b.contactName || String(b.orgName).trim(), String(b.email).trim(), b.phone || null,
-       String(b.orgName).trim(), '000000', JSON.stringify([item]), tier.fee]
+       String(b.orgName).trim(), '000000', JSON.stringify([item]), tier.fee, CURRENCY]
     );
     const orderId = ins.rows[0].id;
 

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Pricing — Archery.Services</title>
-<meta name="description" content="From ₹99/year for every archer to federation-grade infrastructure. Transparent, fixed annual pricing in Indian Rupees. No hidden fees.">
+<meta name="description" content="From CHF 20/year for every archer to federation-grade infrastructure. Transparent, fixed annual pricing in Swiss Francs (CHF). No hidden fees.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
@@ -164,11 +164,10 @@
 <div class="pr-hero">
   <div class="pr-hero-bg"></div>
   <div class="pr-hero-inner">
-    <div class="pr-eyebrow" id="pr-eyebrow">Pricing · All amounts in ₹ (INR) · Annual billing</div>
-    <h1 class="pr-hero-title">From <em>₹99</em> a year</h1>
+    <div class="pr-eyebrow" id="pr-eyebrow">Pricing · All amounts in CHF · Annual billing</div>
+    <h1 class="pr-hero-title">From <em>CHF 20</em> a year</h1>
     <p class="pr-hero-lead">Every tier is annual. Every price is public and fixed. No monthly billing. No per-seat charges. No hidden fees. No ads. No data sales.</p>
     <div class="pr-hero-meta">
-      <span>7-day free trial on Pro+</span>
       <span>Cancel anytime</span>
       <span>No setup fees</span>
       <span>Upgrade anytime</span>
@@ -199,90 +198,14 @@
 <!--  INDIVIDUAL TAB                                           -->
 <!-- ═══════════════════════════════════════════════════════════ -->
 <div class="pr-section tab-panel active" id="tab-individual">
-  <div class="tier-grid">
+  <!-- Membership plans are rendered from /api/memberships so the SERVER owns the
+       prices (CLAUDE.md §1.6). Never hard-code an amount back into this page. -->
+  <div class="tier-grid" id="membership-grid">
+    <div style="grid-column:1/-1;padding:40px;text-align:center;color:var(--faint);font-size:13px;">Loading plans…</div>
+  </div>
 
-    <!-- ARCHER ₹99 -->
-    <div class="tier-card">
-      <div class="tier-code">ATH</div>
-      <div class="tier-name c-blue">Archer</div>
-      <div class="tier-price">
-        <span class="tier-price-num" data-base="99">₹99</span>
-        <span class="tier-price-per">/ year</span>
-      </div>
-      <p class="tier-desc">Your permanent Archery ID. Everything an individual athlete needs to compete, track, and grow within the global archery community.</p>
-      <div class="tier-for-label">Best for</div>
-      <div class="tier-for">Every active archer, regardless of level, discipline or location.</div>
-      <div class="tier-features">
-        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tbl)">+</span><span class="tier-feat-text">Permanent Archery ID — QR-verifiable worldwide</span></div>
-        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tbl)">+</span><span class="tier-feat-text">Lifetime scoring and classification records</span></div>
-        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tbl)">+</span><span class="tier-feat-text">Tournament entry via platform</span></div>
-        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tbl)">+</span><span class="tier-feat-text">Training log — unlimited sessions</span></div>
-        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tbl)">+</span><span class="tier-feat-text">Community access — 50,000+ verified members</span></div>
-        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tbl)">+</span><span class="tier-feat-text">Public Archery Profile + link-in-bio page</span></div>
-        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tbl)">+</span><span class="tier-feat-text">Club and federation linking</span></div>
-        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tbl)">+</span><span class="tier-feat-text">Event calendar — regional and global</span></div>
-        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tbl)">+</span><span class="tier-feat-text">Knowledge library — technique, rules, equipment</span></div>
-      </div>
-      <a class="tier-cta-ghost" href="federation.html">Get Archer ID</a>
-      <div class="tier-trial-note">No trial needed — just ₹99 a year</div>
-    </div>
+  <div id="membership-notice" style="background:rgba(15,95,168,.05);border:1px solid rgba(15,95,168,.15);border-radius:10px;padding:18px 20px;margin-bottom:28px;font-size:12.5px;line-height:1.75;color:var(--dim);"></div>
 
-    <!-- PRO ARCHER ₹1,999 -->
-    <div class="tier-card recommended">
-      <div class="tier-badge-top">Most Popular</div>
-      <div class="tier-code">PRO</div>
-      <div class="tier-name c-red">Pro Archer</div>
-      <div class="tier-price">
-        <span class="tier-price-num" data-base="1999">₹1,999</span>
-        <span class="tier-price-per">/ year</span>
-      </div>
-      <p class="tier-desc">Compete, rank, and train at elite level. Everything in Archer plus the full analytics and training suite.</p>
-      <div class="tier-for-label">Best for</div>
-      <div class="tier-for">Competitive archers preparing for regional, national, or international events.</div>
-      <div class="tier-features">
-        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tr)">+</span><span class="tier-feat-text">Everything in Archer</span></div>
-        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tr)">+</span><span class="tier-feat-text">World ranking profile — updated after every competition</span></div>
-        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tr)">+</span><span class="tier-feat-text">Advanced training analytics — load, volume, progress curves</span></div>
-        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tr)">+</span><span class="tier-feat-text">Equipment tracker and bow setup log</span></div>
-        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tr)">+</span><span class="tier-feat-text">Shot data analysis and pattern detection</span></div>
-        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tr)">+</span><span class="tier-feat-text">Rival tracker — head-to-head records</span></div>
-        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tr)">+</span><span class="tier-feat-text">Video library — full access, 200+ lessons</span></div>
-        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tr)">+</span><span class="tier-feat-text">Priority grading and classification verification</span></div>
-        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tr)">+</span><span class="tier-feat-text">Download certificates as PDF</span></div>
-        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tr)">+</span><span class="tier-feat-text">Wellness and injury tracking</span></div>
-      </div>
-      <a class="tier-cta-primary" href="federation.html">Start Pro Trial</a>
-      <div class="tier-trial-note">7-day free trial · Cancel anytime</div>
-    </div>
-
-    <!-- COACH ₹2,999 -->
-    <div class="tier-card">
-      <div class="tier-code">COACH</div>
-      <div class="tier-name c-yellow">Coach</div>
-      <div class="tier-price">
-        <span class="tier-price-num" data-base="2999">₹2,999</span>
-        <span class="tier-price-per">/ year</span>
-      </div>
-      <p class="tier-desc">Teach, earn, and manage students at scale. Built for instructors who run classes, programmes, or online courses.</p>
-      <div class="tier-for-label">Best for</div>
-      <div class="tier-for">Certified coaches, range instructors, and online archery educators.</div>
-      <div class="tier-features">
-        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--ty)">+</span><span class="tier-feat-text">Everything in Pro Archer</span></div>
-        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--ty)">+</span><span class="tier-feat-text">Teaching platform — list and sell courses (earn in ₹)</span></div>
-        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--ty)">+</span><span class="tier-feat-text">Student CRM — up to 150 students per coach account</span></div>
-        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--ty)">+</span><span class="tier-feat-text">Live classes — schedule and host up to 12 per month</span></div>
-        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--ty)">+</span><span class="tier-feat-text">Course creation toolkit — video + quizzes + certificates</span></div>
-        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--ty)">+</span><span class="tier-feat-text">Earnings dashboard — transparent payout tracking</span></div>
-        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--ty)">+</span><span class="tier-feat-text">Coach profile — discoverable by students globally</span></div>
-        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--ty)">+</span><span class="tier-feat-text">Priority verification and coach badge</span></div>
-        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--ty)">+</span><span class="tier-feat-text">Attendance and grading workflow for own students</span></div>
-        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--ty)">+</span><span class="tier-feat-text">Coach Inbox — centralised student communications</span></div>
-      </div>
-      <a class="tier-cta-ghost" href="federation.html">Start Coach Trial</a>
-      <div class="tier-trial-note">7-day free trial · Cancel anytime</div>
-    </div>
-
-  </div><!-- end tier-grid -->
 
   <!-- Payment methods -->
   <div class="payment-block">
@@ -307,13 +230,13 @@
 
   <div class="tier-grid">
 
-    <!-- CLUB ₹7,999 -->
+    <!-- CLUB CHF 89 -->
     <div class="tier-card recommended">
       <div class="tier-badge-top">Most Common</div>
       <div class="tier-code">CLUB</div>
       <div class="tier-name c-blue">Club / Range</div>
       <div class="tier-price">
-        <span class="tier-price-num" data-base="7999">₹7,999</span>
+        <span class="tier-price-num" data-base="89">CHF 89</span>
         <span class="tier-price-per">/ year</span>
       </div>
       <p class="tier-desc">Full club management suite. One fixed annual price covers the entire club or range's operations.</p>
@@ -331,15 +254,14 @@
         <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tbl)">+</span><span class="tier-feat-text">Public club listing — discoverable on platform</span></div>
       </div>
       <a class="tier-cta-primary" href="federation.html">Register Club</a>
-      <div class="tier-trial-note">7-day free trial · Cancel anytime</div>
     </div>
 
-    <!-- DISTRICT ₹11,999 -->
+    <!-- DISTRICT CHF 129 -->
     <div class="tier-card">
       <div class="tier-code">DIST</div>
       <div class="tier-name c-red">District Federation</div>
       <div class="tier-price">
-        <span class="tier-price-num" data-base="11999">₹11,999</span>
+        <span class="tier-price-num" data-base="129">CHF 129</span>
         <span class="tier-price-per">/ year</span>
       </div>
       <p class="tier-desc">District-level federation management for inter-club coordination and rankings.</p>
@@ -358,12 +280,12 @@
       <a class="tier-cta-ghost" href="federation.html">Register Federation</a>
     </div>
 
-    <!-- STATE ₹39,999 -->
+    <!-- STATE CHF 429 -->
     <div class="tier-card">
       <div class="tier-code">STATE</div>
       <div class="tier-name c-yellow">State Federation</div>
       <div class="tier-price">
-        <span class="tier-price-num" data-base="39999">₹39,999</span>
+        <span class="tier-price-num" data-base="429">CHF 429</span>
         <span class="tier-price-per">/ year</span>
       </div>
       <p class="tier-desc">State-level federation with full API access and compliance tooling.</p>
@@ -382,12 +304,12 @@
       <a class="tier-cta-ghost" href="federation.html">Register State Federation</a>
     </div>
 
-    <!-- NATIONAL ₹79,999 -->
+    <!-- NATIONAL CHF 849 -->
     <div class="tier-card">
       <div class="tier-code">NAT</div>
       <div class="tier-name c-blue">National Federation</div>
       <div class="tier-price">
-        <span class="tier-price-num" data-base="79999">₹79,999</span>
+        <span class="tier-price-num" data-base="849">CHF 849</span>
         <span class="tier-price-per">/ year</span>
       </div>
       <p class="tier-desc">Full national-level platform with sovereign API and advanced compliance tooling.</p>
@@ -406,12 +328,12 @@
       <a class="tier-cta-ghost" href="federation.html">Register National Federation</a>
     </div>
 
-    <!-- INTERNATIONAL ₹8,99,999 -->
+    <!-- INTERNATIONAL CHF 9,499 -->
     <div class="tier-card">
       <div class="tier-code">INT</div>
       <div class="tier-name c-red">International Federation</div>
       <div class="tier-price">
-        <span class="tier-price-num" data-base="899999">₹8,99,999</span>
+        <span class="tier-price-num" data-base="9499">CHF 9,499</span>
         <span class="tier-price-per">/ year</span>
       </div>
       <p class="tier-desc">Multi-country platform with premium API, dedicated support, and custom feature development.</p>
@@ -430,12 +352,12 @@
       <a class="tier-cta-ghost" href="federation.html">Contact Platform</a>
     </div>
 
-    <!-- EQUIPMENT BRAND ₹1,19,999 -->
+    <!-- EQUIPMENT BRAND CHF 1,299 -->
     <div class="tier-card">
       <div class="tier-code">BRAND</div>
       <div class="tier-name c-yellow">Equipment Brand</div>
       <div class="tier-price">
-        <span class="tier-price-num" data-base="119999">₹1,19,999</span>
+        <span class="tier-price-num" data-base="1299">CHF 1,299</span>
         <span class="tier-price-per">/ year</span>
       </div>
       <p class="tier-desc">Product listings, analytics, and campaign tools for equipment and apparel brands.</p>
@@ -467,15 +389,15 @@
       <thead>
         <tr>
           <th><span class="th-name">Feature</span></th>
-          <th><div class="th-name">Archer</div><div class="th-price">₹99</div></th>
-          <th><div class="th-name">Pro</div><div class="th-price">₹1,999</div></th>
-          <th><div class="th-name">Coach</div><div class="th-price">₹2,999</div></th>
-          <th><div class="th-name">Club</div><div class="th-price">₹7,999</div></th>
-          <th><div class="th-name">District</div><div class="th-price">₹11,999</div></th>
-          <th><div class="th-name">State</div><div class="th-price">₹39,999</div></th>
-          <th><div class="th-name">National</div><div class="th-price">₹79,999</div></th>
-          <th><div class="th-name">Intl Fed</div><div class="th-price">₹9L</div></th>
-          <th><div class="th-name">Brand</div><div class="th-price">₹1.2L</div></th>
+          <th><div class="th-name">Recreational</div><div class="th-price">CHF 20</div></th>
+          <th><div class="th-name">Adult</div><div class="th-price">CHF 65</div></th>
+          <th><div class="th-name">Family</div><div class="th-price">CHF 140</div></th>
+          <th><div class="th-name">Club</div><div class="th-price">CHF 89</div></th>
+          <th><div class="th-name">District</div><div class="th-price">CHF 129</div></th>
+          <th><div class="th-name">State</div><div class="th-price">CHF 429</div></th>
+          <th><div class="th-name">National</div><div class="th-price">CHF 849</div></th>
+          <th><div class="th-name">Intl Fed</div><div class="th-price">CHF 9,499</div></th>
+          <th><div class="th-name">Brand</div><div class="th-price">CHF 1,299</div></th>
         </tr>
       </thead>
       <tbody id="compare-tbody"></tbody>
@@ -531,8 +453,11 @@
 
 <script>
 // ── CURRENCY — all pricing is in Indian Rupees ──
+// One place formats every licence price. Changed INR -> CHF on 2026-07-16;
+// the authoritative amounts live in api/_lib/fees.js and the data-base attributes
+// mirror them. Swiss convention groups thousands with an apostrophe.
 function fmtPrice(total){
-  return '₹' + Math.round(total).toLocaleString('en-IN');
+  return 'CHF ' + Math.round(total).toLocaleString('de-CH');
 }
 
 // ── BILLING TOGGLE ──
@@ -555,7 +480,7 @@ function updatePrices(){
     el.nextElementSibling.textContent = '/ ' + perLabel;
   });
   const ey = document.getElementById('pr-eyebrow');
-  if(ey) ey.textContent = 'Pricing · All amounts in ₹ (INR) · Annual billing';
+  if(ey) ey.textContent = 'Pricing · All amounts in CHF · Annual billing';
 }
 
 document.addEventListener('DOMContentLoaded', ()=>{ updatePrices(); });
@@ -643,15 +568,15 @@ renderCompare();
 // ── FAQ DATA ──
 const FAQS = [
   {cat:'Billing', q:'Can I change my tier later?', a:'Yes. Upgrade any time — the price difference is prorated to your renewal date. Downgrades take effect at the start of your next annual period. You never lose access before your period ends.'},
-  {cat:'Billing', q:'Is ₹99 really the full price for the Archer tier?', a:'Yes. ₹99 per year is the complete price. No setup fees, no in-app purchases, no advertising revenue, no data sales. The platform is funded by the distribution of tiers across its user base, not by monetising individuals.'},
-  {cat:'Billing', q:'Is there a free trial?', a:'Yes. A 7-day free preview is available for Pro Archer, Coach, and Club tiers. You can explore the full feature set without entering payment details. At the end of the trial, choose to subscribe or revert to the Archer tier (₹99).'},
+  {cat:'Billing', q:'Is CHF 20 really the full price for Recreational membership?', a:'Yes. CHF 20 per year is the complete price. No setup fees, no in-app purchases, no advertising, no data sales. Prices are shown in Swiss Francs and charged in Swiss Francs.'},
+  {cat:'Billing', q:'Am I buying a federation licence?', a:'No. Archery.Services is an independent platform, not a national governing body. Membership gives you access to this platform. It does not include insurance, national team selection, eligibility for sanctioned competitions, or official national rankings — those come only from your national federation.'},
   {cat:'Billing', q:'Can I cancel my subscription?', a:'Yes. Cancel any time from your account settings. Your subscription remains active until the end of the annual period you have paid for. There are no cancellation fees.'},
   {cat:'Billing', q:'Are there discounts for multi-year subscriptions?', a:'Yes. 2-year subscriptions receive a 10% discount on the total. 3-year subscriptions receive a 20% discount. Multi-year pricing is available for all tiers including organisation plans.'},
   {cat:'Billing', q:'Can a club pay for its members\' subscriptions?', a:'Yes. A registered club can purchase Archer or Pro Archer subscriptions in bulk and assign them to members. This appears as a gift subscription in the member\'s account. The member retains the account fully if they leave the club.'},
   {cat:'Identity', q:'What is an Archery ID?', a:'An Archery ID is a unique, permanent alphanumeric identifier assigned to your account on registration. It is paired with a QR code that links to your verified profile. It persists across club changes, federation affiliations, and discipline changes.'},
   {cat:'Identity', q:'What happens to my Archery ID if I leave my club?', a:'Your Archery ID belongs to you permanently. It is not owned by your club or federation. If you move clubs, change federation, or stop training for a period, your records and certificates remain accessible and valid.'},
   {cat:'Limits', q:'How many students can a Coach account manage?', a:'A Coach account supports up to 150 students in the CRM. For larger student populations, a Club plan includes unlimited member management.'},
-  {cat:'Commerce', q:'How does the earning model work for coaches?', a:'Coaches set their own course prices in ₹ (INR). The platform retains 15% of gross course revenue as a platform fee. The remaining 85% is paid to the coach monthly via UPI or bank transfer.'},
+  {cat:'Commerce', q:'How does the earning model work for coaches?', a:'Coaches set their own course prices in CHF. The platform retains 15% of gross course revenue as a platform fee. The remaining 85% is paid to the coach monthly by bank transfer.'},
   {cat:'API', q:'What does "sovereign API" mean for national federations?', a:'Sovereign API means the federation has a dedicated API endpoint, its own authentication domain, and data residency controls. The federation\'s data does not pass through shared federation endpoints — designed for national bodies with data sovereignty obligations.'},
   {cat:'API', q:'Are there additional costs for tournaments run on the platform?', a:'No per-event fees are charged to the federation or club for standard tournaments. Entry fees collected through the platform are handled as pass-through — the platform charges only standard payment processor rates.'},
   {cat:'Security', q:'How are payments processed?', a:'All payments are processed through a PCI-DSS Level 1 compliant payment processor. Card details are never stored on Archery.Services servers. Payment data is tokenised and handled entirely within the processor\'s secure environment.'},
@@ -683,6 +608,49 @@ function toggleFAQ(id){
 }
 renderFAQs();
 </script>
+<script src="esc.js"></script>
 <script src="shared.js"></script>
+<script>
+// Membership plans, priced by the SERVER (/api/memberships). If the API can't be
+// reached we say so — we never fall back to a hard-coded price list, because a
+// stale price shown as current is a lie about money (CLAUDE.md §1.1, §1.6).
+(async function loadMemberships(){
+  const grid = document.getElementById('membership-grid');
+  const notice = document.getElementById('membership-notice');
+  try{
+    const r = await fetch('/api/memberships');
+    if(!r.ok) throw new Error('unavailable');
+    const d = await r.json();
+    if(!d || !Array.isArray(d.plans) || !d.plans.length) throw new Error('empty');
+
+    grid.innerHTML = d.plans.map(function(p){
+      const per = p.period === 'year' ? '/year' : (p.period === 'event' ? '/event' : ' one-time');
+      const from = p.from ? '<span style="font-size:12px;color:var(--faint);">from </span>' : '';
+      return '<div class="tier-card'+(p.recommended?' recommended':'')+'">'
+        + (p.recommended ? '<div class="tier-badge-top">Most chosen</div>' : '')
+        + '<div class="tier-code">'+escA(p.key.toUpperCase().slice(0,3))+'</div>'
+        + '<div class="tier-name c-blue">'+escA(p.label)+'</div>'
+        + (p.ageNote ? '<div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--tr);margin-bottom:6px;">'+escA(p.ageNote)+'</div>' : '')
+        + '<div class="tier-price">'+from+'<span class="tier-price-num">'+escA(p.currency)+' '+escA(String(p.price))+'</span><span class="tier-price-per">'+per+'</span></div>'
+        + '<div class="tier-desc">'+escA(p.for)+'</div>'
+        + '<div class="tier-for-label">Includes</div>'
+        + '<ul style="list-style:none;padding:0;margin:8px 0 18px;display:flex;flex-direction:column;gap:7px;">'
+        +   p.benefits.map(function(b){
+              return '<li style="display:flex;gap:8px;font-size:13px;color:var(--dim);line-height:1.55;">'
+                   + '<span style="color:#22C55E;flex-shrink:0;">✓</span><span>'+escA(b)+'</span></li>';
+            }).join('')
+        + '</ul>'
+        + '<a class="btn-primary" href="signup.html" style="display:block;text-align:center;text-decoration:none;">Join</a>'
+        + '</div>';
+    }).join('');
+
+    notice.textContent = d.notice || '';
+  }catch(e){
+    grid.innerHTML = '<div style="grid-column:1/-1;padding:40px;text-align:center;color:var(--faint);font-size:13px;">'
+      + 'We can’t load membership plans right now. Please try again shortly.</div>';
+    notice.textContent = '';
+  }
+})();
+</script>
 </body>
 </html>
