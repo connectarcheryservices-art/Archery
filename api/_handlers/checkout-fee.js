@@ -41,6 +41,41 @@ module.exports = async (req, res) => {
     if (!String(b.email || '').trim()) return json(res, { ok: false, error: 'An official email is required.' }, 400);
 
     const level = String(b.level).toLowerCase();
+
+    // ── ORGANISATION TIERS ARE NOT FOR SALE ────────────────────────────────
+    // Audited 2026-07-22: all 43 capabilities advertised for the club/district/
+    // state/national/international/brand tiers were checked against this codebase.
+    // ZERO were implemented — no clubs table, no members, no scheduling, no
+    // attendance, no rankings (no arrows table), no draws, no licensing, no
+    // customer API. The federation "portal" was a payment form whose
+    // "Manage Clubs →" and "Certification Portal →" were inert <div>s.
+    //
+    // Charging CHF 89–9,499/yr for that is taking money for software that does
+    // not exist. CLAUDE.md §1.1 covers promises as much as numbers, and §1.6 puts
+    // money above convenience. So the SERVER refuses — not the page, which a
+    // client could bypass.
+    //
+    // The enquiry is still recorded so nobody is lost; it simply does not charge.
+    // Re-enable a level ONLY when its features actually ship, one at a time.
+    const FOR_SALE = new Set();   // deliberately empty
+    if (!FOR_SALE.has(level)) {
+      await q(
+        `insert into applications (org_name, org_type, contact_name, email, phone, status, created_at)
+         values ($1,$2,$3,$4,$5,'enquiry',$6)`,
+        [String(b.orgName).trim(), tier.label, b.contactName || null,
+         String(b.email).trim(), b.phone || null, Date.now()]
+      ).catch(() => {});
+      return json(res, {
+        ok: true,
+        notForSale: true,
+        level,
+        label: tier.label,
+        message: 'Thanks — your interest is registered and nothing has been charged. '
+               + 'Organisation accounts are still being built, so we are not taking payment '
+               + 'for them yet. We will contact you the moment the features you need are live.',
+      });
+    }
+
     const no = orderNo();
 
     // 1. Application into the admin inbox (org_type carries the level label).

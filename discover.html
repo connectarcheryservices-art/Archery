@@ -154,46 +154,18 @@ section.disc-section{margin-bottom:48px;}
 </div>
 
 <script>
-const TRENDING = [
-  {id:1,title:'Recurve Technique Masterclass',type:'Video',country:'South Korea',style:'Recurve',desc:'Full breakdown of the Olympic draw cycle with slow-motion analysis at 240fps.'},
-  {id:2,title:'Mental Archery — Staying Calm Under Pressure',type:'Article',country:'Switzerland',style:'All',desc:'Sport psychology applied to archery: pre-shot routines, breath control, and focus cues.'},
-  {id:3,title:'3D Archery Hunting Setup Guide',type:'Guide',country:'USA',style:'3D',desc:'Field points vs broadheads, distance estimation, and ethical hunting distance limits.'},
-  {id:4,title:'Compound Tuning for Beginners',type:'Article',country:'Germany',style:'Compound',desc:'Peep sight alignment, draw length, and arrow spine selection explained step by step.'},
-  {id:5,title:'Junior Olympic Archery Development',type:'Video',country:'USA',style:'Recurve',desc:'Age-appropriate training progressions for under-18 recurve athletes aiming for national selection.'},
-  {id:6,title:'Arrow Spine Calculator Deep Dive',type:'Guide',country:'UK',style:'All',desc:'How spine affects grouping, when to go stiffer or weaker, and the affect of point weight.'},
-  {id:7,title:'Field Archery Course Design',type:'Article',country:'Australia',style:'Field',desc:'How to design a 28-target field course that challenges all ability levels.'},
-  {id:8,title:'Olympic Archery Finals — Tactical Breakdown',type:'Video',country:'Switzerland',style:'Recurve',desc:'Shot-by-shot analysis of Paris 2024 finals: wind calls, timing, and pressure management.'},
-  {id:9,title:'Indoor 18m Season Preparation',type:'Guide',country:'Netherlands',style:'Recurve',desc:'12-week training block to peak for indoor World Archery series events.'},
-  {id:10,title:'Adaptive Archery — Inclusive Range Design',type:'Article',country:'UK',style:'All',desc:'Designing ranges, equipment, and training programmes for athletes with disabilities.'},
-  {id:11,title:'String Making for Compound Archers',type:'Video',country:'USA',style:'Compound',desc:'FastFlight and BCY materials, serving techniques, and break-in procedures.'},
-  {id:12,title:'Youth Club Setup — Complete Guide',type:'Guide',country:'India',style:'All',desc:'How to start an archery club from scratch: insurance, equipment, coaching, and liability.'},
-];
+// Fabricated directory removed 2026-07-22 (CLAUDE.md §1.1).
+// This page — "Coaches & Clubs" in the main nav — made ZERO API calls and served
+// three invented datasets as if they were platform listings: 12 trending items,
+// 10 ranges/clubs and 10 events. Several named REAL organisations (World Archery
+// Excellence Centre, Lancaster Archery, Seoul Olympic Archery Centre) who have
+// published nothing here. There is no clubs table in the schema, so there is no
+// real data to show yet: the page now says so instead of inventing a directory.
+const TRENDING = [];
 
-const RANGES = [
-  {id:1,name:'Seoul Olympic Archery Centre',city:'Seoul',country:'South Korea',style:'Recurve',founded:1988,region:'Asia'},
-  {id:2,name:'Lancaster Archery',city:'Lancaster',country:'USA',style:'All',founded:1984,region:'Americas'},
-  {id:3,name:'World Archery Excellence Centre',city:'Lausanne',country:'Switzerland',style:'All',founded:2010,region:'Europe'},
-  {id:4,name:'National Archery Academy',city:'Mumbai',country:'India',style:'Recurve',founded:2004,region:'Asia'},
-  {id:5,name:'German Archery Federation HQ',city:'Stuttgart',country:'Germany',style:'Compound',founded:1972,region:'Europe'},
-  {id:6,name:'Bhutan National Archery Club',city:'Thimphu',country:'Bhutan',style:'Traditional',founded:1971,region:'Asia'},
-  {id:7,name:'Sydney Archery Club',city:'Sydney',country:'Australia',style:'Field',founded:1998,region:'Oceania'},
-  {id:8,name:'Paris Archery Centre',city:'Paris',country:'France',style:'Recurve',founded:1985,region:'Europe'},
-  {id:9,name:'Sao Paulo Archery Academy',city:'Sao Paulo',country:'Brazil',style:'Compound',founded:2007,region:'Americas'},
-  {id:10,name:'Cape Town Bowmen',city:'Cape Town',country:'South Africa',style:'Field',founded:2012,region:'Africa'},
-];
+const RANGES = [];
 
-const EVENTS = [
-  {id:1,name:'World Archery Championships 2026',date:'2026-10-15',country:'Hungary',city:'Budapest',style:'All',type:'Tournament',registered:2840,capacity:4000},
-  {id:2,name:'Asian Archery Grand Prix',date:'2026-07-20',country:'South Korea',city:'Seoul',style:'Recurve',type:'Tournament',registered:618,capacity:800},
-  {id:3,name:'European Indoor Cup',date:'2026-08-05',country:'Netherlands',city:'Amsterdam',style:'All',type:'Tournament',registered:442,capacity:600},
-  {id:4,name:'India Open Championship',date:'2026-09-01',country:'India',city:'New Delhi',style:'Recurve',type:'Tournament',registered:380,capacity:500},
-  {id:5,name:'3D Archery Summer Camp',date:'2026-07-28',country:'USA',city:'Lancaster',style:'3D',type:'Camp',registered:56,capacity:80},
-  {id:6,name:'Olympic Recurve Masterclass',date:'2026-08-12',country:'Switzerland',city:'Lausanne',style:'Recurve',type:'Seminar',registered:38,capacity:50},
-  {id:7,name:'Australia Field Archery National',date:'2026-09-14',country:'Australia',city:'Melbourne',style:'Field',type:'Tournament',registered:220,capacity:320},
-  {id:8,name:'Youth Archer Development Programme',date:'2026-08-20',country:'UK',city:'London',style:'All',type:'Camp',registered:44,capacity:60},
-  {id:9,name:'World Archery Para Championships',date:'2026-11-03',country:'Germany',city:'Berlin',style:'All',type:'Tournament',registered:310,capacity:450},
-  {id:10,name:'Compound World Cup Stage 3',date:'2026-09-22',country:'France',city:'Paris',style:'Compound',type:'Tournament',registered:184,capacity:250},
-];
+const EVENTS = [];
 
 let trendFilter='All', rangeFilter='All', eventFilter='All';
 
@@ -202,6 +174,7 @@ const RANGE_EMOJI={Recurve:'🏹',Compound:'🎯',All:'🏹','3D':'🌲',Field:'
 
 function renderTrending(){
   const data=TRENDING.filter(t=>(trendFilter==='All'||t.type===trendFilter) && matchGlobal([t.title,t.country,t.style,t.desc,t.type]));
+  if(!data.length){document.getElementById('trending-grid').innerHTML='<div style="grid-column:1/-1;padding:52px 20px;text-align:center;color:var(--faint);"><div style="font-family:Oswald,sans-serif;font-size:16px;color:var(--dim);text-transform:uppercase;margin-bottom:8px;">Nothing trending yet</div><div style="font-size:13.5px;line-height:1.7;">This board fills from real activity on the platform. It will not show invented items.</div></div>';return;}
   document.getElementById('trending-grid').innerHTML=data.map(t=>`
     <div class="card">
       <div class="card-img">${EMOJIS[t.type]||'📄'}</div>
@@ -220,6 +193,7 @@ function renderTrending(){
 
 function renderRanges(){
   const data=RANGES.filter(r=>(rangeFilter==='All'||r.region===rangeFilter) && matchGlobal([r.name,r.city,r.country,r.style,r.region]));
+  if(!data.length){document.getElementById('ranges-grid').innerHTML='<div style="grid-column:1/-1;padding:52px 20px;text-align:center;color:var(--faint);"><div style="font-family:Oswald,sans-serif;font-size:16px;color:var(--dim);text-transform:uppercase;margin-bottom:8px;">No clubs or ranges listed yet</div><div style="font-size:13.5px;line-height:1.7;">Clubs and ranges appear here once they register on the platform.</div></div>';return;}
   document.getElementById('ranges-grid').innerHTML=data.map(r=>`
     <div class="range-card">
       <div class="range-header">
@@ -243,6 +217,7 @@ function renderEvents(){
   const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const TYPE_CLS={Tournament:'badge-t',Seminar:'badge-s',Camp:'badge-c'};
   const data=EVENTS.filter(e=>(eventFilter==='All'||e.type===eventFilter) && matchGlobal([e.name,e.city,e.country,e.style,e.type]));
+  if(!data.length){document.getElementById('events-list').innerHTML='<div style="grid-column:1/-1;padding:52px 20px;text-align:center;color:var(--faint);"><div style="font-family:Oswald,sans-serif;font-size:16px;color:var(--dim);text-transform:uppercase;margin-bottom:8px;">No events listed yet</div><div style="font-size:13.5px;line-height:1.7;">Events appear here once organisers publish them on the platform.</div></div>';return;}
   document.getElementById('events-list').innerHTML=data.map(e=>{
     const d=new Date(e.date);
     const pct=Math.round(e.registered/e.capacity*100);
