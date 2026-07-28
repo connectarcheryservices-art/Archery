@@ -45,7 +45,13 @@ h1 em{font-style:normal;color:var(--gold);}
 .desc{font-size:15px;color:var(--text-2);line-height:1.8;margin-bottom:40px;max-width:560px;}
 .job-card{background:var(--ink-2);border:.5px solid rgba(255,255,255,.07);border-radius:var(--r-xl);padding:24px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;transition:border-color .3s,transform .2s;cursor:pointer;}
 .job-card:hover{border-color:rgba(201,162,39,.25);transform:translateY(-2px);}
-.job-left{}
+.job-left{flex:1;min-width:240px;}
+.job-desc{margin-top:12px;}
+.job-desc>summary{cursor:pointer;color:var(--gold);font-size:13px;font-weight:600;list-style:none;display:inline-flex;align-items:center;gap:6px;}
+.job-desc>summary::-webkit-details-marker{display:none;}
+.job-desc>summary::before{content:'▸';transition:transform .2s;}
+.job-desc[open]>summary::before{transform:rotate(90deg);}
+.job-desc-body{margin-top:12px;font-size:13.5px;color:var(--text-2);line-height:1.75;max-width:680px;}
 .job-title{font-family:'Oswald',sans-serif;font-size:18px;font-weight:600;color:var(--text);margin-bottom:6px;}
 .job-org{font-size:13px;color:var(--gold);margin-bottom:8px;}
 .job-tags{display:flex;gap:8px;flex-wrap:wrap;}
@@ -85,27 +91,33 @@ h1 em{font-style:normal;color:var(--gold);}
 <div class="main">
   <div id="jobs-list"></div>
 </div>
+<script src="esc.js"></script>
 <script src="shared.js"></script>
 <script>
 const API='/api';
 let JOBS=[];
 fetch(API+'/jobs').then(r=>r.json()).then(jobs=>{
   JOBS=jobs;
-  document.getElementById('jobs-list').innerHTML=jobs.filter(j=>j.active!==false).map(j=>`
+  document.getElementById('jobs-list').innerHTML=jobs.filter(j=>j.active!==false).map(j=>{
+    // Description is admin-authored plain text: escape it, then turn newlines into
+    // line breaks so the sections/bullets read correctly (§1.7 — escape first).
+    const desc=j.description?escA(j.description).replace(/\n/g,'<br>'):'';
+    return `
     <div class="job-card reveal">
       <div class="job-left">
-        <div class="job-title">${j.title}</div>
-        <div class="job-org">${j.org}</div>
+        <div class="job-title">${escA(j.title)}</div>
+        <div class="job-org">${escA(j.org||'')}</div>
         <div class="job-tags">
-          <span class="job-tag">${j.location}</span>
-          <span class="job-tag">${j.type}</span>
+          ${j.location?`<span class="job-tag">${escA(j.location)}</span>`:''}
+          ${j.type?`<span class="job-tag">${escA(j.type)}</span>`:''}
         </div>
+        ${desc?`<details class="job-desc"><summary>View full description</summary><div class="job-desc-body">${desc}</div></details>`:''}
       </div>
       <div class="job-right">
-        <div class="job-salary">${j.salary}</div>
+        ${j.salary?`<div class="job-salary">${escA(j.salary)}</div>`:''}
         <button class="btn-apply" onclick="applyJob(${j.id})">Apply Now</button>
       </div>
-    </div>`).join('');
+    </div>`;}).join('');
   document.querySelectorAll('.reveal').forEach(r=>{
     new IntersectionObserver(e=>e.forEach(x=>{if(x.isIntersecting)x.target.classList.add('visible');}),{threshold:.1}).observe(r);
   });

@@ -11,7 +11,7 @@ const TABLES = {
   products:    ['name','brand','description','price','was','category','stock','img_url','active'],
   tournaments: ['name','date','location','prize','slots','registered','status','active'],
   athletes:    ['name','state','discipline','rank','pb','img_url','active'],
-  jobs:        ['title','org','location','type','salary','active'],
+  jobs:        ['title','org','location','type','salary','description','active'],
   knowledge:   ['title','category','level','read_time','excerpt','body','published','active'],
   news:        ['title','category','date','excerpt','img_url','active'],
   profiles:    ['handle','name','headline','location','discipline','bio','pb','rank','events','years','links','achievements','experience','certifications','img_url','verified','active'],

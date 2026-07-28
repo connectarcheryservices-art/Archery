@@ -584,7 +584,8 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
           <div class="form-group"><label class="form-label">Organisation</label><input class="form-input" id="j-org" placeholder="e.g. SAI Guwahati"></div>
           <div class="form-group"><label class="form-label">Location</label><input class="form-input" id="j-loc" placeholder="City, State"></div>
           <div class="form-group"><label class="form-label">Type</label><select class="form-select" id="j-type"><option>Full Time</option><option>Part Time</option><option>Contract</option><option>Volunteer</option></select></div>
-          <div class="form-group"><label class="form-label">Salary</label><input class="form-input" id="j-salary" placeholder="CHF 60,000/month"></div>
+          <div class="form-group"><label class="form-label">Salary (optional)</label><input class="form-input" id="j-salary" placeholder="e.g. CHF 60,000/yr — leave blank if not disclosed"></div>
+          <div class="form-group" style="grid-column:1/-1;"><label class="form-label">Description (what the role is, responsibilities, requirements)</label><textarea class="form-input" id="j-desc" rows="6" placeholder="Full job description. Line breaks are preserved."></textarea></div>
         </div>
         <div class="form-actions">
           <button class="btn-save" onclick="saveJob()">Post Job</button>
@@ -1313,10 +1314,11 @@ async function loadJobs(){
 }
 
 async function saveJob(){
-  const d={title:document.getElementById('j-title').value,org:document.getElementById('j-org').value,location:document.getElementById('j-loc').value,type:document.getElementById('j-type').value,salary:document.getElementById('j-salary').value,active:true};
-  if(!d.title){return;}
+  const d={title:document.getElementById('j-title').value,org:document.getElementById('j-org').value,location:document.getElementById('j-loc').value,type:document.getElementById('j-type').value,salary:document.getElementById('j-salary').value,description:document.getElementById('j-desc').value,active:true};
+  if(!d.title){toast('A job title is required.');return;}
   const r=await post('jobs',d);
   if(!r||r.error){ toast((r&&r.error)||'Could not post the job.'); return; }
+  ['j-title','j-org','j-loc','j-salary','j-desc'].forEach(id=>document.getElementById(id).value='');
   loadJobs(); toggleInlineForm('job-form'); toast('Job posted');
 }
 
@@ -1807,7 +1809,7 @@ const EDIT_SCHEMA={
   products:[{k:'name',l:'Name'},{k:'brand',l:'Brand'},{k:'category',l:'Category'},{k:'price',l:'Price (CHF)',t:'number'},{k:'was',l:'Was / MRP (CHF)',t:'number'},{k:'stock',l:'Stock',t:'number'},{k:'description',l:'Description',t:'area'},{k:'imgUrl',l:'Product photo',t:'image'},{k:'active',l:'Visible in shop',t:'bool'}],
   tournaments:[{k:'name',l:'Name'},{k:'date',l:'Date',t:'date'},{k:'location',l:'Location'},{k:'prize',l:'Prize pool (CHF)',t:'number'},{k:'slots',l:'Slots',t:'number'},{k:'registered',l:'Registered',t:'number'},{k:'status',l:'Status',t:'select',opts:['open','soon','live','done']},{k:'active',l:'Visible',t:'bool'}],
   athletes:[{k:'name',l:'Name'},{k:'state',l:'State'},{k:'discipline',l:'Discipline'},{k:'rank',l:'Rank',t:'number'},{k:'pb',l:'Personal best',t:'number'},{k:'imgUrl',l:'Photo',t:'image'},{k:'active',l:'Active',t:'bool'}],
-  jobs:[{k:'title',l:'Title'},{k:'org',l:'Organisation'},{k:'location',l:'Location'},{k:'type',l:'Type'},{k:'salary',l:'Salary'},{k:'active',l:'Open',t:'bool'}],
+  jobs:[{k:'title',l:'Title'},{k:'org',l:'Organisation'},{k:'location',l:'Location'},{k:'type',l:'Type'},{k:'salary',l:'Salary'},{k:'description',l:'Description',t:'area'},{k:'active',l:'Open',t:'bool'}],
   knowledge:[{k:'title',l:'Title'},{k:'category',l:'Category'},{k:'level',l:'Level'},{k:'readTime',l:'Read time'},{k:'excerpt',l:'Excerpt',t:'area'},{k:'body',l:'Body',t:'area'},{k:'published',l:'Published',t:'bool'},{k:'active',l:'Active',t:'bool'}],
   news:[{k:'title',l:'Title'},{k:'category',l:'Category'},{k:'date',l:'Date',t:'date'},{k:'excerpt',l:'Excerpt',t:'area'},{k:'imgUrl',l:'Cover photo',t:'image'},{k:'active',l:'Visible',t:'bool'}],
   team:[{k:'name',l:'Full name'},{k:'role',l:'Role / title'},{k:'bio',l:'Short bio',t:'area'},{k:'link',l:'Public link'},{k:'sortOrder',l:'Order (lower first)',t:'number'},{k:'imgUrl',l:'Photo',t:'image'},{k:'active',l:'Shown publicly',t:'bool'}],
