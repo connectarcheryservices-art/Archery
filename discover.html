@@ -153,6 +153,7 @@ section.disc-section{margin-bottom:48px;}
   </div>
 </div>
 
+<script src="esc.js"></script>
 <script>
 // Fabricated directory removed 2026-07-22 (CLAUDE.md §1.1).
 // This page — "Coaches & Clubs" in the main nav — made ZERO API calls and served
@@ -199,16 +200,16 @@ function renderRanges(){
       <div class="range-header">
         <div class="range-icon">${RANGE_EMOJI[r.style]||'🏹'}</div>
         <div>
-          <div class="range-name">${r.name}</div>
-          <div class="range-loc">📍 ${r.city}, ${r.country}</div>
+          <div class="range-name">${escA(r.name)}</div>
+          <div class="range-loc">📍 ${escA([r.city,r.country].filter(Boolean).join(', ')||'—')}</div>
           <!-- Star rating removed 2026-07-13: invented, and attached to real named
                organisations. We hold no ratings (CLAUDE.md §1.1). -->
         </div>
       </div>
       <div class="range-stats">
         <!-- Member counts removed 2026-07-13: invented for real organisations. -->
-        <div><div class="rs-val">${r.country}</div><div class="rs-label">Country</div></div>
-        <div><div class="rs-val">${r.style}</div><div class="rs-label">Discipline</div></div>
+        <div><div class="rs-val">${escA(r.country||'—')}</div><div class="rs-label">Country</div></div>
+        <div><div class="rs-val">${escA(r.style||'—')}</div><div class="rs-label">Discipline</div></div>
       </div>
     </div>`).join('');
 }
@@ -277,6 +278,24 @@ function filterAll(q){ applyGlobalFilter(q); }
 function setCountry(c){ applyGlobalFilter(c); }
 
 renderTrending();renderRanges();renderEvents();
+
+// Real clubs from the database. If the API is empty or unreachable, the existing
+// honest empty state stands — we never invent clubs (CLAUDE.md §1.1). Member
+// lists are deliberately never fetched here; they are admin-only (§1.8).
+(async function loadClubs(){
+  try{
+    const r=await fetch('/api/clubs');
+    if(!r.ok) return;
+    const data=await r.json();
+    if(!Array.isArray(data)) return;              // 503 {unavailable} → keep empty state
+    RANGES.length=0;
+    data.forEach(c=>RANGES.push({
+      name:c.name, city:c.city||'', country:c.country||'',
+      style:c.discipline||'', region:c.region||''
+    }));
+    renderRanges();
+  }catch(e){ /* keep the honest empty state */ }
+})();
 </script>
 <script src="shared.js"></script>
 </body>

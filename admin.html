@@ -366,6 +366,10 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/></svg>
       Team (public)
     </button>
+    <button class="nav-item" onclick="showPanel('clubs',this);loadClubs();">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-4a3 3 0 016 0v4"/></svg>
+      Clubs
+    </button>
     <button class="nav-item" onclick="showPanel('forum',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 11.5a8.5 8.5 0 01-12.6 7.4L3 20l1.1-5.4A8.5 8.5 0 1121 11.5z"/></svg>
       Community Forum
@@ -868,6 +872,49 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
         <table class="data-table">
           <thead><tr><th>Name</th><th>Role</th><th>Order</th><th>Status / Actions</th></tr></thead>
           <tbody id="tm-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── CLUBS (real directory + membership, migration 013) ── -->
+    <div class="panel" id="panel-clubs">
+      <div class="breadcrumb">Admin <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg> <span>Clubs</span></div>
+      <button class="btn-add-new" onclick="toggleInlineForm('club-form')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Club</button>
+      <div class="inline-form" id="club-form">
+        <div class="form-grid">
+          <div class="form-group"><label class="form-label">Club name *</label><input class="form-input" id="cl-name" maxlength="120" placeholder="e.g. Ranchi Archery Academy"></div>
+          <div class="form-group"><label class="form-label">City</label><input class="form-input" id="cl-city" maxlength="80" placeholder="e.g. Ranchi"></div>
+          <div class="form-group"><label class="form-label">Region (continent — used by the public filter)</label>
+            <select class="form-input" id="cl-region"><option value="">—</option><option>Asia</option><option>Europe</option><option>Americas</option><option>Oceania</option><option>Africa</option></select>
+          </div>
+          <div class="form-group"><label class="form-label">Country</label><input class="form-input" id="cl-country" maxlength="80" placeholder="e.g. India"></div>
+          <div class="form-group"><label class="form-label">Primary discipline</label>
+            <select class="form-input" id="cl-discipline"><option value="">—</option><option>recurve</option><option>compound</option><option>barebow</option><option>field</option><option>3d</option><option>traditional</option></select>
+          </div>
+          <div class="form-group"><label class="form-label">Public email</label><input class="form-input" id="cl-email" maxlength="120" placeholder="contact@club.org"></div>
+          <div class="form-group"><label class="form-label">Phone</label><input class="form-input" id="cl-phone" maxlength="40"></div>
+          <div class="form-group"><label class="form-label">Website</label><input class="form-input" id="cl-website" maxlength="200" placeholder="https://…"></div>
+          <div class="form-group" style="grid-column:1/-1;"><label class="form-label">About (public description)</label><textarea class="form-input" id="cl-about" rows="3" maxlength="600"></textarea></div>
+        </div>
+        <div class="form-actions">
+          <button class="btn-cancel" onclick="toggleInlineForm('club-form')">Cancel</button>
+          <button class="btn-save" onclick="saveClub()">Save club</button>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:16px;">
+        <div style="font-size:12.5px;color:var(--text-2);line-height:1.7;">
+          Real clubs and ranges, shown publicly on the <b style="color:var(--text);">Coaches &amp; Clubs</b> page.
+          Add a club, then use <b style="color:var(--text);">Members</b> to manage its roster.
+          Add a photo via <b style="color:var(--text);">Edit</b>.
+          <br>Member lists are <b style="color:var(--text);">never public</b>. A club is onboarded free —
+          organisation tiers are not on sale until their features exist.
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Clubs <span class="td-badge badge-active" style="font-size:11px;" id="clubs-count">0</span></div>
+        <table class="data-table">
+          <thead><tr><th>Name</th><th>City · Country</th><th>Discipline</th><th>Status / Actions</th></tr></thead>
+          <tbody id="clubs-tbody"></tbody>
         </table>
       </div>
     </div>
@@ -1521,8 +1568,8 @@ async function loadNews(){
   const tb=document.getElementById('news-tbody'); if(!tb)return;
   tb.innerHTML=data.length?data.map(n=>`<tr><td class="td-name">${escA(n.title)}</td><td>${escA(n.category||'')}</td><td>${escA(n.date||'')}</td><td class="td-actions"><span class="td-badge ${n.active!==false?'badge-active':'badge-inactive'}">${n.active!==false?'live':'hidden'}</span> <button class="btn-edit" onclick="openEdit('news',${n.id})">Edit</button><button class="btn-edit" onclick="setContent('news',${n.id},{active:${!(n.active!==false)}})">${n.active!==false?'Hide':'Show'}</button><button class="btn-delete" onclick="delContent('news',${n.id})">Delete</button></td></tr>`).join(''):'<tr><td colspan="4" style="padding:22px;color:var(--text-2);">No posts yet.</td></tr>';
 }
-async function setContent(resource,id,patch){const r=await put(resource,id,patch);if(!r||r.error){toast((r&&r.error)||'Could not update.');return;}({profiles:loadProfiles,news:loadNews,team:loadTeamPublic}[resource])();toast('Updated');}
-async function delContent(resource,id){if(!confirm('Delete?'))return;const r=await del(resource,id);if(!r||r.error){toast((r&&r.error)||'Could not delete.');return;}({profiles:loadProfiles,news:loadNews,team:loadTeamPublic}[resource])();toast('Deleted');}
+async function setContent(resource,id,patch){const r=await put(resource,id,patch);if(!r||r.error){toast((r&&r.error)||'Could not update.');return;}({profiles:loadProfiles,news:loadNews,team:loadTeamPublic,clubs:loadClubs}[resource])();toast('Updated');}
+async function delContent(resource,id){if(!confirm('Delete?'))return;const r=await del(resource,id);if(!r||r.error){toast((r&&r.error)||'Could not delete.');return;}({profiles:loadProfiles,news:loadNews,team:loadTeamPublic,clubs:loadClubs}[resource])();toast('Deleted');}
 
 // ── TEAM (public "who runs this platform") ──
 // Real people only. Nothing is seeded and nothing is invented (CLAUDE.md §1.1) —
@@ -1573,6 +1620,71 @@ async function loadTeamPublic(){
       </td></tr>`).join('')
     :'<tr><td colspan="4" style="padding:22px;color:var(--text-2);">Nobody added yet — the public Team section on the About page stays hidden until you add someone.</td></tr>';
 }
+
+// ── CLUBS (real directory + membership, migration 013) ──
+// Clubs are generic CRUD (/api/clubs); members are the scoped /api/club-members.
+async function saveClub(){
+  const v=id=>document.getElementById(id).value.trim();
+  if(!v('cl-name')){ toast('A club name is required.'); return; }
+  const d={ name:v('cl-name'), city:v('cl-city'), region:v('cl-region'), country:v('cl-country'),
+            discipline:v('cl-discipline'), email:v('cl-email'), phone:v('cl-phone'),
+            website:v('cl-website'), about:v('cl-about'), active:true };
+  const r=await post('clubs',d);
+  if(!r||r.error){ toast((r&&r.error)||'Could not save the club.'); return; }
+  ['cl-name','cl-city','cl-country','cl-email','cl-phone','cl-website','cl-about'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('cl-region').value=''; document.getElementById('cl-discipline').value='';
+  toggleInlineForm('club-form'); loadClubs(); toast('Club saved');
+}
+async function loadClubs(){
+  const data=await get('clubs');
+  const tb=document.getElementById('clubs-tbody'); if(!tb) return;
+  if(!Array.isArray(data)){ tb.innerHTML='<tr><td colspan="4" style="padding:22px;color:var(--text-2);">Could not load clubs — the catalogue may be temporarily unavailable.</td></tr>'; return; }
+  const c=document.getElementById('clubs-count'); if(c) c.textContent=data.length+(data.length===1?' club':' clubs');
+  tb.innerHTML=data.length?data.map(cl=>`<tr>
+      <td class="td-name">${escA(cl.name)}</td>
+      <td>${escA([cl.city,cl.country].filter(Boolean).join(' · ')||'—')}</td>
+      <td>${escA(cl.discipline||'—')}</td>
+      <td class="td-actions">
+        <span class="td-badge ${cl.active!==false?'badge-active':'badge-inactive'}">${cl.active!==false?'listed':'hidden'}</span>
+        <button class="btn-edit" onclick="openMembers(${cl.id},'${escA(cl.name)}')">Members</button>
+        <button class="btn-edit" onclick="openEdit('clubs',${cl.id})">Edit</button>
+        <button class="btn-edit" onclick="setContent('clubs',${cl.id},{active:${!(cl.active!==false)}})">${cl.active!==false?'Hide':'Show'}</button>
+        <button class="btn-delete" onclick="delContent('clubs',${cl.id})">Delete</button>
+      </td></tr>`).join('')
+    :'<tr><td colspan="4" style="padding:22px;color:var(--text-2);">No clubs yet — add your first club, then manage its members. The public Coaches &amp; Clubs page stays empty until a club is listed.</td></tr>';
+}
+// Members overlay — modelled on the federation Officers overlay. Roster: a member
+// does NOT need a platform account. Never public (§1.8). No DOB/age is collected.
+async function openMembers(clubId,clubName){
+  const list=await get('club-members?clubId='+clubId);
+  const IN='width:100%;background:#101116;border:1px solid rgba(255,255,255,.14);border-radius:8px;padding:10px 12px;color:#F5F6F8;font-size:13px;box-sizing:border-box;font-family:inherit;';
+  const rows=Array.isArray(list)&&list.length?list.map(m=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.06);"><div><b style="color:#fff;">${escA(m.name)}</b> ${m.email?`<span style="color:var(--text-2);font-size:12px;">${escA(m.email)}</span>`:''}${m.status==='inactive'?' <span class="td-badge badge-inactive">inactive</span>':''}</div><div style="display:flex;align-items:center;gap:8px;"><span class="td-badge badge-soon">${escA(m.memberRole||'archer')}</span>${m.discipline?`<span class="td-badge">${escA(m.discipline)}</span>`:''}<button class="btn-delete" onclick="delMember(${m.id},${clubId},'${escA(clubName)}')">×</button></div></div>`).join(''):'<div style="color:var(--text-2);font-size:13px;padding:8px 0;">No members yet.</div>';
+  const ov=document.createElement('div'); ov.id='mem-ov';
+  ov.style.cssText='position:fixed;inset:0;z-index:9998;background:rgba(7,15,34,.75);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:18px;';
+  ov.innerHTML='<div style="background:#17181D;border:1px solid rgba(255,255,255,.1);border-radius:14px;width:100%;max-width:520px;padding:24px;max-height:88vh;overflow:auto;">'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><div style="font-family:Oswald,sans-serif;font-size:17px;color:#fff;text-transform:uppercase;letter-spacing:.04em;">Members — '+escA(clubName)+'</div><button onclick="document.getElementById(\'mem-ov\').remove()" style="background:none;border:none;color:#7E8290;font-size:24px;cursor:pointer;">&times;</button></div>'+
+    '<div style="font-size:12px;color:var(--text-2);margin-bottom:14px;">The club\'s roster. A member does not need a platform account; if their email matches one, it is linked automatically. Member lists are never shown publicly. Do not enter data for anyone under 18.</div>'+
+    '<div id="mem-list" style="margin-bottom:16px;">'+rows+'</div>'+
+    '<div style="border-top:1px solid rgba(255,255,255,.08);padding-top:14px;">'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">'+
+        '<div><label class="form-label">Name *</label><input id="mem-name" style="'+IN+'" placeholder="Full name"></div>'+
+        '<div><label class="form-label">Email (optional)</label><input id="mem-email" style="'+IN+'" placeholder="member@example.com"></div>'+
+        '<div><label class="form-label">Role</label><select id="mem-role" style="'+IN+'"><option value="archer">Archer</option><option value="coach">Coach</option><option value="official">Official</option></select></div>'+
+        '<div><label class="form-label">Discipline</label><select id="mem-disc" style="'+IN+'"><option value="">—</option><option value="recurve">Recurve</option><option value="compound">Compound</option><option value="barebow">Barebow</option></select></div>'+
+      '</div>'+
+      '<button class="btn-save" style="margin-top:14px;" onclick="addMember('+clubId+',\''+escA(clubName)+'\')">Add member</button></div>'+
+    '</div>';
+  document.body.appendChild(ov);
+  ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
+}
+async function addMember(clubId,clubName){
+  const name=document.getElementById('mem-name').value.trim();
+  if(!name){toast('Enter the member name');return;}
+  const r=await post('club-members',{clubId,name,email:document.getElementById('mem-email').value.trim(),memberRole:document.getElementById('mem-role').value,discipline:document.getElementById('mem-disc').value});
+  if(r&&r.ok){ document.getElementById('mem-ov').remove(); openMembers(clubId,clubName); toast('Member added'+(r.linked?' (linked to their account)':'')); }
+  else toast((r&&r.error)||'Could not add member');
+}
+async function delMember(id,clubId,clubName){ const r=await del('club-members',id); if(!r||r.error){ toast((r&&r.error)||'Could not remove the member.'); return; } document.getElementById('mem-ov').remove(); openMembers(clubId,clubName); toast('Removed'); }
 
 // ── COMMUNITY FORUM ──
 async function loadForum(){
@@ -1652,6 +1764,8 @@ function loadPanel(name){
   else if(name==='jobs'){loadJobs();}
   else if(name==='news'){loadNews();}
   else if(name==='knowledge'){loadKnowledge();}
+  else if(name==='team-public'){loadTeamPublic();}
+  else if(name==='clubs'){loadClubs();}
   else if(name==='forum'){loadForum();}
   else if(name==='registrations'){loadRegistrations();}
   else if(name==='reports'){loadReports();}
@@ -1697,9 +1811,10 @@ const EDIT_SCHEMA={
   knowledge:[{k:'title',l:'Title'},{k:'category',l:'Category'},{k:'level',l:'Level'},{k:'readTime',l:'Read time'},{k:'excerpt',l:'Excerpt',t:'area'},{k:'body',l:'Body',t:'area'},{k:'published',l:'Published',t:'bool'},{k:'active',l:'Active',t:'bool'}],
   news:[{k:'title',l:'Title'},{k:'category',l:'Category'},{k:'date',l:'Date',t:'date'},{k:'excerpt',l:'Excerpt',t:'area'},{k:'imgUrl',l:'Cover photo',t:'image'},{k:'active',l:'Visible',t:'bool'}],
   team:[{k:'name',l:'Full name'},{k:'role',l:'Role / title'},{k:'bio',l:'Short bio',t:'area'},{k:'link',l:'Public link'},{k:'sortOrder',l:'Order (lower first)',t:'number'},{k:'imgUrl',l:'Photo',t:'image'},{k:'active',l:'Shown publicly',t:'bool'}],
+  clubs:[{k:'name',l:'Club name'},{k:'city',l:'City'},{k:'region',l:'Region',t:'select',opts:['','Asia','Europe','Americas','Oceania','Africa']},{k:'country',l:'Country'},{k:'discipline',l:'Discipline',t:'select',opts:['','recurve','compound','barebow','field','3d','traditional']},{k:'about',l:'About',t:'area'},{k:'email',l:'Public email'},{k:'phone',l:'Phone'},{k:'website',l:'Website'},{k:'imgUrl',l:'Photo',t:'image'},{k:'active',l:'Listed publicly',t:'bool'}],
   profiles:[{k:'handle',l:'Handle'},{k:'name',l:'Name'},{k:'headline',l:'Headline'},{k:'location',l:'Location'},{k:'discipline',l:'Discipline'},{k:'bio',l:'Bio',t:'area'},{k:'imgUrl',l:'Photo',t:'image'},{k:'pb',l:'Personal best',t:'number'},{k:'rank',l:'Rank',t:'number'},{k:'verified',l:'Verified',t:'bool'},{k:'active',l:'Visible',t:'bool'}]
 };
-const RELOAD={products:()=>loadProducts(),tournaments:()=>loadTournaments(),athletes:()=>loadAthletes(),jobs:()=>loadJobs(),knowledge:()=>loadKnowledge(),news:()=>loadNews(),profiles:()=>loadProfiles(),team:()=>loadTeamPublic()};
+const RELOAD={products:()=>loadProducts(),tournaments:()=>loadTournaments(),athletes:()=>loadAthletes(),jobs:()=>loadJobs(),knowledge:()=>loadKnowledge(),news:()=>loadNews(),profiles:()=>loadProfiles(),team:()=>loadTeamPublic(),clubs:()=>loadClubs()};
 async function openEdit(resource,id){
   const row=await get(resource+'/'+id);
   if(!row||row.error){toast('Could not load that item');return;}

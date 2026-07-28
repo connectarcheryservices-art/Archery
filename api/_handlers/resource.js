@@ -38,7 +38,8 @@ module.exports = async (req, res) => {
           (select count(*)::int from tournaments where active is not false) tournaments,
           (select count(*)::int from products    where active is not false) products,
           (select count(*)::int from users)                                 members,
-          (select count(*)::int from profiles    where active is not false) profiles`);
+          (select count(*)::int from profiles    where active is not false) profiles,
+          (select count(*)::int from clubs        where active is not false) clubs`);
         return json(res, r.rows[0]);
       } catch (e) {
         console.error('stats:', e?.message);

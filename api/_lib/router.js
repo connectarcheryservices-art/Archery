@@ -37,6 +37,13 @@ module.exports = (req, res) => {
       if (n === 2) q.id = seg[1];
       return H('federation-members')(req, res);
     }
+    // Club roster: /api/club-members[?clubId=N], /api/club-members/<id>.
+    // Explicit route because the hyphenated name won't resolve via generic CRUD.
+    // NB: `clubs` (no hyphen) has NO block here on purpose — it uses generic CRUD.
+    if (r0 === 'club-members') {
+      if (n === 2) q.id = seg[1];
+      return H('club-members')(req, res);
+    }
     // Seller accounts (admin): /api/sellers, /api/sellers/<id>
     if (r0 === 'sellers') {
       if (n === 2) q.id = seg[1];

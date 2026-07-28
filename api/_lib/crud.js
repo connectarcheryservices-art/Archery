@@ -18,6 +18,11 @@ const TABLES = {
   // Public "who runs this platform" list (migration 010). NOT `staff` — that
   // holds admin login credentials and is never public.
   team:        ['name','role','bio','img_url','link','sort_order','active'],
+  // Clubs directory (migration 013). `application_id` is intentionally NOT here —
+  // provenance is set only by a controlled path, never a client, so a POST can't
+  // forge a link to someone else's registration application. Members live in the
+  // separate club_members table via /api/club-members (admin-only, never public).
+  clubs:       ['name','city','region','country','discipline','about','email','phone','website','img_url','active'],
 };
 
 const toSnake = o => { const out = {}; for (const [k, v] of Object.entries(o)) out[k.replace(/([A-Z])/g, c => '_' + c.toLowerCase())] = v; return out; };

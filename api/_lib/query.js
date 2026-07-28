@@ -20,6 +20,7 @@ const SORTABLE = {
   news:       { newest:'date desc nulls last' },
   // Team is a curated, hand-ordered list — sort_order first, then id.
   team:       { order:'sort_order asc, id asc', name:'name asc' },
+  clubs:      { name:'name asc', newest:'id desc' },
 };
 
 // A resource supports free-text search if it has a `search` tsvector column.
@@ -32,6 +33,7 @@ const ILIKE_COLS = {
   athletes: ['name','state','discipline'],
   jobs: ['title','org','location'],
   news: ['title','category','excerpt'],
+  clubs: ['name','city','country','discipline'],
 };
 
 const num = v => { const n = Number(v); return Number.isFinite(n) ? n : null; };
