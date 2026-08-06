@@ -168,11 +168,11 @@ function render(){
   if(!list.length){feed.innerHTML='<div style="padding:40px;text-align:center;color:var(--muted);">No discussions here yet — start one!</div>';return;}
   feed.innerHTML=list.map(p=>{
     const r=(p.replies||[]).length,ex=(p.body||'').slice(0,170)+((p.body||'').length>170?'…':'');
-    return `<div class="post" onclick="openPost(${p.id})">
+    return `<div class="post" onclick="openPost('${p.id}')">
       <div class="pm"><div class="av">${initials(p.author)}</div><div><div class="who">${esc(p.author)}</div><div class="when">${ago(p.createdAt)}</div></div>${p.pinned?'<span class="pin">Pinned</span>':''}<span class="cat">${esc(p.category||'General')}</span></div>
       <div class="pt">${esc(p.title)}</div><div class="px">${esc(ex)}</div>
       <div class="acts">
-        <button class="act" onclick="event.stopPropagation();like(${p.id})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3z"/></svg>${p.likes||0}</button>
+        <button class="act" onclick="event.stopPropagation();like('${p.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3z"/></svg>${p.likes||0}</button>
         <span class="act"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>${r} ${r===1?'reply':'replies'}</span>
       </div></div>`;
   }).join('');

@@ -115,7 +115,7 @@ fetch(API+'/jobs').then(r=>r.json()).then(jobs=>{
       </div>
       <div class="job-right">
         ${j.salary?`<div class="job-salary">${escA(j.salary)}</div>`:''}
-        <button class="btn-apply" onclick="applyJob(${j.id})">Apply Now</button>
+        <button class="btn-apply" onclick="applyJob('${j.id}')">Apply Now</button>
       </div>
     </div>`;}).join('');
   document.querySelectorAll('.reveal').forEach(r=>{

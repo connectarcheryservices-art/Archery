@@ -1822,7 +1822,13 @@ async function openEdit(resource,id){
   if(!row||row.error){toast('Could not load that item');return;}
   const schema=EDIT_SCHEMA[resource]; if(!schema)return;
   const html=schema.map((f,i)=>{
-    const fid='ed-'+i, val=row[f.k]==null?'':row[f.k];
+    const fid='ed-'+i;
+    let val=row[f.k]==null?'':row[f.k];
+    // <input type="date"> silently blanks itself on anything but YYYY-MM-DD —
+    // the API returns full ISO timestamps, so without this every edit of an
+    // existing record wiped its own date (and, since saveEdit() PUTs the whole
+    // form, a blank date column made Postgres reject the entire save).
+    if (f.t==='date' && typeof val==='string' && val.length>=10) val=val.slice(0,10);
     if(f.t==='bool') return '<label class="ed-check"><input type="checkbox" id="'+fid+'" '+(row[f.k]!==false?'checked':'')+'> '+f.l+'</label>';
     if(f.t==='select') return '<div class="ed-field"><label>'+f.l+'</label><select id="'+fid+'">'+f.opts.map(o=>'<option '+(String(val)===o?'selected':'')+'>'+o+'</option>').join('')+'</select></div>';
     if(f.t==='area') return '<div class="ed-field ed-full"><label>'+f.l+'</label><textarea id="'+fid+'" rows="3">'+escA(val)+'</textarea></div>';

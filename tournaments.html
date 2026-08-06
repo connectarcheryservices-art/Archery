@@ -210,10 +210,10 @@ function renderTournaments(list){
     const day=d.getDate(); const mon=d.toLocaleString('en-IN',{month:'short'}).toUpperCase();
     const pct=Math.round(t.registered/t.slots*100);
     const isDone=t.status==='done';
-    const reg=t.status==='open'?`<button class="btn-reg" onclick="openModal(${t.id},'${t.name.replace(/'/g,"\\'")}','${mon} ${day} · ${t.location}')">Register Now</button>`
+    const reg=t.status==='open'?`<button class="btn-reg" onclick="openModal('${t.id}','${t.name.replace(/'/g,"\\'")}','${mon} ${day} · ${t.location}')">Register Now</button>`
               :t.status==='live'?`<button class="btn-reg" onclick="setTTab('live',document.querySelectorAll('.t-tab')[1])">Watch Live</button>`
               :t.status==='done'?`<button class="btn-det" onclick="setTTab('done',document.querySelectorAll('.t-tab')[2])">View Results</button>`
-              :`<button class="btn-det" onclick="downloadICS(${t.id})">Set Reminder</button>`;
+              :`<button class="btn-det" onclick="downloadICS('${t.id}')">Set Reminder</button>`;
     return `<div class="t-card reveal" style="${isDone?'opacity:.7;':''}">
       <div class="t-card-head">
         <div style="display:flex;align-items:flex-start;gap:14px;">
@@ -233,7 +233,7 @@ function renderTournaments(list){
         <div class="t-discs">${(t.disciplines||[]).map(d=>`<span class="disc">${d}</span>`).join('')}</div>
         <div class="t-progress-label"><span>${t.registered} / ${t.slots} slots filled</span><span>${pct}%</span></div>
         <div class="t-track"><div class="t-fill" style="width:${pct}%;${isDone?'background:rgba(245,240,232,.15);':''}"></div></div>
-        <div class="t-footer"><div class="t-org">By <strong>${t.org}</strong></div><div class="t-btns"><button class="btn-det" onclick="tDetails(${t.id})">Details</button>${reg}</div></div>
+        <div class="t-footer"><div class="t-org">By <strong>${t.org}</strong></div><div class="t-btns"><button class="btn-det" onclick="tDetails('${t.id}')">Details</button>${reg}</div></div>
       </div>
     </div>`;
   }).join('');

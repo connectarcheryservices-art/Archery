@@ -170,7 +170,6 @@ document.querySelectorAll('.reveal').forEach(r=>ro.observe(r));
     // charges nothing (see api/_handlers/checkout-fee.js).
     if(res.notForSale){fedDone('Interest registered — nothing charged', res.message||'Your interest is registered. Organisation accounts are still being built, so we are not taking payment for them yet.');return;}
 
-    if(res.testMode){fedDone('Registration complete','<b>'+(res.label||'Licence')+'</b> registered for <b>'+v('fa-org')+'</b> (test mode — no payment charged).<br>Reference: <b>'+res.orderNo+'</b>. Access activates on verification within 14 working days.');return;}
     if(res.offline||!res.razorpay){fedDone('Application received','Your <b>'+(res.label||'registration')+'</b> application is logged (ref <b>'+(res.orderNo||res.applicationId)+'</b>).<br>A secure payment link for '+inr(res.fee)+' will be sent to your official email; access activates once the fee is verified.');return;}
 
     const loaded=await loadRazorpay();
