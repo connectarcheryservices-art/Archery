@@ -3,6 +3,7 @@
 const { cors, json, readBody } = require('../_lib/respond');
 const { checkAdmin } = require('../_lib/auth');
 const { q } = require('../_lib/db');
+const { getSettings } = require('../_lib/settings');
 
 const rowToObj = row => { const o = {}; for (const [k,v] of Object.entries(row)) o[k.replace(/_([a-z])/g, (_,c) => c.toUpperCase())] = v; return o; };
 
@@ -18,6 +19,10 @@ module.exports = async (req, res) => {
       return json(res, r.rows.map(rowToObj));
     }
     if (req.method === 'POST') {
+      const settings = await getSettings();
+      if (settings.communityEnabled === false) {
+        return json(res, { ok: false, error: 'The community forum is temporarily unavailable.' }, 403);
+      }
       const b = readBody(req);
       const title = String(b.title||'').trim().slice(0, 200);
       const body  = String(b.body||'').trim().slice(0, 8000);

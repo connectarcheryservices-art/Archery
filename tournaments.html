@@ -253,14 +253,31 @@ function setTTab(f,btn){tFilter=f;document.querySelectorAll('.t-tab').forEach(b=
 // tournaments (fabricated prize money, registration counts and organisers)
 // whenever the real list was empty, which was every load until a real
 // tournament exists (CLAUDE.md §1.1).
-fetch(API+'/tournaments').then(r=>r.json()).then(d=>{
-  TOURNEYS=Array.isArray(d)?d:[];
-  renderHeroStats(TOURNEYS); renderLiveBanner(TOURNEYS); renderDeadlines(TOURNEYS);
-  applyTFilter();
+fetch(API+'/settings').then(r=>r.json()).then(s=>{
+  if(s&&s.tournamentsEnabled===false){
+    document.getElementById('t-list').innerHTML='<div style="padding:60px 20px;text-align:center;color:var(--ivory-3);">Tournament listings are temporarily unavailable. Please check back soon.</div>';
+    document.querySelectorAll('.t-tab').forEach(b=>b.disabled=true);
+    return;
+  }
+  fetch(API+'/tournaments').then(r=>r.json()).then(d=>{
+    TOURNEYS=Array.isArray(d)?d:[];
+    renderHeroStats(TOURNEYS); renderLiveBanner(TOURNEYS); renderDeadlines(TOURNEYS);
+    applyTFilter();
+  }).catch(()=>{
+    TOURNEYS=[];
+    renderHeroStats(TOURNEYS); renderLiveBanner(TOURNEYS); renderDeadlines(TOURNEYS);
+    applyTFilter();
+  });
 }).catch(()=>{
-  TOURNEYS=[];
-  renderHeroStats(TOURNEYS); renderLiveBanner(TOURNEYS); renderDeadlines(TOURNEYS);
-  applyTFilter();
+  fetch(API+'/tournaments').then(r=>r.json()).then(d=>{
+    TOURNEYS=Array.isArray(d)?d:[];
+    renderHeroStats(TOURNEYS); renderLiveBanner(TOURNEYS); renderDeadlines(TOURNEYS);
+    applyTFilter();
+  }).catch(()=>{
+    TOURNEYS=[];
+    renderHeroStats(TOURNEYS); renderLiveBanner(TOURNEYS); renderDeadlines(TOURNEYS);
+    applyTFilter();
+  });
 });
 
 // Real calendar reminder — downloads an .ics your phone/PC calendar opens

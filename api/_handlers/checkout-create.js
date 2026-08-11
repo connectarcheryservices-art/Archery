@@ -5,7 +5,7 @@
 const crypto = require('crypto');
 const { cors, json, readBody } = require('../_lib/respond');
 const { computeQuote } = require('../_lib/pricing');
-const { loadPricingConfig } = require('../_lib/settings');
+const { loadPricingConfig, getSettings } = require('../_lib/settings');
 const { q } = require('../_lib/db');
 
 function orderNo() {
@@ -40,6 +40,14 @@ module.exports = async (req, res) => {
     const cust = b.customer || {};
     if (!cust.name || !cust.phone) return json(res, { ok: false, error: 'Name and phone are required.' }, 400);
     if (!cust.address1 || !cust.pincode) return json(res, { ok: false, error: 'A delivery address and pincode are required.' }, 400);
+
+    const settings = await getSettings();
+    if (settings.maintenanceMode === true) {
+      return json(res, { ok: false, error: 'The site is temporarily down for maintenance. Please try again shortly.' }, 503);
+    }
+    if (settings.shopEnabled === false) {
+      return json(res, { ok: false, error: 'The shop is not accepting orders right now.' }, 403);
+    }
 
     // Re-price from the DB so the client can't forge prices.
     const ids = items.map(i => parseInt(i.id)).filter(Boolean);

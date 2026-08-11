@@ -419,6 +419,10 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
       Site Settings
     </button>
+    <button class="nav-item" id="nav-audit-item" onclick="showPanel('audit',this);loadAudit(true);">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      Audit Log
+    </button>
   </nav>
 
   <!-- MAIN CONTENT -->
@@ -793,6 +797,64 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
             <button class="btn-save" onclick="saveToggles()">Save Toggles</button>
           </div>
         </div>
+        <div class="card">
+          <div class="card-title">Pricing &amp; Delivery</div>
+          <div class="form-group" style="margin-bottom:14px;"><label class="form-label">Currency</label><input class="form-input" id="set-currency" disabled></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+            <div class="form-group" style="margin-bottom:14px;"><label class="form-label">Tax Rate (%)</label><input class="form-input" id="set-tax" type="number" min="0" max="100" step="0.1"></div>
+            <div class="form-group" style="margin-bottom:14px;"><label class="form-label">Platform Fee (%)</label><input class="form-input" id="set-platform-fee" type="number" min="0" max="100" step="0.1"></div>
+            <div class="form-group" style="margin-bottom:14px;"><label class="form-label">Standard Delivery (CHF)</label><input class="form-input" id="set-delivery-std" type="number" min="0" step="1"></div>
+            <div class="form-group" style="margin-bottom:14px;"><label class="form-label">Same-Day Delivery (CHF)</label><input class="form-input" id="set-delivery-sameday" type="number" min="0" step="1"></div>
+          </div>
+          <div class="form-group" style="margin-bottom:14px;"><label class="form-label">Free Delivery Threshold (CHF)</label><input class="form-input" id="set-free-threshold" type="number" min="0" step="1"></div>
+          <label class="toggle-row">
+            <div class="toggle-info"><div class="toggle-title">Same-Day Delivery</div><div class="toggle-desc">Offer same-day delivery at checkout</div></div>
+            <label class="toggle-switch"><input type="checkbox" id="set-sameday-enabled"><div class="toggle-slider"></div></label>
+          </label>
+          <div class="form-actions" style="margin-top:16px;">
+            <button class="btn-save" onclick="savePricing()">Save Pricing</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── AUDIT LOG ── -->
+    <div class="panel" id="panel-audit">
+      <div class="breadcrumb">Admin <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg> <span>Audit Log</span></div>
+      <div class="card" style="margin-bottom:14px;">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:end;">
+          <div class="form-group" style="margin-bottom:0;"><label class="form-label">Resource type</label>
+            <select class="form-input" id="audit-f-type" onchange="loadAudit(true)">
+              <option value="">All</option>
+              <option value="staff">Staff</option>
+              <option value="sellers">Sellers</option>
+              <option value="orders">Orders</option>
+              <option value="settings">Settings</option>
+              <option value="registrations">Registrations</option>
+              <option value="reports">Reports</option>
+              <option value="applications">Applications</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom:0;"><label class="form-label">Action</label>
+            <select class="form-input" id="audit-f-action" onchange="loadAudit(true)">
+              <option value="">All</option>
+              <option value="create">Create</option>
+              <option value="update">Update</option>
+              <option value="delete">Delete</option>
+              <option value="status_change">Status change</option>
+            </select>
+          </div>
+          <button class="btn-save" style="margin-bottom:0;" onclick="loadAudit(true)">Refresh</button>
+        </div>
+      </div>
+      <div class="card">
+        <table class="data-table">
+          <thead><tr><th>When</th><th>Actor</th><th>Action</th><th>Resource</th><th>Change</th></tr></thead>
+          <tbody id="audit-rows"><tr><td colspan="5" style="text-align:center;padding:30px;color:var(--muted);">Loading…</td></tr></tbody>
+        </table>
+        <div class="form-actions" style="margin-top:16px;">
+          <button class="btn-save" id="audit-more-btn" style="display:none;" onclick="loadAudit(false)">Load more</button>
+        </div>
       </div>
     </div>
 
@@ -1097,6 +1159,7 @@ function applyRole(){
   const teamNav=document.getElementById('nav-team'); if(teamNav) teamNav.style.display=canStaff?'':'none';
   const setNav=document.getElementById('nav-settings-item'); if(setNav) setNav.style.display=canStaff?'':'none';
   const mailNav=document.getElementById('nav-mail-item'); if(mailNav) mailNav.style.display=canStaff?'':'none';
+  const auditNav=document.getElementById('nav-audit-item'); if(auditNav) auditNav.style.display=canStaff?'':'none';
   const badge=document.querySelector('.admin-badge'); if(badge) badge.textContent=ME_ROLE.toUpperCase();
   const av=document.querySelector('.topbar-avatar'); if(av) av.textContent=(ME_NAME||'A').charAt(0).toUpperCase();
 }
@@ -1341,6 +1404,7 @@ async function deleteItem(resource, id){
 }
 
 // ── SETTINGS ──
+let _origMaintenance = false;
 async function loadSettings(){
   const s = await get('settings');
   if(!s) return;
@@ -1348,7 +1412,8 @@ async function loadSettings(){
   document.getElementById('set-tagline').value = s.tagline||'';
   document.getElementById('set-hero').value    = s.heroTitle||'';
   document.getElementById('set-sub').value     = s.heroSubtitle||'';
-  document.getElementById('tog-maintenance').checked  = s.maintenanceMode||false;
+  _origMaintenance = s.maintenanceMode||false;
+  document.getElementById('tog-maintenance').checked  = _origMaintenance;
   document.getElementById('tog-shop').checked         = s.shopEnabled!==false;
   document.getElementById('tog-reg').checked          = s.registrationOpen!==false;
   document.getElementById('tog-community').checked    = s.communityEnabled!==false;
@@ -1356,6 +1421,61 @@ async function loadSettings(){
   document.getElementById('ann-text').value           = s.announcementText||'';
   document.getElementById('ann-active').checked       = s.announcementActive||false;
   document.getElementById('ann-preview').textContent  = s.announcementText||'Preview will appear here';
+  document.getElementById('set-currency').value        = s.currency||'CHF';
+  document.getElementById('set-tax').value              = s.taxRate!=null ? Math.round(s.taxRate*1000)/10 : '';
+  document.getElementById('set-platform-fee').value     = s.platformFeeRate!=null ? Math.round(s.platformFeeRate*1000)/10 : '';
+  document.getElementById('set-delivery-std').value     = s.deliveryStandard!=null ? s.deliveryStandard : '';
+  document.getElementById('set-delivery-sameday').value = s.deliverySameDay!=null ? s.deliverySameDay : '';
+  document.getElementById('set-free-threshold').value   = s.freeDeliveryThreshold!=null ? s.freeDeliveryThreshold : '';
+  document.getElementById('set-sameday-enabled').checked = s.sameDayEnabled!==false;
+}
+
+// ── AUDIT LOG ──
+let AUDIT_CURSOR = null;
+function auditDiff(row){
+  if (row.action === 'delete') return 'removed';
+  if (row.action === 'create') return 'created';
+  const before = row.before || {}, after = row.after || {};
+  const keys = Object.keys(after);
+  if (!keys.length) return '—';
+  return keys.map(k => `${k}: ${JSON.stringify(before[k])} → ${JSON.stringify(after[k])}`).join(', ');
+}
+async function loadAudit(reset){
+  if (reset) { AUDIT_CURSOR = null; document.getElementById('audit-rows').innerHTML = '<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--muted);">Loading…</td></tr>'; }
+  const type = document.getElementById('audit-f-type').value;
+  const action = document.getElementById('audit-f-action').value;
+  let url = 'audit-log?limit=50';
+  if (type) url += '&resourceType=' + encodeURIComponent(type);
+  if (action) url += '&action=' + encodeURIComponent(action);
+  if (!reset && AUDIT_CURSOR) url += '&before=' + AUDIT_CURSOR;
+  const r = await get(url);
+  const tbody = document.getElementById('audit-rows');
+  const rows = (r && r.rows) || [];
+  if (reset && !rows.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--muted);">No audit entries yet.</td></tr>'; document.getElementById('audit-more-btn').style.display='none'; return; }
+  const html = rows.map(row => `<tr>
+    <td>${new Date(row.created_at).toLocaleString()}</td>
+    <td>${esc(row.actor_name||row.actor_role||'—')}</td>
+    <td>${esc(row.action)}</td>
+    <td>${esc(row.resource_type)}${row.resource_id?' #'+esc(String(row.resource_id)):''}</td>
+    <td style="max-width:420px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(auditDiff(row))}">${esc(auditDiff(row))}</td>
+  </tr>`).join('');
+  tbody.innerHTML = reset ? html : tbody.innerHTML + html;
+  AUDIT_CURSOR = r && r.nextBefore;
+  document.getElementById('audit-more-btn').style.display = AUDIT_CURSOR ? '' : 'none';
+}
+
+async function savePricing(){
+  const num = (id,fallback) => { const v=parseFloat(document.getElementById(id).value); return Number.isFinite(v) ? v : fallback; };
+  const d = {
+    taxRate: num('set-tax', 10) / 100,
+    platformFeeRate: num('set-platform-fee', 5) / 100,
+    deliveryStandard: num('set-delivery-std', 5),
+    deliverySameDay: num('set-delivery-sameday', 15),
+    freeDeliveryThreshold: num('set-free-threshold', 99),
+    sameDayEnabled: document.getElementById('set-sameday-enabled').checked,
+  };
+  const r = await post('settings', d);
+  toast(r&&!r.error ? 'Pricing saved' : ((r&&r.error)||'Could not save pricing.'));
 }
 
 async function saveSettings(){
@@ -1365,8 +1485,16 @@ async function saveSettings(){
 }
 
 async function saveToggles(){
-  const d={maintenanceMode:document.getElementById('tog-maintenance').checked,shopEnabled:document.getElementById('tog-shop').checked,registrationOpen:document.getElementById('tog-reg').checked,communityEnabled:document.getElementById('tog-community').checked,tournamentsEnabled:document.getElementById('tog-tournaments').checked};
+  const maintenanceMode = document.getElementById('tog-maintenance').checked;
+  if (maintenanceMode && !_origMaintenance) {
+    if (!confirm('Turn ON maintenance mode? This takes the entire public site down for every visitor until you switch it off again.')) {
+      document.getElementById('tog-maintenance').checked = false;
+      return;
+    }
+  }
+  const d={maintenanceMode,shopEnabled:document.getElementById('tog-shop').checked,registrationOpen:document.getElementById('tog-reg').checked,communityEnabled:document.getElementById('tog-community').checked,tournamentsEnabled:document.getElementById('tog-tournaments').checked};
   const r=await post('settings',d);
+  if(r&&!r.error) _origMaintenance = maintenanceMode;
   toast(r&&!r.error ? 'Toggles saved' : ((r&&r.error)||'Could not save toggles.'));
 }
 

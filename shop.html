@@ -593,6 +593,7 @@ footer{background:var(--ink-2);border-top:.5px solid rgba(255,255,255,.06);paddi
 // If the API returns nothing, the shop says so (renderProducts empty state).
 let PRODUCTS = [];
 let CATALOGUE_DOWN = false;   // true when /api/products is unreachable (503)
+let SHOP_DISABLED = false;    // true when the admin has switched shopEnabled off
 
 const BRAND_INFO = {};
 
@@ -697,7 +698,11 @@ function renderProducts(list) {
   // shop must say what is true: nothing here, or we can't reach the catalogue.
   if (!list.length) {
     grid.className = 'products-grid';
-    grid.innerHTML = CATALOGUE_DOWN
+    grid.innerHTML = SHOP_DISABLED
+      ? '<div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:#B9BEC9;">'
+        + '<div style="font-family:Oswald,sans-serif;font-size:18px;color:#fff;text-transform:uppercase;margin-bottom:8px;">Shop temporarily unavailable</div>'
+        + '<div style="font-size:14px;">We\'re not taking orders right now. Please check back soon.</div></div>'
+      : CATALOGUE_DOWN
       ? '<div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:#B9BEC9;">'
         + '<div style="font-family:Oswald,sans-serif;font-size:18px;color:#fff;text-transform:uppercase;margin-bottom:8px;">Catalogue unavailable</div>'
         + '<div style="font-size:14px;">We can’t reach our catalogue right now. Please try again in a moment.</div></div>'
@@ -947,9 +952,18 @@ renderProducts(getFilteredProducts());
 renderRecoStrips();
 updateCartUI();
 
-// Load live products from the API (Supabase). Falls back to the demo list when empty/offline.
+// Load live products from the API (Supabase). An empty or unreachable catalogue
+// renders an honest empty state (CATALOGUE_DOWN/SHOP_DISABLED) — never a fabricated one.
 (async function loadLiveProducts(){
   try{
+    const settings = await fetch('/api/settings').then(r=>r.json()).catch(()=>null);
+    if (settings && settings.shopEnabled === false) {
+      SHOP_DISABLED = true;
+      renderProducts([]);
+      const cb = document.querySelector('.btn-checkout');
+      if (cb) { cb.disabled = true; cb.textContent = 'Shop unavailable'; cb.style.opacity = '.5'; cb.style.cursor = 'not-allowed'; cb.onclick = null; }
+      return;
+    }
     const res = await fetch('/api/products');
     const data = await res.json();
     if (!res.ok || (data && data.unavailable)) { CATALOGUE_DOWN = true; renderProducts([]); return; }
@@ -967,7 +981,7 @@ updateCartUI();
           reviews: null, badge: was ? 'sale' : null,   // no rating/reviews columns exist — render none
           save: (was && was>price) ? Math.round((1-price/was)*100) : 0,
           tags:[p.category||'Equipment'], color:c[1], bg:'rgba(255,255,255,.04)', icon:c[0],
-          img:p.imgUrl||null, delivery: price>=999 ? 'Free delivery' : 'CHF 49 delivery',
+          img:p.imgUrl||null, delivery: price>=99 ? 'Free delivery' : 'CHF 5 delivery',
           inCart:false, wished:false
         };
       });
