@@ -6,6 +6,7 @@ const { cors, json, readBody } = require('../_lib/respond');
 const { checkAdmin, can, hashPassword, normalizeStaffUsername, staffLoginId } = require('../_lib/auth');
 const { generateSecret, verifyTotp, otpauthUri, generateBackupCodes } = require('../_lib/totp');
 const { q } = require('../_lib/db');
+const { writeAudit } = require('../_lib/audit');
 
 const ROLES = ['manager', 'editor', 'support'];
 const rowOut = r => ({ id: r.id, name: r.name, username: r.username, loginId: staffLoginId(r.username), email: r.email, role: r.role, active: r.active, twoFactor: !!r.totp_enabled, lastLogin: r.last_login, createdAt: r.created_at });
@@ -96,24 +97,37 @@ module.exports = async (req, res) => {
       if (taken) return json(res, { error: 'That username is already taken.' }, 409);
       const r = await q('insert into staff (name,username,email,pass,role,created_by) values ($1,$2,$3,$4,$5,$6) returning id',
         [name, username, b.email || null, hashPassword(password), role, actor.name || actor.username || 'owner']);
+      await writeAudit({ req, actor, action: 'create', resourceType: 'staff', resourceId: r.rows[0].id,
+        after: { name, username, role, email: b.email || null } });
       return json(res, { ok: true, id: r.rows[0].id });
     }
     if (id && req.method === 'PUT') {
       const b = readBody(req);
+      const before = (await q('select name,username,email,role,active from staff where id=$1', [parseInt(id)])).rows[0];
+      if (!before) return json(res, { error: 'Not found' }, 404);
       const sets = [], vals = [];
-      if (b.name !== undefined) { sets.push(`name=$${vals.push(String(b.name).slice(0, 80))}`); }
-      if (b.email !== undefined) { sets.push(`email=$${vals.push(b.email || null)}`); }
-      if (b.role !== undefined && ROLES.includes(b.role)) { sets.push(`role=$${vals.push(b.role)}`); }
-      if (b.active !== undefined) { sets.push(`active=$${vals.push(!!b.active)}`); }
-      if (b.password) { if (String(b.password).length < 8) return json(res, { error: 'Password must be at least 8 characters.' }, 400); sets.push(`pass=$${vals.push(hashPassword(b.password))}`); }
-      if (b.reset2fa) { sets.push(`totp_enabled=false`); sets.push(`totp_secret=null`); sets.push(`backup_codes='[]'`); }
+      const after = {};
+      if (b.name !== undefined) { const v = String(b.name).slice(0, 80); sets.push(`name=$${vals.push(v)}`); after.name = v; }
+      if (b.email !== undefined) { sets.push(`email=$${vals.push(b.email || null)}`); after.email = b.email || null; }
+      if (b.role !== undefined && ROLES.includes(b.role)) { sets.push(`role=$${vals.push(b.role)}`); after.role = b.role; }
+      if (b.active !== undefined) { sets.push(`active=$${vals.push(!!b.active)}`); after.active = !!b.active; }
+      // A password hash is never written to the audit log — only that a
+      // change happened, so a rotation is visible without the secret itself
+      // (or a hash useful for offline cracking) sitting in an audit table
+      // that may be readable by a wider audience than staff-management.
+      if (b.password) { if (String(b.password).length < 8) return json(res, { error: 'Password must be at least 8 characters.' }, 400); sets.push(`pass=$${vals.push(hashPassword(b.password))}`); after.passwordChanged = true; }
+      if (b.reset2fa) { sets.push(`totp_enabled=false`); sets.push(`totp_secret=null`); sets.push(`backup_codes='[]'`); after.twoFactorReset = true; }
       if (!sets.length) return json(res, { error: 'Nothing to update.' }, 400);
       vals.push(parseInt(id));
       await q(`update staff set ${sets.join(',')} where id=$${vals.length}`, vals);
+      const beforeSubset = {}; for (const k of Object.keys(after)) if (k in before) beforeSubset[k] = before[k];
+      await writeAudit({ req, actor, action: 'update', resourceType: 'staff', resourceId: id, before: beforeSubset, after });
       return json(res, { ok: true });
     }
     if (id && req.method === 'DELETE') {
+      const before = (await q('select name,username,role from staff where id=$1', [parseInt(id)])).rows[0];
       await q('delete from staff where id=$1', [parseInt(id)]);
+      await writeAudit({ req, actor, action: 'delete', resourceType: 'staff', resourceId: id, before: before || null });
       return json(res, { ok: true });
     }
     return json(res, { error: 'Method not allowed' }, 405);

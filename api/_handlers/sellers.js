@@ -3,6 +3,7 @@
 const { cors, json, readBody } = require('../_lib/respond');
 const { checkAdmin } = require('../_lib/auth');
 const { q } = require('../_lib/db');
+const { writeAudit } = require('../_lib/audit');
 
 module.exports = async (req, res) => {
   cors(res);
@@ -21,7 +22,10 @@ module.exports = async (req, res) => {
       const b = readBody(req);
       const status = ['approved', 'rejected', 'pending'].includes(b.status) ? b.status : null;
       if (!status) return json(res, { error: 'Invalid status.' }, 400);
+      const before = (await q('select seller_status from users where id=$1', [parseInt(id)])).rows[0];
       await q('update users set seller_status=$1 where id=$2', [status, parseInt(id)]);
+      await writeAudit({ req, actor, action: 'status_change', resourceType: 'sellers', resourceId: id,
+        before: { status: before?.seller_status ?? null }, after: { status } });
       return json(res, { ok: true });
     }
     return json(res, { error: 'Method not allowed' }, 405);

@@ -21,6 +21,7 @@ module.exports = (req, res) => {
     if (r0 === 'mail' && n === 2) { q.action = seg[1]; return H('mail')(req, res); }
     if (r0 === 'memberships' && n === 1) return H('memberships')(req, res);
     if (r0 === 'analytics' && n === 1) return H('analytics')(req, res);
+    if (r0 === 'audit-log' && n === 1) return H('audit-log')(req, res);
     if (r0 === 'coach' && n === 1) return H('coach')(req, res);
     if (r0 === 'users' && n === 2) { q.action = seg[1]; return H('users-action')(req, res); }
     // Logged-in user's own account: /api/me/profile, /api/me/dashboard, /api/me/products[/<id>]
