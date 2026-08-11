@@ -100,13 +100,21 @@ document.querySelectorAll('.reveal').forEach(r=>ro.observe(r));
 // approves the application to activate access at the paid level.
 (function(){
   const IN='width:100%;background:#101116;border:1px solid rgba(255,255,255,.13);border-radius:9px;padding:12px 13px;color:#F5F6F8;font-size:14px;outline:none;box-sizing:border-box;margin-bottom:10px;';
+  // Must mirror api/_lib/fees.js exactly — this went stale after the
+  // 2026-07-16 INR->CHF conversion (was showing ~90x the real fee, e.g.
+  // "CHF 11999/year" for a tier that actually prices at CHF 129/year). The
+  // server currently refuses to charge for any org tier at all
+  // (checkout-fee.js's FOR_SALE set is empty — none of these are built yet),
+  // so nobody was ever actually overcharged, but a prospective applicant
+  // reading this number before that point would have been shown something
+  // wildly wrong.
   const LEVELS={
-    club:{fee:7999,label:'Club / Range Licence',access:'Member management, class scheduling, attendance, finance module, club analytics, public listing.'},
-    district:{fee:11999,label:'District Federation',access:'Up to 20 member clubs, district rankings, tournament draws, member sync, basic API.'},
-    state:{fee:39999,label:'State Federation',access:'Up to 100 clubs, state rankings, compliance dashboard, coach & judge licensing, full API.'},
-    national:{fee:79999,label:'National Federation',access:'Unlimited clubs, national rankings, anti-doping module, sovereign API, dedicated manager.'},
-    international:{fee:899999,label:'International Federation',access:'Multi-country management, premium SLA API, global tournament infrastructure.'},
-    brand:{fee:119999,label:'Equipment Brand Listing',access:'Marketplace storefront, unlimited SKUs, sales analytics, sponsored placements.'},
+    club:{fee:89,label:'Club / Range Licence',access:'Member management, class scheduling, attendance, finance module, club analytics, public listing.'},
+    district:{fee:129,label:'District Federation',access:'Up to 20 member clubs, district rankings, tournament draws, member sync, basic API.'},
+    state:{fee:429,label:'State Federation',access:'Up to 100 clubs, state rankings, compliance dashboard, coach & judge licensing, full API.'},
+    national:{fee:849,label:'National Federation',access:'Unlimited clubs, national rankings, anti-doping module, sovereign API, dedicated manager.'},
+    international:{fee:9499,label:'International Federation',access:'Multi-country management, premium SLA API, global tournament infrastructure.'},
+    brand:{fee:1299,label:'Equipment Brand Listing',access:'Marketplace storefront, unlimited SKUs, sales analytics, sponsored placements.'},
   };
   const inr=n=>'CHF '+Number(n).toLocaleString('de-CH');
 
