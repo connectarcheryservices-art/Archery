@@ -53,9 +53,11 @@ async function boot(){
 }
 function gate(h,p,btn){ document.getElementById('sd-root').innerHTML='<div class="sd-gate"><h1>'+h+'</h1><p>'+p+'</p>'+(btn||'')+'</div>'; }
 
+let PRODUCTS=[];
 async function render(d){
   const products=await fetch('/api/me/products',{headers:{Authorization:'Bearer '+T()}}).then(r=>r.json()).catch(()=>[]);
   const list=Array.isArray(products)?products:[];
+  PRODUCTS=list;
   const live=list.filter(p=>p.active!==false).length;
   const stock=list.reduce((s,p)=>s+(Number(p.stock)||0),0);
   document.getElementById('sd-root').innerHTML=`
@@ -67,13 +69,18 @@ async function render(d){
     </div>
     <table><thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th>Actions</th></tr></thead><tbody>
       ${list.length?list.map(p=>`<tr><td class="td-name">${esc(p.name)}</td><td>${esc(p.category||'')}</td><td>${INR(p.price)}</td><td>${p.stock||0}</td><td>${p.active!==false?'<span style="color:#7BE08A;">Live</span>':'<span style="color:var(--muted-2);">Hidden</span>'}</td>
-        <td><button class="s-btn" onclick='openProd(${JSON.stringify(p)})'>Edit</button> <button class="s-btn del" onclick="delProd(${p.id})">Delete</button></td></tr>`).join(''):'<tr><td colspan="6" style="padding:22px;color:var(--text-2);">No products yet — add your first listing.</td></tr>'}
+        <td><button class="s-btn" onclick="openProd('${p.id}')">Edit</button> <button class="s-btn del" onclick="delProd('${p.id}')">Delete</button></td></tr>`).join(''):'<tr><td colspan="6" style="padding:22px;color:var(--text-2);">No products yet — add your first listing.</td></tr>'}
     </tbody></table>
     <div style="margin-top:20px;"><a href="account.html" style="color:var(--gold);text-decoration:none;font-size:13px;">← Back to my account</a></div>`;
 }
 
-function openProd(p){
-  p=p||{};
+function openProd(id){
+  // Looked up from the real fetched list, never rebuilt from an inline
+  // attribute — a product name/description is seller-controlled free text,
+  // and embedding it via JSON.stringify() into onclick='...' let an
+  // apostrophe (e.g. "Archer's Choice") break out of the attribute
+  // (exactly what esc.js's own header warns against).
+  const p=id?(PRODUCTS.find(x=>String(x.id)===String(id))||{}):{};
   const ov=document.createElement('div'); ov.id='prod-ov';
   ov.style.cssText='position:fixed;inset:0;z-index:9998;background:rgba(7,15,34,.75);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:18px;overflow:auto;';
   ov.innerHTML='<div style="background:#17181D;border:1px solid rgba(255,255,255,.1);border-radius:14px;width:100%;max-width:520px;max-height:88vh;overflow:auto;padding:24px;">'+
@@ -81,8 +88,8 @@ function openProd(p){
     '<div style="display:flex;gap:12px;align-items:center;margin-bottom:6px;"><img id="pd-prev" alt="Product photo" src="'+esc(p.imgUrl||'')+'" style="width:60px;height:60px;object-fit:cover;border-radius:9px;border:1px solid rgba(255,255,255,.14);background:#101116;'+(p.imgUrl?'':'display:none;')+'"><button type="button" class="s-btn" onclick="document.getElementById(\'pd-file\').click()">📷 Photo</button><input type="file" id="pd-file" accept="image/*" style="display:none;" onchange="pdImg(this)"><input type="hidden" id="pd-imgUrl" value="'+esc(p.imgUrl||'')+'"></div>'+
     '<label>Product name</label><input id="pd-name" value="'+esc(p.name||'')+'">'+
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;"><div><label>Brand</label><input id="pd-brand" value="'+esc(p.brand||'')+'"></div><div><label>Category</label><input id="pd-cat" value="'+esc(p.category||'')+'"></div><div><label>Price (CHF)</label><input id="pd-price" type="number" value="'+esc(p.price||'')+'"></div><div><label>MRP / was (CHF)</label><input id="pd-was" type="number" value="'+esc(p.was||'')+'"></div><div><label>Stock</label><input id="pd-stock" type="number" value="'+esc(p.stock||'')+'"></div></div>'+
-    '<label style="margin-top:10px;display:block;">Description</label><textarea id="pd-desc" rows="2">'+String(p.description||'').replace(/</g,'&lt;')+'</textarea>'+
-    '<div style="display:flex;gap:10px;margin-top:18px;"><button class="sd-btn" onclick="saveProd('+(p.id||0)+')">Save</button><button class="s-btn" onclick="document.getElementById(\'prod-ov\').remove()">Cancel</button></div>'+
+    '<label style="margin-top:10px;display:block;">Description</label><textarea id="pd-desc" rows="2">'+esc(p.description||'')+'</textarea>'+
+    '<div style="display:flex;gap:10px;margin-top:18px;"><button class="sd-btn" onclick="saveProd(\''+(p.id||'')+'\')">Save</button><button class="s-btn" onclick="document.getElementById(\'prod-ov\').remove()">Cancel</button></div>'+
     '</div>';
   document.body.appendChild(ov);
   ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
