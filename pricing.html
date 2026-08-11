@@ -175,16 +175,12 @@
   </div>
 </div>
 
-<!-- BILLING TOGGLE -->
-<div class="billing-wrap">
-  <div class="billing-controls">
-    <div class="billing-row">
-      <button class="billing-btn active" onclick="setBilling('1yr',this)">Annual</button>
-      <button class="billing-btn" onclick="setBilling('2yr',this)">2 Years <span class="save-badge">Save 10%</span></button>
-      <button class="billing-btn" onclick="setBilling('3yr',this)">3 Years <span class="save-badge">Save 20%</span></button>
-    </div>
-  </div>
-</div>
+<!-- Multi-year billing toggle removed 2026-08-10. It offered "Save 10%" / "Save
+     20%" for 2- and 3-year terms and recomputed every price in the browser, but
+     the server has no concept of a billing cycle at all (api/_lib/memberships.js
+     prices a single annual or one-time amount, and there is no membership
+     purchase endpoint). Advertising a discount nothing can honour is a §1.6
+     problem, not a cosmetic one. Reinstate only when the server prices terms. -->
 
 <!-- TABS -->
 <div class="tab-row">
@@ -210,12 +206,13 @@
   <!-- Payment methods -->
   <div class="payment-block">
     <div style="font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);margin-bottom:4px;">Payment Methods</div>
+    <!-- Only methods Razorpay actually presents at checkout. "Club gift
+         subscription" and "Invoice (org tiers)" were removed 2026-08-10: neither
+         exists, and org tiers are not on sale at all. -->
     <div class="payment-grid">
       <div class="pay-chip">Visa / Mastercard / Amex</div>
       <div class="pay-chip">UPI / Net Banking</div>
       <div class="pay-chip">Bank Transfer</div>
-      <div class="pay-chip">Club gift subscription</div>
-      <div class="pay-chip">Invoice (org tiers)</div>
     </div>
     <p style="font-size:12px;color:var(--faint);margin-top:12px;">All payments processed through a PCI-DSS Level 1 certified processor. Card data is never stored on Archery.Services servers.</p>
   </div>
@@ -288,14 +285,14 @@
       <div class="tier-for-label">Best for</div>
       <div class="tier-for">District or regional bodies governing multiple clubs.</div>
       <div class="tier-features">
-        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tr)">+</span><span class="tier-feat-text">Up to 20 member clubs</span></div>
-        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tr)">+</span><span class="tier-feat-text">Basic API access</span></div>
-        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tr)">+</span><span class="tier-feat-text">District rankings — all disciplines</span></div>
-        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tr)">+</span><span class="tier-feat-text">Tournament management and draw system</span></div>
-        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tr)">+</span><span class="tier-feat-text">Member sync across affiliated clubs</span></div>
-        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tr)">+</span><span class="tier-feat-text">Classification verification and oversight</span></div>
-        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tr)">+</span><span class="tier-feat-text">District communications board</span></div>
-        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tr)">+</span><span class="tier-feat-text">Annual report generation</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--faint)" title="Planned — not yet available">◷</span><span class="tier-feat-text">Up to 20 member clubs</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--faint)" title="Planned — not yet available">◷</span><span class="tier-feat-text">Basic API access</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--faint)" title="Planned — not yet available">◷</span><span class="tier-feat-text">District rankings — all disciplines</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--faint)" title="Planned — not yet available">◷</span><span class="tier-feat-text">Tournament management and draw system</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--faint)" title="Planned — not yet available">◷</span><span class="tier-feat-text">Member sync across affiliated clubs</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--faint)" title="Planned — not yet available">◷</span><span class="tier-feat-text">Classification verification and oversight</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--faint)" title="Planned — not yet available">◷</span><span class="tier-feat-text">District communications board</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--faint)" title="Planned — not yet available">◷</span><span class="tier-feat-text">Annual report generation</span></div>
       </div>
       <a class="tier-cta-ghost" href="federation.html">Register Federation</a>
     </div>
@@ -360,14 +357,14 @@
       <div class="tier-for-label">Best for</div>
       <div class="tier-for">Continental and international governing bodies of archery.</div>
       <div class="tier-features">
-        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tr)">+</span><span class="tier-feat-text">Multi-country member management</span></div>
-        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tr)">+</span><span class="tier-feat-text">Premium API — high throughput, SLA-backed</span></div>
-        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tr)">+</span><span class="tier-feat-text">Dedicated technical support team</span></div>
-        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tr)">+</span><span class="tier-feat-text">Custom feature development budget included</span></div>
-        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tr)">+</span><span class="tier-feat-text">Global tournament infrastructure</span></div>
-        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tr)">+</span><span class="tier-feat-text">Translation and multi-language portal</span></div>
-        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tr)">+</span><span class="tier-feat-text">Custom legal data residency options</span></div>
-        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--tr)">+</span><span class="tier-feat-text">Annual platform review and roadmap input</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--faint)" title="Planned — not yet available">◷</span><span class="tier-feat-text">Multi-country member management</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--faint)" title="Planned — not yet available">◷</span><span class="tier-feat-text">Premium API — high throughput, SLA-backed</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--faint)" title="Planned — not yet available">◷</span><span class="tier-feat-text">Dedicated technical support team</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--faint)" title="Planned — not yet available">◷</span><span class="tier-feat-text">Custom feature development budget included</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--faint)" title="Planned — not yet available">◷</span><span class="tier-feat-text">Global tournament infrastructure</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--faint)" title="Planned — not yet available">◷</span><span class="tier-feat-text">Translation and multi-language portal</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--faint)" title="Planned — not yet available">◷</span><span class="tier-feat-text">Custom legal data residency options</span></div>
+        <div class="tier-feat"><span class="tier-feat-icon" style="color:var(--faint)" title="Planned — not yet available">◷</span><span class="tier-feat-text">Annual platform review and roadmap input</span></div>
       </div>
       <a class="tier-cta-ghost" href="federation.html">Contact Platform</a>
     </div>
@@ -404,24 +401,21 @@
 <!--  COMPARE ALL TAB                                          -->
 <!-- ═══════════════════════════════════════════════════════════ -->
 <div class="pr-section tab-panel" id="tab-compare">
-  <div class="compare-wrap">
-    <table class="compare-table">
-      <thead>
-        <tr>
-          <th><span class="th-name">Feature</span></th>
-          <th><div class="th-name">Recreational</div><div class="th-price">CHF 20</div></th>
-          <th><div class="th-name">Adult</div><div class="th-price">CHF 65</div></th>
-          <th><div class="th-name">Family</div><div class="th-price">CHF 140</div></th>
-          <th><div class="th-name">Club</div><div class="th-price">CHF 89</div></th>
-          <th><div class="th-name">District</div><div class="th-price">CHF 129</div></th>
-          <th><div class="th-name">State</div><div class="th-price">CHF 429</div></th>
-          <th><div class="th-name">National</div><div class="th-price">CHF 849</div></th>
-          <th><div class="th-name">Intl Fed</div><div class="th-price">CHF 9,499</div></th>
-          <th><div class="th-name">Brand</div><div class="th-price">CHF 1,299</div></th>
-        </tr>
-      </thead>
-      <tbody id="compare-tbody"></tbody>
-    </table>
+  <!-- Every benefit shown here comes straight from /api/memberships — the same
+       server-priced data the Individual tab renders. This used to be a separate
+       hardcoded feature matrix claiming real checkmarks for a training log, a
+       shot-analysis system, a 15%/85% coach course marketplace and 12-language
+       support — none of which exist anywhere in the codebase (CLAUDE.md §1.1).
+       Never hand-author a benefit list here again; read it. -->
+  <div id="compare-individual" style="margin-bottom:8px;">
+    <div style="font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);margin-bottom:14px;">Individual Plans — What Each Tier Actually Includes</div>
+    <div class="compare-wrap" style="border:none;overflow-x:auto;">
+      <div id="compare-individual-grid" style="display:flex;gap:14px;min-width:min-content;padding-bottom:4px;"></div>
+    </div>
+  </div>
+  <div style="background:rgba(210,39,48,.06);border:1.5px solid rgba(210,39,48,.35);border-radius:10px;padding:18px 20px;margin-top:26px;">
+    <div style="font-family:'Oswald',sans-serif;font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--tr);margin-bottom:6px;">Organisation tiers (Club, District, State, National, Intl Fed, Brand)</div>
+    <p style="font-size:13px;line-height:1.7;color:var(--dim);margin:0;">Every organisation-tier capability is planned and not yet built — see the Organisation tab for the full, honestly-marked list. There is nothing to compare feature-by-feature yet because nothing exists yet; we are not taking payment for it.</p>
   </div>
 </div>
 
@@ -480,27 +474,14 @@ function fmtPrice(total){
   return 'CHF ' + Math.round(total).toLocaleString('de-CH');
 }
 
-// ── BILLING TOGGLE ──
-let billingCycle = '1yr';
-function setBilling(cycle, btn){
-  billingCycle = cycle;
-  document.querySelectorAll('.billing-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  updatePrices();
-}
+// Org-tier prices render straight from their data-base attributes, which mirror
+// api/_lib/fees.js. No client-side arithmetic is applied to a price any more —
+// the browser must never compute an amount (§1.6).
 function updatePrices(){
-  const mult = billingCycle==='1yr'?1 : billingCycle==='2yr'?2:3;
-  const disc = billingCycle==='1yr'?1 : billingCycle==='2yr'?.9:.8;
-  const perLabel = billingCycle==='1yr'?'year':billingCycle==='2yr'?'2 years':'3 years';
   document.querySelectorAll('[data-base]').forEach(el=>{
     const base = parseInt(el.dataset.base);
-    const total = base * mult * disc;
-    const save = billingCycle!=='1yr' ? `<span class="tier-price-save">Save ${billingCycle==='2yr'?'10':'20'}%</span>` : '';
-    el.innerHTML = fmtPrice(total) + save;
-    el.nextElementSibling.textContent = '/ ' + perLabel;
+    if(!isNaN(base)) el.textContent = fmtPrice(base);
   });
-  const ey = document.getElementById('pr-eyebrow');
-  if(ey) ey.textContent = 'Pricing · All amounts in CHF · Annual billing';
 }
 
 document.addEventListener('DOMContentLoaded', ()=>{ updatePrices(); });
@@ -513,94 +494,23 @@ function setTab(id, btn){
   btn.classList.add('active');
 }
 
-// ── COMPARE TABLE DATA ──
-const COMPARE = [
-  {cat:'Identity', rows:[
-    {f:'Archery ID (permanent)',        v:['✓','✓','✓','✓','✓','✓','✓','✓','—']},
-    {f:'QR-verifiable certificate',     v:['✓','✓','✓','✓','✓','✓','✓','✓','—']},
-    {f:'Score & classification records',v:['✓','✓','✓','View','View','View','Manage','Manage','—']},
-    {f:'Public Archery Profile',        v:['✓','✓','✓','✓','✓','✓','✓','✓','✓']},
-  ]},
-  {cat:'Competition', rows:[
-    {f:'Tournament registration',       v:['✓','✓','✓','✓','✓','✓','✓','✓','—']},
-    {f:'World ranking profile',         v:['—','✓','✓','—','—','—','—','—','—']},
-    {f:'Shot data & pattern analysis',  v:['—','✓','✓','—','—','—','—','—','—']},
-    {f:'Rival tracker',                 v:['—','✓','✓','—','—','—','—','—','—']},
-    {f:'Tournament draw management',    v:['—','—','—','—','✓','✓','✓','✓','—']},
-  ]},
-  {cat:'Training', rows:[
-    {f:'Training log (unlimited)',      v:['✓','✓','✓','✓','—','—','—','—','—']},
-    {f:'Advanced training analytics',   v:['—','✓','✓','✓','—','—','—','—','—']},
-    {f:'Equipment & bow setup tracker', v:['—','✓','✓','—','—','—','—','—','—']},
-    {f:'Video library (200+ lessons)',  v:['—','✓','✓','—','—','—','—','—','—']},
-    {f:'Wellness & injury tracking',    v:['—','✓','✓','—','—','—','—','—','—']},
-  ]},
-  {cat:'Coaching & Education', rows:[
-    {f:'Knowledge library access',      v:['✓','✓','✓','✓','—','—','—','—','—']},
-    {f:'Course creation & selling',     v:['—','—','✓','—','—','—','—','—','—']},
-    {f:'Student CRM',                   v:['—','—','150','Unlimited','—','—','—','—','—']},
-    {f:'Live class scheduling',         v:['—','—','12/mo','✓','—','—','—','—','—']},
-    {f:'Earnings dashboard',            v:['—','—','✓','—','—','—','—','—','—']},
-    {f:'Coach profile listing',         v:['—','—','✓','—','—','—','—','—','—']},
-  ]},
-  {cat:'Organisation', rows:[
-    {f:'Member management',             v:['—','—','—','Unlimited','20 clubs','100 clubs','Unlimited','Unlimited','—']},
-    {f:'Class scheduling',              v:['—','—','—','✓','—','—','—','—','—']},
-    {f:'Finance module',                v:['—','—','—','✓','—','—','—','—','—']},
-    {f:'Range safety & incident log',   v:['—','—','—','✓','—','—','—','—','—']},
-    {f:'Club analytics',                v:['—','—','—','✓','—','—','—','—','—']},
-    {f:'Anti-doping module',            v:['—','—','—','—','—','✓','✓','✓','—']},
-    {f:'Judge/official licensing',      v:['—','—','—','—','—','✓','✓','✓','—']},
-    {f:'Brand storefront',              v:['—','—','—','—','—','—','—','—','✓']},
-    {f:'Sponsored placements',          v:['—','—','—','—','—','—','—','—','4/yr']},
-  ]},
-  {cat:'API & Data', rows:[
-    {f:'API access',                    v:['—','—','—','—','Basic','Full','Sovereign','Premium','—']},
-    {f:'Data export (CSV/JSON)',         v:['—','✓','✓','✓','✓','✓','✓','✓','✓']},
-    {f:'Multi-country data residency',  v:['—','—','—','—','—','—','—','✓','—']},
-  ]},
-  {cat:'Support', rows:[
-    {f:'Standard support',              v:['✓','✓','✓','✓','✓','✓','✓','✓','✓']},
-    {f:'Priority support',              v:['—','✓','✓','—','—','✓','✓','✓','—']},
-    {f:'Dedicated account manager',     v:['—','—','—','—','—','—','✓','✓','—']},
-  ]},
-];
-
-function renderCompare(){
-  const tbody = document.getElementById('compare-tbody');
-  let html = '';
-  COMPARE.forEach(section=>{
-    html += `<tr class="cat-row"><td colspan="10">${section.cat}</td></tr>`;
-    section.rows.forEach(row=>{
-      html += `<tr class="feat-row"><td>${row.f}</td>`;
-      row.v.forEach(v=>{
-        if(v==='✓') html += `<td><span class="cell-yes">✓</span></td>`;
-        else if(v==='—') html += `<td><span class="cell-no">—</span></td>`;
-        else html += `<td><span class="cell-partial">${v}</span></td>`;
-      });
-      html += '</tr>';
-    });
-  });
-  tbody.innerHTML = html;
-}
-renderCompare();
 
 // ── FAQ DATA ──
+// AUDIT 2026-08-10: this list previously answered questions about an "Archery
+// ID" with QR verification, subscription cancellation/proration, bulk gift
+// subscriptions, a 150-student coach CRM, a 15%/85% course revenue split, a
+// "sovereign API" and 12-language support. NONE of those exist in this
+// codebase — verified by grep across api/ and supabase/. Describing them in
+// the present tense on the page people pay from is a §1.1 breach and, for the
+// money ones, worse than a fabricated statistic. Only answer what is true
+// today; a question with no honest answer gets deleted, not softened.
 const FAQS = [
-  {cat:'Billing', q:'Can I change my tier later?', a:'Yes. Upgrade any time — the price difference is prorated to your renewal date. Downgrades take effect at the start of your next annual period. You never lose access before your period ends.'},
   {cat:'Billing', q:'Is CHF 20 really the full price for Recreational membership?', a:'Yes. CHF 20 per year is the complete price. No setup fees, no in-app purchases, no advertising, no data sales. Prices are shown in Swiss Francs and charged in Swiss Francs.'},
   {cat:'Billing', q:'Am I buying a federation licence?', a:'No. Archery.Services is an independent platform, not a national governing body. Membership gives you access to this platform. It does not include insurance, national team selection, eligibility for sanctioned competitions, or official national rankings — those come only from your national federation.'},
-  {cat:'Billing', q:'Can I cancel my subscription?', a:'Yes. Cancel any time from your account settings. Your subscription remains active until the end of the annual period you have paid for. There are no cancellation fees.'},
-  {cat:'Billing', q:'Are there discounts for multi-year subscriptions?', a:'Yes. 2-year subscriptions receive a 10% discount on the total. 3-year subscriptions receive a 20% discount. Multi-year pricing is available for all tiers including organisation plans.'},
-  {cat:'Billing', q:'Can a club pay for its members\' subscriptions?', a:'Yes. A registered club can purchase Archer or Pro Archer subscriptions in bulk and assign them to members. This appears as a gift subscription in the member\'s account. The member retains the account fully if they leave the club.'},
-  {cat:'Identity', q:'What is an Archery ID?', a:'An Archery ID is a unique, permanent alphanumeric identifier assigned to your account on registration. It is paired with a QR code that links to your verified profile. It persists across club changes, federation affiliations, and discipline changes.'},
-  {cat:'Identity', q:'What happens to my Archery ID if I leave my club?', a:'Your Archery ID belongs to you permanently. It is not owned by your club or federation. If you move clubs, change federation, or stop training for a period, your records and certificates remain accessible and valid.'},
-  {cat:'Limits', q:'How many students can a Coach account manage?', a:'A Coach account supports up to 150 students in the CRM. For larger student populations, a Club plan includes unlimited member management.'},
-  {cat:'Commerce', q:'How does the earning model work for coaches?', a:'Coaches set their own course prices in CHF. The platform retains 15% of gross course revenue as a platform fee. The remaining 85% is paid to the coach monthly by bank transfer.'},
-  {cat:'API', q:'What does "sovereign API" mean for national federations?', a:'Sovereign API means the federation has a dedicated API endpoint, its own authentication domain, and data residency controls. The federation\'s data does not pass through shared federation endpoints — designed for national bodies with data sovereignty obligations.'},
-  {cat:'API', q:'Are there additional costs for tournaments run on the platform?', a:'No per-event fees are charged to the federation or club for standard tournaments. Entry fees collected through the platform are handled as pass-through — the platform charges only standard payment processor rates.'},
-  {cat:'Security', q:'How are payments processed?', a:'All payments are processed through a PCI-DSS Level 1 compliant payment processor. Card details are never stored on Archery.Services servers. Payment data is tokenised and handled entirely within the processor\'s secure environment.'},
-  {cat:'Access', q:'Is the platform available in multiple languages?', a:'Yes. The platform supports English, Spanish, French, German, Arabic, Hindi, Portuguese, Russian, Turkish, Korean, Chinese (Simplified), and Japanese. Additional languages are added based on federation adoption.'},
+  {cat:'Billing', q:'What are the organisation tiers, and can I buy one now?', a:'No — not yet. The club, district, state, national, international and brand tiers describe planned capabilities that are not built. We are not taking payment for them. You can register your interest and we will contact you when the features you need actually exist; nothing is charged.'},
+  {cat:'Access', q:'What can I actually use today?', a:'Athlete profiles, the equipment store, the knowledge hub (including the arrow spine calculator), community discussions, event listings, the club directory and the AI coach. Anything beyond that on this page is marked as planned.'},
+  {cat:'Access', q:'Is the platform available in multiple languages?', a:'Not yet — the platform is currently English-only. Multi-language support is planned, but we will not list languages here until they actually ship.'},
+  {cat:'Security', q:'How are payments processed?', a:'Payments are processed by Razorpay, a PCI-DSS Level 1 certified payment processor. Card details are never stored on Archery.Services servers — payment data is tokenised and handled entirely within the processor\'s secure environment.'},
 ];
 
 function renderFAQs(){
@@ -665,12 +575,36 @@ renderFAQs();
     }).join('');
 
     notice.textContent = d.notice || '';
+    renderCompareIndividual(d.plans);
   }catch(e){
     grid.innerHTML = '<div style="grid-column:1/-1;padding:40px;text-align:center;color:var(--faint);font-size:13px;">'
       + 'We can’t load membership plans right now. Please try again shortly.</div>';
     notice.textContent = '';
+    document.getElementById('compare-individual-grid').innerHTML =
+      '<div style="padding:20px;color:var(--faint);font-size:13px;">Could not load plan data.</div>';
   }
 })();
+
+// Compare tab: same real plan data as the Individual tab above, laid out for
+// side-by-side reading. No separate feature list is hand-authored here.
+function renderCompareIndividual(plans){
+  const el = document.getElementById('compare-individual-grid');
+  if(!el) return;
+  el.innerHTML = plans.map(function(p){
+    const per = p.period === 'year' ? '/year' : (p.period === 'event' ? '/event' : ' one-time');
+    return '<div style="flex:0 0 220px;background:#fff;border:1.5px solid var(--line);border-radius:8px;padding:16px;">'
+      + '<div class="tier-code">'+escA(p.key.toUpperCase().slice(0,3))+'</div>'
+      + '<div style="font-family:\'Oswald\',sans-serif;font-size:15px;font-weight:700;text-transform:uppercase;color:var(--ink);margin-bottom:4px;">'+escA(p.label)+'</div>'
+      + '<div style="font-size:13px;color:var(--ty);font-weight:700;margin-bottom:10px;">'+escA(p.currency)+' '+escA(String(p.price))+per+'</div>'
+      + '<ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px;">'
+      +   p.benefits.map(function(b){
+            return '<li style="display:flex;gap:6px;font-size:12px;color:var(--dim);line-height:1.5;">'
+                 + '<span style="color:#22C55E;flex-shrink:0;">✓</span><span>'+escA(b)+'</span></li>';
+          }).join('')
+      + '</ul>'
+      + '</div>';
+  }).join('');
+}
 </script>
 </body>
 </html>

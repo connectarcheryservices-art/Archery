@@ -62,10 +62,10 @@
 
 <div class="about-stats">
   <div class="about-stats-inner">
-    <div class="about-stat reveal"><div class="v" id="s-athletes">50,000+</div><div class="l">Registered Athletes</div></div>
-    <div class="about-stat reveal reveal-d1"><div class="v" id="s-clubs">1,200+</div><div class="l">Affiliated Clubs</div></div>
-    <div class="about-stat reveal reveal-d2"><div class="v" id="s-tournaments">140+</div><div class="l">Tournaments Hosted</div></div>
-    <div class="about-stat reveal reveal-d3"><div class="v">60+</div><div class="l">Countries Served</div></div>
+    <div class="about-stat reveal"><div class="v" id="s-athletes">—</div><div class="l">Registered Athletes</div></div>
+    <div class="about-stat reveal reveal-d1"><div class="v" id="s-clubs">—</div><div class="l">Affiliated Clubs</div></div>
+    <div class="about-stat reveal reveal-d2"><div class="v" id="s-tournaments">—</div><div class="l">Tournaments Hosted</div></div>
+    <div class="about-stat reveal reveal-d3"><div class="v" id="s-members">—</div><div class="l">Platform Members</div></div>
   </div>
 </div>
 
@@ -140,13 +140,16 @@
 })();
 </script>
 <script>
-// Pull live platform stats if available
+// Pull live platform stats if available. Every number is a real COUNT(*) from
+// /api/stats (CLAUDE.md §1.1) — the "—" placeholder is what stays visible if
+// the fetch fails, never a fabricated fallback number.
 fetch('/api/stats').then(r=>r.json()).then(s=>{
   if(!s)return;
   const fmt=n=>Number(n).toLocaleString('en-US');
   if(s.athletes!=null) document.getElementById('s-athletes').textContent=fmt(s.athletes);
-  if(s.members!=null) document.getElementById('s-clubs').textContent=fmt(s.members);
+  if(s.clubs!=null) document.getElementById('s-clubs').textContent=fmt(s.clubs);
   if(s.tournaments!=null) document.getElementById('s-tournaments').textContent=fmt(s.tournaments);
+  if(s.members!=null) document.getElementById('s-members').textContent=fmt(s.members);
 }).catch(()=>{});
 </script>
 </body></html>
