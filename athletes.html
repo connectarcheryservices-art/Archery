@@ -25,9 +25,6 @@
 .pc-stat-val{font-family:'Oswald',sans-serif;font-size:22px;font-weight:600;color:var(--ivory);}
 .pc-stat-val em{color:var(--ember);font-style:normal;}
 .pc-stat-label{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ivory-3);margin-top:2px;}
-.sb-row{display:flex;justify-content:space-between;font-size:11px;color:var(--ivory-2);margin-bottom:5px;}
-.sb-track{height:3px;background:rgba(245,240,232,.07);border-radius:2px;overflow:hidden;margin-bottom:10px;}
-.sb-fill{height:100%;border-radius:2px;transition:width 1.5s cubic-bezier(.23,1,.32,1);}
 .ath-feature-list{list-style:none;display:flex;flex-direction:column;gap:12px;margin-bottom:28px;}
 .ath-feature-list li{display:flex;align-items:flex-start;gap:11px;font-size:13px;color:var(--ivory-2);line-height:1.6;}
 .af-marker{width:6px;height:6px;background:var(--ember);border-radius:50%;margin-top:7px;flex-shrink:0;}
@@ -83,28 +80,13 @@
         <a href="#rankings" class="btn-outline">View Rankings</a>
       </div>
     </div>
-    <div class="profile-card reveal">
-      <div class="pc-header">
-        <div class="pc-photo">RK</div>
-        <div>
-          <div class="pc-name">Rohit Krishnan</div>
-          <div class="pc-disc">Recurve Open · Tamil Nadu · Rank #7</div>
-          <div class="pc-badges">
-            <span class="pc-badge" style="background:rgba(200,96,26,.12);color:var(--ember-light);">AAI Registered</span>
-            <span class="pc-badge" style="background:rgba(46,94,53,.2);color:#6ABF77;">Active</span>
-            <span class="pc-badge" style="background:rgba(59,130,246,.12);color:#93B4FF;">National Aspirant</span>
-          </div>
-        </div>
-      </div>
-      <div class="pc-stats">
-        <div class="pc-stat"><div class="pc-stat-val">689</div><div class="pc-stat-label">Personal Best</div></div>
-        <div class="pc-stat"><div class="pc-stat-val">7<em>th</em></div><div class="pc-stat-label">National Rank</div></div>
-        <div class="pc-stat"><div class="pc-stat-val">14</div><div class="pc-stat-label">Events</div></div>
-      </div>
-      <div class="sb-row"><span>Accuracy</span><span>91.4%</span></div><div class="sb-track"><div class="sb-fill" id="b1" style="width:0%;background:linear-gradient(90deg,var(--ember-dark),var(--ember));"></div></div>
-      <div class="sb-row"><span>Consistency</span><span>88.7%</span></div><div class="sb-track"><div class="sb-fill" id="b2" style="width:0%;background:linear-gradient(90deg,var(--blue-2),var(--blue));"></div></div>
-      <div class="sb-row"><span>Competition Form</span><span>94.1%</span></div><div class="sb-track"><div class="sb-fill" id="b3" style="width:0%;background:linear-gradient(90deg,var(--ember-dark),var(--gold-ring));"></div></div>
-    </div>
+    <!-- Populated from the real top-PB athlete in /api/athletes (see the fetch
+         below) — this used to be a hardcoded "Rohit Krishnan" mockup with
+         invented PB, rank, event count and three fake performance-bar
+         percentages with no data model behind them (CLAUDE.md §1.1). No
+         per-arrow accuracy/consistency data exists yet, so those bars are
+         gone rather than faked. -->
+    <div class="profile-card reveal" id="hero-profile-card"></div>
   </div>
 </div>
 
@@ -187,6 +169,26 @@ document.querySelectorAll('.r-tab').forEach(b=>b.addEventListener('click',functi
   const q=document.querySelector('.ath-search');
   filterAthletes(q?q.value.trim():'');
 }));
+function renderHeroCard(top){
+  const el=document.getElementById('hero-profile-card');
+  if(!el)return;
+  if(!top){
+    el.innerHTML='<div style="padding:8px 4px;"><div class="pc-name">No athlete profiles yet</div>'
+      +'<div class="pc-disc" style="margin-top:6px;">Be the first — create a profile and it appears here.</div></div>';
+    return;
+  }
+  const init=(top.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  el.innerHTML=`<div class="pc-header">
+      <div class="pc-photo">${escA(init)}</div>
+      <div>
+        <div class="pc-name">${escA(top.name)}</div>
+        <div class="pc-disc">${escA(top.discipline||'')}${top.state?' · '+escA(top.state):''}</div>
+      </div>
+    </div>
+    <div class="pc-stats">
+      <div class="pc-stat"><div class="pc-stat-val">${top.pb!=null?escA(top.pb):'—'}</div><div class="pc-stat-label">Personal Best</div></div>
+    </div>`;
+}
 fetch('/api/athletes')
   .then(r=>r.json())
   .then(data=>{if(Array.isArray(data)&&data.length){
@@ -197,11 +199,10 @@ fetch('/api/athletes')
     // count (|| 12) and a rank (|| i+1) — three fabricated statistics on a page
     // headed "rankings" (CLAUDE.md §1.1). Position is the row number within the
     // current filter, labelled as such; it is NOT a ranking.
-    data.slice().sort((a,b)=>(Number(b.pb)||0)-(Number(a.pb)||0)).forEach((a,i)=>{const[c,bg]=PAL[i%4];ATHLETES.push({pos:i+1,disc:a.discipline||'',init:(a.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase(),name:a.name,state:a.state||'',club:a.club||'',pb:a.pb||null,color:c,bg:bg,img:a.imgUrl});});
-  }filterAthletes('');})
-  .catch(()=>{ ATHLETES.length=0; filterAthletes(''); });
-// Animate bars when in view
-const barObs=new IntersectionObserver(e=>e.forEach(x=>{if(x.isIntersecting){setTimeout(()=>{document.getElementById('b1').style.width='91.4%';document.getElementById('b2').style.width='88.7%';document.getElementById('b3').style.width='94.1%';},200);barObs.disconnect();}}),{threshold:.3});
-const pc=document.querySelector('.profile-card');if(pc)barObs.observe(pc);
+    const sorted=data.slice().sort((a,b)=>(Number(b.pb)||0)-(Number(a.pb)||0));
+    sorted.forEach((a,i)=>{const[c,bg]=PAL[i%4];ATHLETES.push({pos:i+1,disc:a.discipline||'',init:(a.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase(),name:a.name,state:a.state||'',club:a.club||'',pb:a.pb||null,color:c,bg:bg,img:a.imgUrl});});
+    renderHeroCard(sorted[0]);
+  } else { renderHeroCard(null); } filterAthletes('');})
+  .catch(()=>{ ATHLETES.length=0; renderHeroCard(null); filterAthletes(''); });
 </script>
 </body></html>

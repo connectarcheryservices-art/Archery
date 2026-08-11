@@ -172,9 +172,12 @@ let delivery = 'standard';
 let geo = null;
 let lastQuote = null;
 
-// Client-side fallback pricing (mirrors api/_lib/pricing.js defaults) so the page
-// still shows a total if the quote API is briefly unreachable.
-const FALLBACK = { taxRate:0.10, platformFeeRate:0.05, deliveryStandard:49, deliverySameDay:149, freeDeliveryThreshold:999 };
+// Client-side fallback pricing so the page still shows a total if the quote
+// API is briefly unreachable. Must actually mirror api/_lib/pricing.js's
+// DEFAULTS — these were left at their pre-CHF-conversion INR values (49/149/
+// 999) after the 2026-07-16 currency change, so a real quote-API hiccup was
+// showing a delivery fee ~10x the real one (CLAUDE.md §1.6).
+const FALLBACK = { taxRate:0.10, platformFeeRate:0.05, deliveryStandard:5, deliverySameDay:15, freeDeliveryThreshold:99 };
 function localQuote(items, deliv){
   const goods = items.reduce((s,i)=>s+i.price*i.qty,0);
   let fee = goods===0?0 : deliv==='sameday'?FALLBACK.deliverySameDay : (goods>=FALLBACK.freeDeliveryThreshold?0:FALLBACK.deliveryStandard);
