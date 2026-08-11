@@ -7,6 +7,7 @@ const { INBOX, inboxList, inboxCreate } = require('../_lib/inbox');
 const { checkAdmin } = require('../_lib/auth');
 const { q } = require('../_lib/db');
 const { SETTINGS: SEED_SETTINGS } = require('../_lib/seed');
+const { writeAudit } = require('../_lib/audit');
 
 module.exports = async (req, res) => {
   cors(res);
@@ -61,10 +62,28 @@ module.exports = async (req, res) => {
           return json(res, SEED);
         }
       }
-      if (!checkAdmin(req)) return json(res, { error: 'Unauthorised' }, 401);
-      const cur = (await q(`select data from ${resource} where id=1`)).rows[0]?.data || {};
-      const merged = { ...cur, ...readBody(req) };
-      await q(`insert into ${resource} (id,data) values (1,$1) on conflict (id) do update set data=$1`, [JSON.stringify(merged)]);
+      const actor = checkAdmin(req);
+      if (!actor) return json(res, { error: 'Unauthorised' }, 401);
+      const body = readBody(req);
+      // Best-effort snapshot for the audit row only — the merge itself below
+      // does not depend on this being perfectly fresh.
+      const before = (await q(`select data from ${resource} where id=1`)).rows[0]?.data || {};
+      // Atomic shallow merge inside Postgres: `settings.data` here is always
+      // the row exactly as it stands the instant this statement runs, so two
+      // admins saving different panels concurrently (e.g. one clicking "Save
+      // Toggles" while another publishes the announcement banner) both apply
+      // cleanly instead of a read-modify-write race silently discarding
+      // whichever one committed first. Previously this read `cur` in
+      // JavaScript, merged with `{...cur, ...body}`, then wrote the whole
+      // blob back — a real, demonstrable race, not theoretical.
+      const r = await q(
+        `insert into ${resource} (id, data) values (1, $1::jsonb)
+         on conflict (id) do update set data = ${resource}.data || excluded.data
+         returning data`,
+        [JSON.stringify(body)]
+      );
+      const merged = r.rows[0].data;
+      await writeAudit({ req, actor, action: 'update', resourceType: 'settings', resourceId: null, before, after: body });
       return json(res, { ok: true, [resource]: merged });
     }
 
