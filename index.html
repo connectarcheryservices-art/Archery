@@ -458,17 +458,16 @@ fetch('/api/stats').then(r=>r.json()).then(s=>{
   tile('st-products', s.products);
 }).catch(()=>{});
 
-/* Featured products */
+/* Featured products — real /api/products only. This used to fall back to
+   four hand-authored products (fake names, fake prices) whenever the real
+   catalogue was empty, which is every load until real inventory exists —
+   CLAUDE.md §1.1 forbids serving invented rows to real users as real. */
 const RING='<svg viewBox="0 0 64 64" fill="none" stroke="#3D5FC4" stroke-width="1.6"><circle cx="32" cy="32" r="24"/><circle cx="32" cy="32" r="15"/><circle cx="32" cy="32" r="6" fill="#3D5FC4" fill-opacity=".25"/></svg>';
 const BRAND_COL=['#C9A227','#D22730','#3D5FC4','#3AA45B'];
-const P_FALLBACK=[
-  {id:1,name:'Pro Recurve Bow — 68" 36lbs',brand:'Olympic Line',price:28999,was:33999},
-  {id:2,name:'Carbon Compound Bow — 60lbs',brand:'Carbon Series',price:47999,was:null},
-  {id:3,name:'Aluminium Arrow Set — 12pcs',brand:'Field Series',price:3499,was:3999},
-  {id:4,name:'Competition Target Face 80cm',brand:'Range Series',price:899,was:1099},
-];
 function renderProds(list){
-  document.getElementById('prod-grid').innerHTML=list.slice(0,4).map((p,i)=>`
+  const grid=document.getElementById('prod-grid');
+  if(!list.length){ grid.innerHTML='<div style="grid-column:1/-1;padding:32px;text-align:center;color:var(--muted,#8C8273);">The shop is being stocked — check back soon.</div>'; return; }
+  grid.innerHTML=list.slice(0,4).map((p,i)=>`
     <a class="prod" href="product.html?id=${p.id}">
       <div class="prod-img">${p.imgUrl?`<img src="${p.imgUrl}" alt="${esc(p.name)}">`:RING}${p.was&&p.was>p.price?'<span class="prod-badge">Sale</span>':''}</div>
       <div class="prod-body">
@@ -478,21 +477,19 @@ function renderProds(list){
       </div>
     </a>`).join('');
 }
-fetch('/api/products').then(r=>r.json()).then(d=>renderProds(Array.isArray(d)&&d.length?d.filter(p=>p.active!==false):P_FALLBACK)).catch(()=>renderProds(P_FALLBACK));
+fetch('/api/products').then(r=>r.json()).then(d=>renderProds(Array.isArray(d)?d.filter(p=>p.active!==false):[])).catch(()=>renderProds([]));
 
-/* News & Results */
-const N_FALLBACK=[
-  {title:'Vasquez claims continental gold in dramatic shoot-off',category:'Results',date:'2025-06-18',excerpt:'A perfect final end secured the title after a tie at 6-6, capping an unbeaten run through the brackets.'},
-  {title:'2025 World Ranking series adds two new stages',category:'Announcement',date:'2025-06-12'},
-  {title:'Para classification criteria updated for the new season',category:'Governance',date:'2025-06-05'},
-  {title:'Coach certification goes fully online for entry level',category:'Education',date:'2025-05-28'},
-];
+/* News & Results — real /api/news only. This used to fall back to four
+   fabricated headlines (including a fake match result, "Vasquez claims
+   continental gold...") whenever the real news table was empty — inventing
+   sports results as if reported is a §1.1 violation, not just a stat. */
 const THUMB_COL={Results:'#1F3E9C',Announcement:'#173070',Governance:'#122250',Education:'#3A1220'};
 function renderNews(list){
   list=list.filter(n=>n.active!==false);
-  if(!list.length)list=N_FALLBACK;
+  const grid=document.getElementById('news-grid');
+  if(!list.length){ grid.innerHTML='<div style="padding:32px;text-align:center;color:var(--muted,#8C8273);">No news posted yet — check back soon.</div>'; return; }
   const f=list[0],rest=list.slice(1,4);
-  document.getElementById('news-grid').innerHTML=`
+  grid.innerHTML=`
     <a class="news-hero" href="community.html">
       <span class="news-tag">${esc(f.category||'News')}</span>
       <div class="news-hero-date">${esc(f.date||'')}</div>
@@ -505,17 +502,17 @@ function renderNews(list){
         <div><div class="news-cat">${esc(n.category||'News')}</div><div class="news-date">${esc(n.date||'')}</div><div class="news-title">${esc(n.title)}</div></div>
       </a>`).join('')}</div>`;
 }
-fetch('/api/news').then(r=>r.json()).then(d=>renderNews(Array.isArray(d)&&d.length?d:N_FALLBACK)).catch(()=>renderNews(N_FALLBACK));
+fetch('/api/news').then(r=>r.json()).then(d=>renderNews(Array.isArray(d)?d:[])).catch(()=>renderNews([]));
 
-/* Upcoming events */
-const E_FALLBACK=[
-  {id:1,name:'Assam Open Archery Championship 2025',date:'2025-07-14',location:'Guwahati, Assam',prize:240000,status:'open'},
-  {id:2,name:'National Ranking Tournament — Round 3',date:'2025-08-02',location:'Pune, Maharashtra',prize:800000,status:'open'},
-  {id:3,name:'India International Archery Grand Prix',date:'2025-09-18',location:'New Delhi',prize:4500000,status:'soon'},
-];
+/* Upcoming events — real /api/tournaments only. This used to fall back to
+   three fabricated tournaments (fake prize money, fake venues) whenever the
+   real table was empty — the same fabricated entries were duplicated onto
+   tournaments.html's own now-fixed FALLBACK array; both must stay real. */
 function renderEvents(list){
   const up=list.filter(t=>t.status==='open'||t.status==='soon'||t.status==='live').slice(0,3);
-  document.getElementById('ev-list').innerHTML=(up.length?up:E_FALLBACK).map(t=>{
+  const el=document.getElementById('ev-list');
+  if(!up.length){ el.innerHTML='<div style="padding:32px;text-align:center;color:var(--muted,#8C8273);">No events open for registration right now — check back soon.</div>'; return; }
+  el.innerHTML=up.map(t=>{
     const d=new Date(t.date);
     return `<div class="ev-row">
       <div class="ev-date"><div class="ev-day">${d.getDate()}</div><div class="ev-mon">${d.toLocaleString('en-IN',{month:'short'})}</div></div>
@@ -524,7 +521,7 @@ function renderEvents(list){
       <a class="ev-btn" href="tournaments.html">${t.status==='open'?'Register':'Details'}</a>
     </div>`;}).join('');
 }
-fetch('/api/tournaments').then(r=>r.json()).then(d=>renderEvents(Array.isArray(d)&&d.length?d:E_FALLBACK)).catch(()=>renderEvents(E_FALLBACK));
+fetch('/api/tournaments').then(r=>r.json()).then(d=>renderEvents(Array.isArray(d)?d:[])).catch(()=>renderEvents([]));
 
 /* Live chat (talks to /api/chat; admin replies appear in the panel) */
 let chatId=parseInt(localStorage.getItem('archery_chat_thread'))||null,chatPoll=null,chatOpen=false;
