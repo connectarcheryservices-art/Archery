@@ -12,6 +12,7 @@ const { writeAudit } = require('../_lib/audit');
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const { sign, authedUserChecked, revokeSessions } = require('../_lib/userauth');
+const { isMinor, validateDob } = require('../_lib/age');
 
 // A reset/welcome link must point back at a real, known Archery.Services
 // origin — never at whatever `origin` a caller puts in the request body.
@@ -55,27 +56,94 @@ module.exports = async (req, res) => {
       if (!name || !email || !password) return json(res, { ok: false, error: 'Name, email and password are required.' }, 400);
       if (!EMAIL_RE.test(email)) return json(res, { ok: false, error: 'Please enter a valid email address.' }, 400);
       if (password.length < 8) return json(res, { ok: false, error: 'Password must be at least 8 characters.' }, 400);
+      // Age assurance at account creation (CLAUDE.md §1.8) — every new
+      // signup states a real date of birth; there is no "skip" option.
+      const dobCheck = validateDob(b.dateOfBirth);
+      if (!dobCheck.valid) return json(res, { ok: false, error: dobCheck.error }, 400);
+      const minor = isMinor(dobCheck.date);
+      let parentEmail = null;
+      if (minor) {
+        parentEmail = String(b.parentEmail || '').trim().toLowerCase().slice(0, 160);
+        if (!parentEmail || !EMAIL_RE.test(parentEmail)) return json(res, { ok: false, error: "A parent or guardian's email is required for an under-18 account." }, 400);
+        if (parentEmail === email) return json(res, { ok: false, error: "The parent/guardian email must be different from the account's own email." }, 400);
+      }
       const exists = (await q('select id from users where email=$1', [email])).rows[0];
       if (exists) { await record('ip:' + require('../_lib/ratelimit').clientIp(req), { ok: false, req }); return json(res, { ok: false, error: 'An account with this email already exists.' }, 409); }
-      const r = await q('insert into users (name,email,pass,created_at) values ($1,$2,$3,$4) returning id',
-        [name, email, hashPassword(password), Date.now()]);
+      const consentToken = minor ? crypto.randomBytes(24).toString('base64url') : null;
+      const r = await q(
+        `insert into users (name,email,pass,created_at,date_of_birth,parent_email,parent_consent_status,parent_consent_token,parent_consent_sent_at)
+         values ($1,$2,$3,$4,$5,$6,$7,$8,$9) returning id`,
+        [name, email, hashPassword(password), Date.now(), dobCheck.date, parentEmail,
+         minor ? 'pending' : 'not_required', consentToken, minor ? new Date() : null]);
       const userId = r.rows[0].id;
       // Every registered user gets a real, editable, shareable profile — no more demo data.
       const handle = await uniqueHandle(name);
       await q(`insert into profiles (handle,name,user_id,active) values ($1,$2,$3,true)`, [handle, name, userId]);
+      const site = safeOrigin(b.origin);
       // Welcome email (best-effort — silent if no mail server connected yet).
       try {
         const { sendMail, branded } = require('../_lib/mailer');
-        const site = safeOrigin(b.origin);
         sendMail({ to: email, subject: 'Welcome to Archery.Services 🏹',
           html: branded({ heading: 'Welcome, ' + name.split(' ')[0] + '!',
             preheader: 'Your archery account is ready',
-            body: 'Your account is ready. Build your athlete profile, enter tournaments, shop equipment, and connect with the archery community across India.<br><br>Your public profile: <b>archery.services/' + handle + '</b>',
+            body: (minor
+              ? 'Your account is created. Because you\'re under 18, a parent or guardian needs to confirm before you can do things like connect with a coach or enter a tournament — we\'ve emailed them.'
+              : 'Your account is ready. Build your athlete profile, enter tournaments, shop equipment, and connect with the archery community across India.')
+              + '<br><br>Your public profile: <b>archery.services/' + handle + '</b>',
             cta: 'Go to my profile', ctaUrl: site + '/profile' }) }).catch(() => {});
       } catch (e) {}
+      // Verifiable parental consent, requested from the PARENT's inbox, never
+      // the child's — "verifiable" means the parent takes an action on their
+      // own email, not a checkbox the child ticks on the parent's behalf.
+      if (minor) {
+        try {
+          const { sendMail, branded } = require('../_lib/mailer');
+          const link = site + '/parental-consent.html?token=' + consentToken;
+          await sendMail({ to: parentEmail, subject: `${name} wants to join Archery.Services — your consent is needed`,
+            html: branded({ heading: 'Parental consent requested',
+              preheader: 'A parent/guardian confirmation is required',
+              body: `${name} (${email}) has created an account on Archery.Services and listed you as their parent or guardian. Because they are under 18, Indian law (the DPDP Act) requires your verifiable consent before we process their data beyond a bare account — things like connecting with a coach, entering a tournament, or having a public profile all wait for your decision. We never show them personalised ads or track their activity for marketing, with or without your consent — that protection is not optional and does not depend on what you choose below.<br><br>If this isn't a real request, or you don't recognise this account, choose "I do not consent" and nothing further will happen.`,
+              cta: 'Review and respond', ctaUrl: link }) });
+        } catch (e) { console.error('users/register: parent consent email failed:', e?.message); }
+      }
       await record('ip:' + require('../_lib/ratelimit').clientIp(req), { ok: true, req });
-      const user = { id: userId, name, email };
+      const user = { id: userId, name, email, isMinor: !!minor, parentConsentStatus: minor ? 'pending' : 'not_required' };
       return json(res, { ok: true, token: sign(user), user });
+    }
+
+    // ── PARENTAL CONSENT: the parent/guardian's own action, from their own
+    // inbox — never something the child (or anyone else) can trigger on the
+    // parent's behalf. Public (the parent has no account here), gated
+    // entirely by possession of the single-use emailed token. ──
+    if (action === 'parent-consent-info' && req.method === 'GET') {
+      const token = String(req.query.token || '');
+      if (!token) return json(res, { ok: false, error: 'Missing consent token.' }, 400);
+      const row = (await q(`select name, email, parent_consent_status from users where parent_consent_token=$1`, [token])).rows[0];
+      if (!row) return json(res, { ok: false, error: 'This consent link is invalid or has already been used.' }, 404);
+      // Only what's needed to make an informed decision — never the
+      // password hash or anything beyond the identity already disclosed
+      // in the consent email itself.
+      return json(res, { ok: true, childName: row.name, childEmail: row.email, status: row.parent_consent_status });
+    }
+    if (action === 'verify-parent-consent' && req.method === 'POST') {
+      const b = readBody(req);
+      const token = String(b.token || '');
+      if (!token) return json(res, { ok: false, error: 'Missing consent token.' }, 400);
+      const row = (await q(`select id, name, parent_email, parent_consent_status from users where parent_consent_token=$1`, [token])).rows[0];
+      if (!row) return json(res, { ok: false, error: 'This consent link is invalid or has already been used.' }, 404);
+      if (row.parent_consent_status !== 'pending') return json(res, { ok: false, error: 'This request has already been responded to.', status: row.parent_consent_status }, 409);
+      const grant = b.decision !== 'deny';
+      const newStatus = grant ? 'granted' : 'denied';
+      await q(`update users set parent_consent_status=$1, parent_consent_responded_at=now() where id=$2`, [newStatus, row.id]);
+      await writeAudit({ req, actor: { role: 'parent-guardian', sid: null, name: 'Parent/guardian of ' + row.name }, action: 'update', resourceType: 'users', resourceId: row.id, after: { parentConsentStatus: newStatus } });
+      try {
+        const { sendMail, branded } = require('../_lib/mailer');
+        const child = (await q('select email from users where id=$1', [row.id])).rows[0];
+        if (child) sendMail({ to: child.email, subject: 'Your parental consent status has been updated',
+          html: branded({ heading: grant ? 'Consent granted' : 'Consent not granted',
+            body: grant ? 'Your parent/guardian has confirmed consent. Your account now has full access.' : 'Your parent/guardian did not grant consent. Some features will remain unavailable until they do.' }) }).catch(() => {});
+      } catch (e) {}
+      return json(res, { ok: true, status: newStatus, childName: row.name });
     }
 
     if (action === 'login' && req.method === 'POST') {
@@ -108,7 +176,9 @@ module.exports = async (req, res) => {
         if (newBackupCodes) await q('update users set backup_codes=$1 where id=$2', [JSON.stringify(newBackupCodes), row.id]);
       }
       await record('id:user:' + email, { ok: true, identity: email, req });
-      const user = { id: row.id, name: row.name, email: row.email };
+      // isMinor is recomputed fresh from date_of_birth on every login, same
+      // as the 'me' action — never trusted from a stale claim.
+      const user = { id: row.id, name: row.name, email: row.email, isMinor: isMinor(row.date_of_birth) === true, parentConsentStatus: row.parent_consent_status || 'not_required' };
       return json(res, { ok: true, token: sign(user), user, accountType: row.account_type || 'customer', sellerStatus: row.seller_status });
     }
 
@@ -127,10 +197,18 @@ module.exports = async (req, res) => {
     if (action === 'me' && req.method === 'GET') {
       const u = await authedUserChecked(req);
       if (!u) return json(res, { ok: false }, 401);
-      const row = (await q('select id,name,email,account_type,seller_status from users where id=$1', [u.id])).rows[0];
+      const row = (await q('select id,name,email,account_type,seller_status,date_of_birth,parent_consent_status from users where id=$1', [u.id])).rows[0];
       if (!row) return json(res, { ok: false }, 401);
       const prof = (await q('select handle from profiles where user_id=$1 limit 1', [u.id])).rows[0];
-      return json(res, { ok: true, user: { id: row.id, name: row.name, email: row.email }, accountType: row.account_type, sellerStatus: row.seller_status, handle: prof && prof.handle });
+      // isMinor is computed FRESH from date_of_birth on every call, never
+      // cached in the token (CLAUDE.md §1.4: roles/status read from the DB
+      // on every request) — someone's age changes, silently trusting a
+      // stale claim would eventually mis-protect a now-adult, or worse,
+      // stop protecting someone who is still a minor.
+      const minor = isMinor(row.date_of_birth);
+      return json(res, { ok: true,
+        user: { id: row.id, name: row.name, email: row.email, isMinor: !!minor, parentConsentStatus: row.parent_consent_status },
+        accountType: row.account_type, sellerStatus: row.seller_status, handle: prof && prof.handle });
     }
 
     // ── 2FA (TOTP authenticator app) for customer accounts ──

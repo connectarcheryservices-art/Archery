@@ -11,6 +11,22 @@
 const { q } = require('./db');
 const { checkAdmin } = require('./auth');
 const { authedUserChecked } = require('./userauth');
+const { isMinor } = require('./age');
+
+// Is this athlete's underlying account a confirmed minor whose parent has
+// NOT granted consent? Gates real processing (a public tournament entry,
+// live results tied to their name) regardless of who's submitting it —
+// even staff, since CLAUDE.md §1.8/DPDP s.9(3) is about the DATA being
+// processed, not who initiates it. An athletes row with no linked account
+// (nothing to check DOB against) is never blocked here.
+async function isAthleteConsentBlocked(athleteId) {
+  if (!athleteId) return false;
+  const row = (await q(
+    `select u.date_of_birth, u.parent_consent_status from athletes a
+       join users u on u.id = a.user_id where a.id=$1`, [athleteId])).rows[0];
+  if (!row) return false;
+  return isMinor(row.date_of_birth) === true && row.parent_consent_status !== 'granted';
+}
 
 // Is this user the athlete themself (athletes.user_id, migration 024)?
 async function isOwnAthlete(userId, athleteId) {
@@ -113,7 +129,7 @@ async function requireScorerForEnd(req, endId) {
 }
 
 module.exports = {
-  isOwnAthlete, isActiveCoach, canActForAthlete,
+  isOwnAthlete, isActiveCoach, canActForAthlete, isAthleteConsentBlocked,
   isAssignedCertifiedOfficial, eventIdForMatchEntry, eventIdForEnd,
   requireScorerForMatchEntry, requireScorerForEnd,
 };

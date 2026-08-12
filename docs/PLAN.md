@@ -202,7 +202,27 @@ CLAUDE.md §6, "verify, don't assume" — this is a paraphrase of commit message
 - [~] **1.8** Tests — no CI coverage gate exists, but every mutation this session shipped with a
       real test against the local dev stack first (unit, API, and headless-Chrome UI tests where
       relevant) — see the file list under Phase 2 below.
-- [ ] **1.9** Age assurance + parental consent — not touched this session. ⚠️ still legally open.
+- [x] **1.9** Age assurance + parental consent (2026-08-12) — migration `027_age_assurance.sql`
+      + `api/_lib/age.js` (the one place age is computed; `isMinor(null)` returns `null`, never
+      assumed adult). `date_of_birth` is now mandatory at `/api/users/register`; a minor needs a
+      real, distinct `parentEmail`. Consent is a single-use emailed token
+      (`parental-consent.html`), never a checkbox the child can tick. Gated with 403 until
+      granted: `become-athlete`, `become-coach`, `coach-link` accept, `request-certification`
+      (`api/_handlers/members.js`) — declining/`revoke-coach-link` stay always-allowed so a minor
+      can shrink exposure without a parent. `isAthleteConsentBlocked()`
+      (`api/_lib/member-capability.js`) checks the *athlete's* consent, closing the staff-bypass
+      gap for tournament entries (`api/_handlers/scoring.js`). `reco.js` behavioural tracking is
+      a no-op for a signed-in minor regardless of consent (s.9(3) — profiling isn't
+      consent-unlockable); found and fixed a real pre-existing gap in the same pass where
+      `shop.html`/`product.html` loaded `reco.js` without `auth.js`, so the check could never
+      have run. Non-consented minors' profiles are excluded from `/api/profiles` and
+      `/api/search`, not just staff-overridable like active/inactive. Full detail + file list:
+      `docs/THREAT_MODEL.md` T9. Tested: `age-assurance-test.js` (21 API assertions, all green)
+      + `age-assurance-ui-test.js` (signup field reveal, tracking gate); full 34-file regression
+      suite re-run clean after fixing 3 pre-existing tests that registered accounts without a DOB.
+      **Not covered:** `tournaments.html`'s free-text `registrations.dob` field (a separate,
+      unauthenticated DOB path); `dashboard.html` doesn't yet surface consent status in the UI
+      (server-side block is real either way).
 
 **Gate:** you can **fire a staff member and prove their access died within 60 seconds**. You can
 answer *"who changed this price, when, from what"* for any row. `npm test` is meaningful and CI

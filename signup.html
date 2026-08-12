@@ -100,6 +100,16 @@
           <label for="confirm">Confirm Password</label>
           <input id="confirm" type="password" autocomplete="new-password" required placeholder="Re-enter your password">
         </div>
+        <div class="a-field">
+          <label for="dob">Date of Birth</label>
+          <input id="dob" type="date" autocomplete="bday" required oninput="checkMinor()">
+          <div class="a-hint">Required for every account — if you're under 18, a parent or guardian's email is needed too.</div>
+        </div>
+        <div class="a-field" id="parent-email-field" style="display:none;">
+          <label for="parent-email">Parent / Guardian Email</label>
+          <input id="parent-email" type="email" autocomplete="email" maxlength="160" placeholder="parent@example.com">
+          <div class="a-hint">We'll email them to confirm before your account gets full access. We never show under-18 accounts personalised ads or track their activity — that's not something consent changes.</div>
+        </div>
         <label class="a-terms"><input type="checkbox" id="agree"> I agree to the <a href="terms.html" target="_blank">Terms of Use</a> and <a href="privacy.html" target="_blank">Privacy Policy</a>.</label>
         <button class="a-btn" type="submit" id="submit-btn">Create Free Account</button>
         <div class="a-msg" id="auth-msg"></div>
@@ -120,12 +130,29 @@ function updateStrength(){
   const col=['','#EF4444','#F97316','#C9A227','#3DAA5A'][s];
   bar.style.width=pct+'%'; bar.style.background=col;
 }
+function computeIsMinor(dobStr){
+  if(!dobStr) return null;
+  const dob=new Date(dobStr+'T00:00:00');
+  if(isNaN(dob.getTime())) return null;
+  const now=new Date();
+  let age=now.getFullYear()-dob.getFullYear();
+  const m=now.getMonth()-dob.getMonth();
+  if(m<0||(m===0&&now.getDate()<dob.getDate())) age--;
+  return age<18;
+}
+function checkMinor(){
+  const dob=document.getElementById('dob').value;
+  const minor=computeIsMinor(dob);
+  document.getElementById('parent-email-field').style.display=minor?'block':'none';
+}
 async function doSignup(e){
   e.preventDefault();
   const name=document.getElementById('name').value.trim();
   const email=document.getElementById('email').value.trim();
   const password=document.getElementById('password').value;
   const confirm=document.getElementById('confirm').value;
+  const dob=document.getElementById('dob').value;
+  const parentEmail=document.getElementById('parent-email').value.trim();
   const agree=document.getElementById('agree').checked;
   const msg=document.getElementById('auth-msg');
   const btn=document.getElementById('submit-btn');
@@ -133,13 +160,20 @@ async function doSignup(e){
   if(!name||!email||!password) return fail('Please complete all fields.');
   if(password.length<8) return fail('Password must be at least 8 characters.');
   if(password!==confirm) return fail('Passwords do not match.');
+  if(!dob) return fail('Date of birth is required.');
+  const minor=computeIsMinor(dob);
+  if(minor===null) return fail('Enter a valid date of birth.');
+  if(minor&&!parentEmail) return fail("A parent or guardian's email is required for an under-18 account.");
   if(!agree) return fail('Please accept the Terms of Use and Privacy Policy.');
   btn.disabled=true;btn.textContent='Creating account…';
-  const res=await ArcheryAuth.register(name,email,password);
+  const res=await ArcheryAuth.register(name,email,password,{dateOfBirth:dob,parentEmail:minor?parentEmail:undefined});
   if(res&&res.ok){
-    msg.className='a-msg ok';msg.textContent='Account created — welcome aboard! Redirecting…';
+    msg.className='a-msg ok';
+    msg.textContent=minor
+      ? "Account created. We've emailed your parent/guardian for consent — some features stay locked until they respond."
+      : 'Account created — welcome aboard! Redirecting…';
     const dest=new URLSearchParams(location.search).get('next')||'profile.html';
-    setTimeout(()=>location.href=dest,600);
+    setTimeout(()=>location.href=dest,minor?2200:600);
   }else{
     fail((res&&res.error)||'Could not create account. Please try again.');
     btn.disabled=false;btn.textContent='Create Free Account';

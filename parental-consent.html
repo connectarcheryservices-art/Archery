@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Parental Consent — Archery.Services</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+.auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--forest);padding:24px;}
+.auth-card{width:100%;max-width:480px;background:var(--forest-2);border:1px solid var(--line);border-radius:14px;padding:36px;}
+.auth-card h1{font-family:'Oswald',sans-serif;font-size:24px;font-weight:600;text-transform:uppercase;letter-spacing:.02em;color:var(--ivory);margin-bottom:6px;}
+.auth-card p{font-size:14px;color:var(--ivory-2);line-height:1.6;}
+.pc-box{background:var(--forest-3);border:1px solid var(--line);border-radius:8px;padding:14px 16px;margin:18px 0;font-size:13px;color:var(--ivory-2);}
+.pc-box b{color:var(--ivory);}
+.pc-protect{font-size:12.5px;color:var(--ivory-3);background:rgba(201,162,39,.08);border:1px solid rgba(201,162,39,.25);border-radius:8px;padding:12px 14px;margin:18px 0;line-height:1.6;}
+.pc-actions{display:flex;gap:10px;margin-top:22px;}
+.pc-btn{flex:1;padding:13px;border-radius:8px;font-family:'Oswald',sans-serif;font-size:12.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;border:none;}
+.pc-btn-grant{background:var(--gold);color:#131316;}
+.pc-btn-grant:hover{background:var(--gold-light);}
+.pc-btn-deny{background:none;border:1px solid var(--line);color:var(--ivory-2);}
+.pc-btn-deny:hover{border-color:rgba(239,68,68,.4);color:#FF8080;}
+.pc-btn:disabled{opacity:.5;cursor:wait;}
+.a-msg{margin-top:16px;font-size:13px;padding:11px 14px;border-radius:8px;display:none;}
+.a-msg.err{display:block;background:rgba(239,68,68,.12);color:#FF8080;border:1px solid rgba(239,68,68,.3);}
+.a-msg.ok{display:block;background:rgba(61,170,90,.14);color:#6ABF77;border:1px solid rgba(61,170,90,.3);}
+</style>
+</head>
+<body>
+<div class="auth-wrap">
+  <div class="auth-card">
+    <h1>Parental Consent</h1>
+    <div id="pc-loading"><p>Loading this request…</p></div>
+    <div id="pc-content" style="display:none;"></div>
+    <div class="a-msg" id="pc-msg"></div>
+  </div>
+</div>
+<script>
+const params = new URLSearchParams(location.search);
+const token = params.get('token') || '';
+const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+async function init(){
+  const loading = document.getElementById('pc-loading');
+  const content = document.getElementById('pc-content');
+  if (!token) { loading.innerHTML = '<p>This link is missing its consent token — please use the link from the email exactly as sent.</p>'; return; }
+  const r = await fetch('/api/users/parent-consent-info?token=' + encodeURIComponent(token)).then(x => x.json()).catch(() => null);
+  loading.style.display = 'none';
+  content.style.display = 'block';
+  if (!r || !r.ok) {
+    content.innerHTML = `<p>${esc((r && r.error) || 'This consent link is invalid or has already been used.')}</p>`;
+    return;
+  }
+  if (r.status !== 'pending') {
+    content.innerHTML = `<p>This request has already been responded to (status: <b>${esc(r.status)}</b>). No further action is needed.</p>`;
+    return;
+  }
+  content.innerHTML = `
+    <p><b>${esc(r.childName)}</b> (${esc(r.childEmail)}) has created an account on Archery.Services and listed you as their parent or guardian.</p>
+    <div class="pc-box">Because they are under 18, Indian law (the DPDP Act) requires your verifiable consent before we process their data beyond a bare account. Until you respond, they cannot connect with a coach, register for a tournament, or have a public profile.</div>
+    <div class="pc-protect">Regardless of what you choose: we never show this account personalised ads, and we never track their browsing or activity for marketing or profiling. That protection is not something consent unlocks or removes — it's always on for an under-18 account.</div>
+    <p>If you don't recognise this request, choose "I do not consent" below and nothing further will happen.</p>
+    <div class="pc-actions">
+      <button class="pc-btn pc-btn-grant" id="btn-grant" onclick="respond(true)">I consent</button>
+      <button class="pc-btn pc-btn-deny" id="btn-deny" onclick="respond(false)">I do not consent</button>
+    </div>`;
+}
+
+async function respond(grant){
+  const msg = document.getElementById('pc-msg');
+  document.getElementById('btn-grant').disabled = true;
+  document.getElementById('btn-deny').disabled = true;
+  const r = await fetch('/api/users/verify-parent-consent', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token, decision: grant ? 'grant' : 'deny' }),
+  }).then(x => x.json()).catch(() => null);
+  if (r && r.ok) {
+    msg.className = 'a-msg ok';
+    msg.textContent = grant ? 'Thank you — consent recorded. Their account now has full access.' : 'Recorded — consent was not given. Their account remains limited.';
+    document.getElementById('pc-content').querySelector('.pc-actions').remove();
+  } else {
+    msg.className = 'a-msg err';
+    msg.textContent = (r && r.error) || 'Could not record your response — please try again.';
+    document.getElementById('btn-grant').disabled = false;
+    document.getElementById('btn-deny').disabled = false;
+  }
+}
+
+init();
+</script>
+</body>
+</html>

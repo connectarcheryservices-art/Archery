@@ -145,6 +145,46 @@ under-18s that parental consent cannot unlock.** Up to **₹200 crore**. Full co
 **May 2027**.
 → **Age assurance at creation; profiling off for minors, unconditionally.**
 
+**Status: fixed for the account-holder path** (migration `027_age_assurance.sql`,
+`api/_lib/age.js`, 2026-08-12) — `date_of_birth` is now **mandatory** on every
+`/api/users/register` call (`api/_handlers/users-action.js`); a minor cannot register without a
+real, distinct `parentEmail`. Consent is *verifiable*, not a checkbox: a single-use
+`crypto.randomBytes(24)` token is emailed **only to the parent**, landing on a standalone
+`parental-consent.html` that requires an explicit grant/deny — never something the child (or a
+checkbox on their behalf) can satisfy. Until granted, `requireConsentedMember()`
+(`api/_handlers/members.js`) blocks `become-athlete`, `become-coach`, `coach-link` accept,
+`request-certification` with 403 — but never blocks *declining* a link or `revoke-coach-link`,
+so a minor can always reduce exposure without a parent. `isAthleteConsentBlocked()`
+(`api/_lib/member-capability.js`) closes the gap the CRUD/scoring paths would otherwise leave:
+it checks the **athlete's own** `date_of_birth`/`parent_consent_status`, so `api/_handlers/
+scoring.js`'s `entries` action refuses to enter a non-consented minor **even when a staff token
+initiates it** — DPDP governs whose data is processed, not who clicks the button. `reco.js`'s
+`trackView`/`trackSearch`/`trackCategory`/`trackAddToCart`/`trackWish`/`markSession` are all
+early-return no-ops for a signed-in minor regardless of consent status (profiling is never
+consent-unlockable per s.9(3)); `forYou`/`recentlyViewed`/`trending` fall back to
+non-personalised results. (Fixed a real pre-existing gap while doing this: `shop.html` and
+`product.html` loaded `reco.js` without ever loading `auth.js`, so the minor check could not
+have run at all — both now load `auth.js` first.) A non-consented minor's `profiles` row is
+excluded from `/api/profiles` (list + direct-by-id) and `/api/search`
+(`filterUnconsentedMinorProfiles` in `api/_lib/crud.js`, `NOT_UNCONSENTED_MINOR` in
+`api/_handlers/search.js`) — public discoverability is itself exposure, so this is **not**
+staff-overridable the way the active/inactive toggle is. Pre-existing accounts with no
+`date_of_birth` are treated as **unknown**, never assumed adult (`isMinor()` returns `null`,
+not `false`) — nothing is fabricated to make old rows look compliant.
+Verified end-to-end against the local dev stack: `age-assurance-test.js` (21 API-level
+assertions — DOB validation, parent-email requirement, token grant/deny/already-answered,
+every gated action blocked-then-unblocked, staff-cannot-bypass-consent on tournament entry,
+profile/search visibility) and `age-assurance-ui-test.js` (signup.html field reveal, reco.js
+tracking gate, adult-visitor sanity check) both green; full 34-file regression suite re-run
+clean after updating the three pre-existing tests (`flow-test.js`, `security-test.js`,
+`coach-test.js`) that registered accounts without a DOB.
+**Not yet covered:** `tournaments.html`'s standalone `registrations.dob` field (unauthenticated,
+free-text, not linked to an account) is a separate DOB-collection path this fix does not touch.
+`dashboard.html` does not yet render the `isMinor`/`parentConsentStatus`/`consentBlocked` fields
+`members/my-status` now returns — a blocked minor sees only the generic 403 message, not a
+persistent status explanation (UX gap, not a compliance gap: the block itself is fully
+server-enforced regardless of what the UI shows).
+
 ### T10 — Fabricated data / dark patterns · **CRITICAL (legal + constitutional)**
 `reco.js:113/118` `liveViewers()` / `soldRecently()` are LCGs (6–45 "viewers", 3–24 "sold");
 `reco.js:107` **blends `liveViewers(p.id)*2` into `trending()` ranking**. The source comment

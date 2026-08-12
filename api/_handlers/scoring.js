@@ -15,7 +15,7 @@ const { writeAudit } = require('../_lib/audit');
 const { computeMatchState, maybeAdvanceWinner } = require('../_lib/scoring-db');
 const { rankingScoreForResult, selectBest7 } = require('../_lib/ranking');
 const { generateBracket, roundCount, advancesTo } = require('../_lib/seeding');
-const { requireScorerForMatchEntry, requireScorerForEnd, canActForAthlete } = require('../_lib/member-capability');
+const { requireScorerForMatchEntry, requireScorerForEnd, canActForAthlete, isAthleteConsentBlocked } = require('../_lib/member-capability');
 const { authedUserChecked } = require('../_lib/userauth');
 
 const rowToObj = row => { const o = {}; for (const [k, v] of Object.entries(row)) o[k.replace(/_([a-z])/g, (_, c) => c.toUpperCase())] = v; return o; };
@@ -113,6 +113,13 @@ module.exports = async (req, res) => {
         }
       }
       if (!actor) return json(res, { error: 'Unauthorised' }, 401);
+      // A tournament entry is real processing (a public result tied to a
+      // real name) — gated on the ATHLETE's consent status, not who's
+      // submitting it. Even staff cannot register a non-consented minor
+      // (CLAUDE.md §1.8/DPDP s.9(3) is about the data, not the actor).
+      if (await isAthleteConsentBlocked(parseInt(b.athleteId, 10))) {
+        return json(res, { error: "This athlete's account needs parental consent before they can be registered for an event." }, 403);
+      }
       const r = await q(
         `insert into entries (event_category_id,athlete_id,target_assignment) values ($1,$2,$3) returning id`,
         [b.eventCategoryId, b.athleteId, b.targetAssignment || null]);

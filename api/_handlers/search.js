@@ -18,18 +18,23 @@ const { checkAdmin } = require('../_lib/auth');
 // One tsvector per source, built from the columns worth matching on. Every
 // branch is parameterised with the SAME $1 (the query) and $2 (result
 // limit per branch, kept small since these are UNIONed then re-limited).
-function branch({ type, table, idCol = 'id', titleExpr, subtitleExpr, urlExpr, tsExpr, activeClause }) {
+function branch({ type, table, idCol = 'id', titleExpr, subtitleExpr, urlExpr, tsExpr, activeClause, from }) {
   // Each UNION ALL branch needs its own ORDER BY/LIMIT wrapped in parens —
   // otherwise Postgres parses the ORDER BY as applying to the whole UNION
   // and the next branch's SELECT is a syntax error.
   return `(
     select '${type}' as type, ${idCol}::text as id, ${titleExpr} as title, ${subtitleExpr} as subtitle,
            ${urlExpr} as url, ts_rank(${tsExpr}, plainto_tsquery('english', $1)) as rank
-      from ${table}
+      from ${from || table}
      where ${tsExpr} @@ plainto_tsquery('english', $1) ${activeClause}
      order by rank desc limit 8
   )`;
 }
+// A minor's profile never appears in a public search result, consent or
+// not (CLAUDE.md §1.8) — public discoverability is itself a form of
+// exposure, and staff's wider search doesn't override it either (unlike
+// the active/inactive visibility axis, this isn't a staff-workflow need).
+const NOT_UNCONSENTED_MINOR = `and (u.date_of_birth is null or u.date_of_birth <= (current_date - interval '18 years') or u.parent_consent_status = 'granted')`;
 
 function buildSearchSql(includeInactive) {
   const activeOnly = includeInactive ? '' : 'and active = true';
@@ -66,10 +71,12 @@ function buildSearchSql(includeInactive) {
       titleExpr: 'name', subtitleExpr: `coalesce(brand,'') || case when category is not null and category<>'' then ' · ' || category else '' end`,
       urlExpr: `'product.html?id=' || id`, tsExpr: `to_tsvector('english', coalesce(name,'') || ' ' || coalesce(brand,'') || ' ' || coalesce(category,''))`,
       activeClause: activeOnly }),
-    branch({ type: 'profile', table: 'profiles',
-      titleExpr: 'name', subtitleExpr: `coalesce(headline,'')`,
-      urlExpr: `'profile.html?h=' || handle`, tsExpr: `to_tsvector('english', coalesce(name,'') || ' ' || coalesce(headline,'') || ' ' || coalesce(bio,'') || ' ' || coalesce(discipline,''))`,
-      activeClause: activeOnly + ` and handle is not null` }),
+    branch({ type: 'profile', table: 'profiles', idCol: 'profiles.id',
+      from: 'profiles left join users u on u.id = profiles.user_id',
+      titleExpr: 'profiles.name', subtitleExpr: `coalesce(profiles.headline,'')`,
+      urlExpr: `'profile.html?h=' || handle`,
+      tsExpr: `to_tsvector('english', coalesce(profiles.name,'') || ' ' || coalesce(profiles.headline,'') || ' ' || coalesce(profiles.bio,'') || ' ' || coalesce(profiles.discipline,''))`,
+      activeClause: activeOnly.replace('active', 'profiles.active') + ` and handle is not null ${NOT_UNCONSENTED_MINOR}` }),
   ];
   return branches.join('\nunion all\n') + '\norder by rank desc limit 40';
 }

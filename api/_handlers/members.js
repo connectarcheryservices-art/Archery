@@ -11,6 +11,7 @@ const { q } = require('../_lib/db');
 const { checkAdmin } = require('../_lib/auth');
 const { authedUserChecked } = require('../_lib/userauth');
 const { writeAudit } = require('../_lib/audit');
+const { isMinor } = require('../_lib/age');
 
 async function requireMember(req) {
   const claims = await authedUserChecked(req);
@@ -18,12 +19,28 @@ async function requireMember(req) {
   const row = (await q('select id, name, email, member_role from users where id=$1', [claims.id])).rows[0];
   return row || null;
 }
+// Same as requireMember(), but additionally refuses a CONFIRMED minor
+// (a real date_of_birth on file, computed fresh, under 18) whose parent has
+// not granted consent — for actions that are "processing beyond a bare
+// account" (CLAUDE.md §1.8, DPDP s.9(3)): creating a public athlete
+// profile, or a data-sharing relationship with a third-party coach. An
+// account with no date_of_birth on file (registered before migration 027)
+// is treated as unknown, not minor — never blocked here on a guess.
+async function requireConsentedMember(req) {
+  const claims = await authedUserChecked(req);
+  if (!claims) return null;
+  const row = (await q('select id, name, email, member_role, date_of_birth, parent_consent_status from users where id=$1', [claims.id])).rows[0];
+  if (!row) return null;
+  if (isMinor(row.date_of_birth) === true && row.parent_consent_status !== 'granted') return { blocked: true };
+  return row;
+}
 async function requireStaff(req) {
   const actor = await checkAdmin(req);
   if (!actor || (actor.role !== 'owner' && actor.role !== 'manager')) return null;
   return actor;
 }
 const memberActor = (member, role) => ({ role: 'member:' + role, sid: member.id, name: member.name });
+const CONSENT_REQUIRED_MSG = "A parent or guardian's consent is required before this account can do this — check your dashboard for status.";
 async function ownAthleteId(userId) {
   const row = (await q('select id from athletes where user_id=$1', [userId])).rows[0];
   return row ? row.id : null;
@@ -51,14 +68,19 @@ module.exports = async (req, res) => {
       const assignments = (await q(
         `select eo.event_id, eo.role, ev.name as event_name from event_officials eo
            join events ev on ev.id = eo.event_id where eo.user_id=$1 order by eo.created_at desc`, [member.id])).rows;
-      return json(res, { ok: true, memberRole: member.member_role, athlete, coaching, myCoaches, certification, assignments });
+      const dobRow = (await q('select date_of_birth, parent_consent_status from users where id=$1', [member.id])).rows[0];
+      const minor = isMinor(dobRow && dobRow.date_of_birth);
+      return json(res, { ok: true, memberRole: member.member_role, athlete, coaching, myCoaches, certification, assignments,
+        isMinor: minor === true, parentConsentStatus: dobRow ? dobRow.parent_consent_status : 'not_required',
+        consentBlocked: minor === true && dobRow && dobRow.parent_consent_status !== 'granted' });
     }
 
     // ── BECOME-ATHLETE: create MY OWN athletes row (instant, safe — no
     // identity conflict possible for a brand-new row). Idempotent. ──
     if (action === 'become-athlete' && req.method === 'POST') {
-      const member = await requireMember(req);
+      const member = await requireConsentedMember(req);
       if (!member) return json(res, { error: 'Unauthorised' }, 401);
+      if (member.blocked) return json(res, { error: CONSENT_REQUIRED_MSG }, 403);
       const existing = await ownAthleteId(member.id);
       if (existing) return json(res, { ok: true, athleteId: existing, alreadyLinked: true });
       const b = readBody(req);
@@ -75,8 +97,9 @@ module.exports = async (req, res) => {
     // athletes row — needs staff approval (approve-claim), since that row
     // could genuinely belong to someone else. ──
     if (action === 'claim-athlete' && req.method === 'POST') {
-      const member = await requireMember(req);
+      const member = await requireConsentedMember(req);
       if (!member) return json(res, { error: 'Unauthorised' }, 401);
+      if (member.blocked) return json(res, { error: CONSENT_REQUIRED_MSG }, 403);
       const b = readBody(req);
       const athleteId = parseInt(b.athleteId, 10);
       if (!athleteId) return json(res, { error: 'athleteId is required' }, 400);
@@ -104,8 +127,9 @@ module.exports = async (req, res) => {
     // ── BECOME-COACH: self-label. Grants no capability by itself — every
     // real coach->athlete relationship still needs the athlete's consent. ──
     if (action === 'become-coach' && req.method === 'POST') {
-      const member = await requireMember(req);
+      const member = await requireConsentedMember(req);
       if (!member) return json(res, { error: 'Unauthorised' }, 401);
+      if (member.blocked) return json(res, { error: CONSENT_REQUIRED_MSG }, 403);
       await q('update users set member_role=$1 where id=$2', ['coach', member.id]);
       await writeAudit({ req, actor: memberActor(member, 'coach'), action: 'update', resourceType: 'users', resourceId: member.id, after: { memberRole: 'coach' } });
       return json(res, { ok: true });
@@ -115,8 +139,9 @@ module.exports = async (req, res) => {
     // athlete, or an athlete invites a coach — the OTHER side must accept
     // (coach-link-respond) before it's active. ──
     if (action === 'coach-link' && req.method === 'POST') {
-      const member = await requireMember(req);
+      const member = await requireConsentedMember(req);
       if (!member) return json(res, { error: 'Unauthorised' }, 401);
+      if (member.blocked) return json(res, { error: CONSENT_REQUIRED_MSG }, 403);
       const b = readBody(req);
       let coachUserId, athleteId, requestedBy;
       if (b.athleteId) {
@@ -154,9 +179,14 @@ module.exports = async (req, res) => {
 
     // ── COACH-LINK-RESPOND: the non-requesting party accepts or declines. ──
     if (action === 'coach-link-respond' && req.method === 'POST') {
-      const member = await requireMember(req);
-      if (!member) return json(res, { error: 'Unauthorised' }, 401);
+      // Consent only gates ACCEPTING (creates a real data-sharing
+      // relationship) — declining is always allowed regardless of consent
+      // status, since it reduces exposure rather than creating it, and a
+      // minor must always be able to say no.
       const b = readBody(req);
+      const member = b.accept ? await requireConsentedMember(req) : await requireMember(req);
+      if (!member) return json(res, { error: 'Unauthorised' }, 401);
+      if (member.blocked) return json(res, { error: CONSENT_REQUIRED_MSG }, 403);
       const linkId = parseInt(b.linkId, 10);
       if (!linkId) return json(res, { error: 'linkId is required' }, 400);
       const link = (await q('select * from coach_athletes where id=$1', [linkId])).rows[0];
@@ -203,8 +233,9 @@ module.exports = async (req, res) => {
     // status stays 'pending' until staff approves (approve-certification) —
     // this alone grants no scoring capability. ──
     if (action === 'request-certification' && req.method === 'POST') {
-      const member = await requireMember(req);
+      const member = await requireConsentedMember(req);
       if (!member) return json(res, { error: 'Unauthorised' }, 401);
+      if (member.blocked) return json(res, { error: CONSENT_REQUIRED_MSG }, 403);
       const b = readBody(req);
       const level = ['club', 'state', 'national', 'international'].includes(b.level) ? b.level : 'club';
       const r = await q(

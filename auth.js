@@ -27,10 +27,10 @@
     isLoggedIn(){ return !!this.token() && !!this.user(); },
     authHeaders(){ const t = this.token(); return t ? { 'Authorization': 'Bearer ' + t } : {}; },
 
-    async register(name, email, password){
+    async register(name, email, password, extra){
       const r = await fetch('/api/users/register', {
         method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ name, email, password })
+        body: JSON.stringify({ name, email, password, ...(extra || {}) })
       }).then(x=>x.json()).catch(()=>null);
       if (r && r.ok && r.token) save(r.token, r.user);
       return r;

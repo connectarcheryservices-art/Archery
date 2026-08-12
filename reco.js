@@ -9,6 +9,21 @@
   const now = () => Date.now();
   const HALFLIFE = 1000*60*60*24*14; // affinity decays with a ~14-day half-life
 
+  // CLAUDE.md §1.8 / DPDP Act s.9(3): behavioural profiling and targeted
+  // merchandising for an under-18 account are an ABSOLUTE prohibition —
+  // parental consent does not unlock this, unlike other minor-gated
+  // actions elsewhere on the site. isMinor comes from ArcheryAuth's cached
+  // copy of /api/users/me's response (recomputed server-side from a real
+  // date of birth on every login/register — see api/_handlers/users-
+  // action.js), never inferred here. An anonymous/signed-out visitor is
+  // NOT exempted by this check (we have no age signal for them) — that gap
+  // is real and tracked as still-open in docs/PLAN.md/THREAT_MODEL.md;
+  // this closes the part we CAN close today, a signed-in minor.
+  function isSignedInMinor(){
+    try { return !!(window.ArcheryAuth && ArcheryAuth.isLoggedIn() && ArcheryAuth.user() && ArcheryAuth.user().isMinor); }
+    catch(e){ return false; }
+  }
+
   function load(){
     try { return JSON.parse(localStorage.getItem(KEY)) || null; } catch(e){ return null; }
     }
@@ -25,7 +40,7 @@
   const Reco = {
     // ---- tracking ----
     trackView(prod){
-      if(!prod) return;
+      if(!prod || isSignedInMinor()) return;
       const b = get();
       bump(b.views, prod.id, 1);
       // Beacon the view to the server so real trending can be computed from aggregate demand.
@@ -44,11 +59,11 @@
       b._last = prod.id;
       save(b);
     },
-    trackSearch(q){ if(!q) return; const b=get(); b.searches=[q,...b.searches.filter(x=>x!==q)].slice(0,12); save(b); },
-    trackCategory(cat){ if(!cat) return; const b=get(); bump(b.cats,cat,2); save(b); },
-    trackAddToCart(prod){ if(!prod) return; const b=get(); if(prod.category)bump(b.cats,prod.category,5); bump(b.prices,priceBand(prod.price),4); b.cart=[prod.id,...b.cart.filter(x=>x!==prod.id)].slice(0,30); save(b); },
-    trackWish(prod){ if(!prod) return; const b=get(); if(prod.category)bump(b.cats,prod.category,4); b.wished=[prod.id,...b.wished.filter(x=>x!==prod.id)].slice(0,40); save(b); },
-    markSession(){ const b=get(); b.sessions=(b.sessions||0)+1; save(b); },
+    trackSearch(q){ if(!q || isSignedInMinor()) return; const b=get(); b.searches=[q,...b.searches.filter(x=>x!==q)].slice(0,12); save(b); },
+    trackCategory(cat){ if(!cat || isSignedInMinor()) return; const b=get(); bump(b.cats,cat,2); save(b); },
+    trackAddToCart(prod){ if(!prod || isSignedInMinor()) return; const b=get(); if(prod.category)bump(b.cats,prod.category,5); bump(b.prices,priceBand(prod.price),4); b.cart=[prod.id,...b.cart.filter(x=>x!==prod.id)].slice(0,30); save(b); },
+    trackWish(prod){ if(!prod || isSignedInMinor()) return; const b=get(); if(prod.category)bump(b.cats,prod.category,4); b.wished=[prod.id,...b.wished.filter(x=>x!==prod.id)].slice(0,40); save(b); },
+    markSession(){ if(isSignedInMinor()) return; const b=get(); b.sessions=(b.sessions||0)+1; save(b); },
 
     hasHistory(){ const b=load(); return !!(b && (b.recent.length || Object.keys(b.cats).length)); },
     recentIds(){ return get().recent; },
@@ -69,9 +84,14 @@
       return catAff*4 + priceAff*1.5 + popularity*1.2 + coLift*3 - viewed*0.5 + jitter*0.6;
     },
 
-    // Personalised "For You" ordering of a product list.
+    // Personalised "For You" ordering of a product list. A minor never gets
+    // a personalised order — the list comes back exactly as given (still
+    // limited, if asked, but never re-ranked from tracked behaviour, since
+    // none was ever recorded for them in the first place).
     forYou(list, opts){
-      opts = opts||{}; const b = get();
+      opts = opts||{};
+      if(isSignedInMinor()) return opts.limit ? list.slice(0,opts.limit) : list;
+      const b = get();
       const exclude = new Set(opts.exclude||[]);
       const scored = list.filter(p=>!exclude.has(p.id)).map(p=>({p, s:this.score(p,b)}));
       scored.sort((a,z)=>z.s-a.s);
@@ -79,7 +99,10 @@
       return opts.limit ? out.slice(0,opts.limit) : out;
     },
 
-    // "Because you viewed X" — items most co-viewed / same-category as the anchor.
+    // "Because you viewed X" — items most co-viewed / same-category as the
+    // anchor. For a minor, co-view data never exists (trackView is a no-op
+    // for them), so this already degrades to same-category + social proof
+    // only — same code path, genuinely non-personalised result.
     similar(anchor, list, limit){
       if(!anchor) return [];
       const b = get();
@@ -96,7 +119,11 @@
       return scored.slice(0,limit||4).map(x=>x.p);
     },
 
+    // Recently-viewed is entirely built from trackView's recorded history —
+    // already empty for a minor since trackView is a no-op for them, but
+    // explicit here too so this stays true even if that ever changes.
     recentlyViewed(list, limit){
+      if(isSignedInMinor()) return [];
       const ids = get().recent;
       const byId = Object.fromEntries(list.map(p=>[p.id,p]));
       return ids.map(id=>byId[id]).filter(Boolean).slice(0,limit||6);
@@ -107,7 +134,10 @@
     // is unavailable. Orders by this visitor's OWN observed behaviour, which is
     // real data we actually hold. It invents nothing.
     // NOTE: products carry no rating/reviews columns — do not score on them.
+    // For a minor this is never behaviour-ranked (§1.8) — just the given
+    // order, truncated.
     trending(list, limit){
+      if(isSignedInMinor()) return list.slice(0, limit || 8);
       const b = get();
       const scored = list.map(p => ({ p, s: (b.views[p.id] || 0) * 2 + (b.cats[p.category] || 0) }));
       scored.sort((a, z) => z.s - a.s);

@@ -8,6 +8,21 @@ const { checkAdmin, can } = require('./auth');
 const { json, readBody } = require('./respond');
 const { buildListQuery } = require('./query');
 const { writeAudit } = require('./audit');
+const { isMinor } = require('./age');
+
+// A minor's profile never shows up in the public directory or by direct
+// id/handle lookup, consent or not (CLAUDE.md §1.8) — public discoverability
+// is itself exposure, and it's not something a staff token overrides either
+// (unlike active/inactive, which is a staff-workflow visibility axis).
+// Only engages for the 'profiles' table; every other resource is unaffected.
+async function filterUnconsentedMinorProfiles(rows) {
+  if (!rows.length) return rows;
+  const userIds = rows.map(r => r.user_id).filter(Boolean);
+  if (!userIds.length) return rows;
+  const users = (await q('select id, date_of_birth, parent_consent_status from users where id = any($1::bigint[])', [userIds])).rows;
+  const blocked = new Set(users.filter(u => isMinor(u.date_of_birth) === true && u.parent_consent_status !== 'granted').map(u => String(u.id)));
+  return rows.filter(r => !r.user_id || !blocked.has(String(r.user_id)));
+}
 
 const TABLES = {
   products:    ['name','brand','description','price','was','category','stock','img_url','active'],
@@ -66,12 +81,13 @@ async function listOrCreate(table, req, res) {
         params = qy.params;
       }
       const r = await q(sql, params);
+      const rows = table === 'profiles' ? await filterUnconsentedMinorProfiles(r.rows) : r.rows;
       // An empty table returns an empty list. It does NOT return seed rows.
       // Serving invented rows to real users as real is prohibited by CLAUDE.md
       // §1.1 ("no seeded demo rows served to real users as real") — an empty
       // shop is a design problem, not a data problem. The pages render honest
       // empty states.
-      return json(res, r.rows.map(rowToObj));
+      return json(res, rows.map(rowToObj));
     } catch (e) {
       // DB unavailable: fail loudly. Previously this served seed rows, i.e. a
       // database outage silently turned into fabricated inventory with real
@@ -108,6 +124,7 @@ async function itemOps(table, id, req, res) {
     // the list view.
     if (!admin && row.active === false) return json(res, { error: 'Not found' }, 404);
     if (!admin && table === 'knowledge' && row.published === false) return json(res, { error: 'Not found' }, 404);
+    if (table === 'profiles' && !(await filterUnconsentedMinorProfiles([row])).length) return json(res, { error: 'Not found' }, 404);
     return json(res, rowToObj(row));
   }
   const actor = await checkAdmin(req);
