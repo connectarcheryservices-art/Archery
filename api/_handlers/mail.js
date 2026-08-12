@@ -17,7 +17,7 @@ async function saveSettings(patch) {
 module.exports = async (req, res) => {
   cors(res);
   if (req.method === 'OPTIONS') return res.status(204).end();
-  const actor = checkAdmin(req);
+  const actor = await checkAdmin(req);
   if (!actor) return json(res, { error: 'Unauthorised' }, 401);
   const action = req.query.action;
 

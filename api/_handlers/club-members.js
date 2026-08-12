@@ -25,7 +25,7 @@ module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') return res.status(204).end();
 
   // §1.4 default-deny: a roster is not public.
-  const actor = checkAdmin(req);
+  const actor = await checkAdmin(req);
   if (!actor) return json(res, { error: 'Unauthorised' }, 401);
 
   const id = req.query.id;

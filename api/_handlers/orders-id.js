@@ -11,7 +11,7 @@ const STATUSES = ['new', 'confirmed', 'packed', 'shipped', 'delivered', 'cancell
 module.exports = async (req, res) => {
   cors(res);
   if (req.method === 'OPTIONS') return res.status(204).end();
-  const actor = checkAdmin(req);
+  const actor = await checkAdmin(req);
   if (!actor) return json(res, { error: 'Unauthorised' }, 401);
   if (!can(actor, 'orders')) return json(res, { error: 'Your role does not have access to orders.' }, 403);
   const id = parseInt(req.query.id, 10);

@@ -12,7 +12,7 @@ module.exports = async (req, res) => {
   const now = Date.now();
   try {
     if (req.method === 'GET') {
-      if (!checkAdmin(req)) return json(res, { error: 'Unauthorised' }, 401);
+      if (!(await checkAdmin(req))) return json(res, { error: 'Unauthorised' }, 401);
       const r = await q('select * from chats order by updated_at desc nulls last, id desc');
       return json(res, r.rows.map(rowToObj));
     }

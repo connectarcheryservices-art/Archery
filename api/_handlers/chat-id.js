@@ -16,7 +16,7 @@ module.exports = async (req, res) => {
       const r = await q('select * from chats where id=$1', [id]);
       return r.rows[0] ? json(res, rowToObj(r.rows[0])) : json(res, { error: 'Not found' }, 404);
     }
-    if (!checkAdmin(req)) return json(res, { error: 'Unauthorised' }, 401);
+    if (!(await checkAdmin(req))) return json(res, { error: 'Unauthorised' }, 401);
     if (req.method === 'PUT') { await q('update chats set unread=false where id=$1', [id]); return json(res, { ok: true }); }
     if (req.method === 'DELETE') { await q('delete from chats where id=$1', [id]); return json(res, { ok: true }); }
     return json(res, { error: 'Method not allowed' }, 405);

@@ -3,7 +3,7 @@
 // secure their own login.
 'use strict';
 const { cors, json, readBody } = require('../_lib/respond');
-const { checkAdmin, can, hashPassword, normalizeStaffUsername, staffLoginId } = require('../_lib/auth');
+const { checkAdmin, can, hashPassword, normalizeStaffUsername, staffLoginId, revokeStaffSessions } = require('../_lib/auth');
 const { generateSecret, verifyTotp, otpauthUri, generateBackupCodes } = require('../_lib/totp');
 const { q } = require('../_lib/db');
 const { writeAudit } = require('../_lib/audit');
@@ -14,7 +14,7 @@ const rowOut = r => ({ id: r.id, name: r.name, username: r.username, loginId: st
 module.exports = async (req, res) => {
   cors(res);
   if (req.method === 'OPTIONS') return res.status(204).end();
-  const actor = checkAdmin(req);
+  const actor = await checkAdmin(req);
   if (!actor) return json(res, { error: 'Unauthorised' }, 401);
 
   const id = req.query.id;         // /api/staff/<id>
@@ -120,6 +120,10 @@ module.exports = async (req, res) => {
       if (!sets.length) return json(res, { error: 'Nothing to update.' }, 400);
       vals.push(parseInt(id));
       await q(`update staff set ${sets.join(',')} where id=$${vals.length}`, vals);
+      // A password change must invalidate any session token issued before it —
+      // otherwise a compromised credential someone just rotated away from
+      // keeps working until the (now 12h) token naturally expires.
+      if (after.passwordChanged) await revokeStaffSessions(parseInt(id));
       const beforeSubset = {}; for (const k of Object.keys(after)) if (k in before) beforeSubset[k] = before[k];
       await writeAudit({ req, actor, action: 'update', resourceType: 'staff', resourceId: id, before: beforeSubset, after });
       return json(res, { ok: true });

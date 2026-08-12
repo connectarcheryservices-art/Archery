@@ -17,7 +17,7 @@ module.exports = async (req, res) => {
       const r = await q('select * from posts where id=$1', [id]);
       return r.rows[0] ? json(res, rowToObj(r.rows[0])) : json(res, { error: 'Not found' }, 404);
     }
-    const actor = checkAdmin(req);
+    const actor = await checkAdmin(req);
     if (!actor) return json(res, { error: 'Unauthorised' }, 401);
     if (req.method === 'PUT') {
       const b = readBody(req);

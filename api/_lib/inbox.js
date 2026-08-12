@@ -35,7 +35,7 @@ const toSnake = o => { const out = {}; for (const [k,v] of Object.entries(o)) ou
 const rowToObj = row => { const o = {}; for (const [k,v] of Object.entries(row)) o[k.replace(/_([a-z])/g, (_,c) => c.toUpperCase())] = v; return o; };
 
 async function inboxList(resource, req, res) {
-  if (!checkAdmin(req)) return json(res, { error: 'Unauthorised' }, 401);
+  if (!(await checkAdmin(req))) return json(res, { error: 'Unauthorised' }, 401);
   const r = await q(`select * from ${INBOX[resource].table} order by id desc`);
   return json(res, r.rows.map(rowToObj));
 }
@@ -75,7 +75,7 @@ async function inboxCreate(resource, req, res) {
 }
 
 async function inboxItem(resource, id, req, res) {
-  const actor = checkAdmin(req);
+  const actor = await checkAdmin(req);
   if (!actor) return json(res, { error: 'Unauthorised' }, 401);
   const cfg = INBOX[resource];
   if (req.method === 'GET') {

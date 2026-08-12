@@ -12,7 +12,7 @@ module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') return res.status(204).end();
   try {
     if (req.method === 'GET') {
-      const sql = checkAdmin(req)
+      const sql = (await checkAdmin(req))
         ? 'select * from posts order by pinned desc, id desc'
         : 'select * from posts where active is not false order by pinned desc, id desc';
       const r = await q(sql);

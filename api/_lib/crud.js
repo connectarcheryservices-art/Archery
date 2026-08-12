@@ -42,7 +42,7 @@ function pick(table, data) {
 
 async function listOrCreate(table, req, res) {
   if (req.method === 'GET') {
-    const admin = checkAdmin(req);
+    const admin = await checkAdmin(req);
     const query = req.query || {};
     const qy = buildListQuery(table, query, { admin });
     try {
@@ -82,7 +82,7 @@ async function listOrCreate(table, req, res) {
     }
   }
   if (req.method === 'POST') {
-    const actor = checkAdmin(req);
+    const actor = await checkAdmin(req);
     if (!actor) return json(res, { error: 'Unauthorised' }, 401);
     if (!can(actor, 'content')) return json(res, { error: 'Your role does not have access to content editing.' }, 403);
     const cols = pick(table, readBody(req));
@@ -98,7 +98,7 @@ async function listOrCreate(table, req, res) {
 
 async function itemOps(table, id, req, res) {
   if (req.method === 'GET') {
-    const admin = checkAdmin(req);
+    const admin = await checkAdmin(req);
     const r = await q(`select * from ${table} where id=$1`, [id]);
     const row = r.rows[0];
     if (!row) return json(res, { error: 'Not found' }, 404);
@@ -110,7 +110,7 @@ async function itemOps(table, id, req, res) {
     if (!admin && table === 'knowledge' && row.published === false) return json(res, { error: 'Not found' }, 404);
     return json(res, rowToObj(row));
   }
-  const actor = checkAdmin(req);
+  const actor = await checkAdmin(req);
   if (!actor) return json(res, { error: 'Unauthorised' }, 401);
   if (!can(actor, 'content')) return json(res, { error: 'Your role does not have access to content editing.' }, 403);
   if (req.method === 'PUT') {

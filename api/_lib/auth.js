@@ -1,17 +1,39 @@
-// Admin auth for serverless — two kinds of actor, both stateless (no session store):
+// Admin auth for serverless — two kinds of actor:
 //   • OWNER — the creator. Authenticates with the master ADMIN_PASSWORD.
-//             Token = HMAC(ADMIN_PASSWORD). Full control, always.
 //   • STAFF — employees created by the owner. Authenticate with username +
-//             password (scrypt) [+ TOTP 2FA if enabled]. Token is a signed
-//             {sid,role,name} payload — no session store needed.
+//             password (scrypt) [+ TOTP 2FA if enabled].
 //
-// checkAdmin(req) returns an actor object (truthy) or null (falsy), so every
-// existing `if (!checkAdmin(req))` callsite keeps working unchanged. New code
-// can read actor.role / actor.name / actor.sid for role-gated endpoints.
+// Fixed 2026-08-12 (CLAUDE.md §1.2/§1.3, THREAT_MODEL T4/T5, matching the
+// customer-token fix in userauth.js/migration 019): tokens used to be signed
+// with ADMIN_PASSWORD itself (the owner token was literally
+// HMAC(ADMIN_PASSWORD) — the LOGIN CREDENTIAL doubling as the SIGNING KEY),
+// were constant/never expired, and staff role/name were trusted straight
+// from the token payload with no per-request DB check — so a staff member
+// demoted or deactivated kept their old privileges until they happened to
+// log in again, which for a non-expiring token could be never.
+//
+// Now: a dedicated SESSION_SECRET (never ADMIN_PASSWORD, never a
+// human-chosen password — falls back to a fixed non-secret marker when
+// unconfigured so an unconfigured deployment fails safe), tokens carry
+// iat/exp (12h — shorter than the customer default, since this is the
+// highest-privilege account class on the platform), and checkAdmin() is now
+// async: for staff it re-reads role/name/active from the `staff` table on
+// EVERY request (the token payload only carries which row to look up, never
+// the role itself) and checks a revocation watermark
+// (staff.token_valid_after / owner_security.token_valid_after, migration
+// 020) so a password change invalidates old sessions immediately instead of
+// leaving them valid until they happen to expire.
+//
+// checkAdmin(req) returns a Promise<actor|null> — every callsite must
+// `await` it now (18 callsites, all already inside async functions, audited
+// before this change).
 'use strict';
 const crypto = require('crypto');
+const { q } = require('./db');
 
-const SECRET = () => process.env.ADMIN_PASSWORD || 'no-admin-password-set';
+const ADMIN_PW = () => process.env.ADMIN_PASSWORD || 'no-admin-password-set';
+const SESSION_SECRET = () => process.env.SESSION_SECRET || 'session-secret-not-configured';
+const TOKEN_TTL_MS = 12 * 60 * 60 * 1000; // 12h — short-lived, high-privilege session
 
 function timingEq(x, y) {
   const a = Buffer.from(String(x)), b = Buffer.from(String(y));
@@ -55,39 +77,58 @@ function verifyPassword(pw, stored) {
   return timingEq(hash, test);
 }
 
-// ── owner token (master password, unchanged shape for backward compatibility) ──
-function adminToken() {
-  return crypto.createHmac('sha256', SECRET()).update('archery-admin-v1').digest('hex');
+// ── signed session tokens: <base64url payload>.<hmac>, SESSION_SECRET-keyed ──
+function sign(payload) {
+  const body = Buffer.from(JSON.stringify({ ...payload, iat: Date.now(), exp: Date.now() + TOKEN_TTL_MS })).toString('base64url');
+  const sig = crypto.createHmac('sha256', SESSION_SECRET()).update(body).digest('base64url');
+  return body + '.' + sig;
+}
+function verify(token) {
+  const [body, sig] = String(token || '').split('.');
+  if (!body || !sig) return null;
+  const want = crypto.createHmac('sha256', SESSION_SECRET()).update(body).digest('base64url');
+  const a = Buffer.from(sig), b = Buffer.from(want);
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
+  let claims;
+  try { claims = JSON.parse(Buffer.from(body, 'base64url').toString()); }
+  catch { return null; }
+  if (!claims.exp || Date.now() > claims.exp) return null;
+  return claims;
 }
 
-// ── staff token: s.<base64url payload>.<hmac> ──
-function staffToken(staff) {
-  const body = Buffer.from(JSON.stringify({ sid: staff.id, role: staff.role, name: staff.name, username: staff.username })).toString('base64url');
-  const sig = crypto.createHmac('sha256', SECRET()).update(body).digest('base64url');
-  return 's.' + body + '.' + sig;
-}
+// Owner token: {role:'owner'}. No DB row identifies the owner (single
+// env-var identity), so there's nothing to look up beyond the claim itself.
+function adminToken() { return sign({ role: 'owner' }); }
 
-function actorFromToken(t) {
-  if (!process.env.ADMIN_PASSWORD || !t) return null;
-  if (timingEq(t, adminToken())) return { role: 'owner', name: 'Owner' };
-  if (t.startsWith('s.')) {
-    const parts = t.split('.');
-    if (parts.length !== 3) return null;
-    const [, body, sig] = parts;
-    const expected = crypto.createHmac('sha256', SECRET()).update(body).digest('base64url');
-    if (!timingEq(sig, expected)) return null;
-    try {
-      const p = JSON.parse(Buffer.from(body, 'base64url').toString());
-      return { role: p.role || 'support', name: p.name || 'Staff', username: p.username, sid: p.sid };
-    } catch (e) { return null; }
-  }
-  return null;
-}
+// Staff token: {sid}. Deliberately carries NO role/name — those are always
+// re-read from the staff table in checkAdmin(), never trusted from the token.
+function staffToken(staff) { return sign({ sid: staff.id }); }
 
-function checkAdmin(req) {
+async function checkAdmin(req) {
   const h = req.headers['authorization'] || '';
   const t = h.startsWith('Bearer ') ? h.slice(7).trim() : '';
-  return actorFromToken(t);
+  if (!t) return null;
+  const claims = verify(t);
+  if (!claims) return null;
+
+  if (claims.role === 'owner') {
+    if (!process.env.ADMIN_PASSWORD) return null;
+    const sec = (await q('select token_valid_after from owner_security where id=1').catch(() => ({ rows: [] }))).rows[0];
+    if (sec && sec.token_valid_after && claims.iat < Number(sec.token_valid_after)) return null;
+    return { role: 'owner', name: 'Owner' };
+  }
+
+  if (claims.sid == null) return null;
+  const row = (await q('select role, name, username, active, token_valid_after from staff where id=$1', [claims.sid]).catch(() => ({ rows: [] }))).rows[0];
+  if (!row || row.active === false) return null;
+  if (row.token_valid_after && claims.iat < Number(row.token_valid_after)) return null;
+  return { role: row.role || 'support', name: row.name || 'Staff', username: row.username, sid: claims.sid };
+}
+
+// Bump a staff member's revocation watermark so every token issued before
+// this instant stops working — called on password change.
+async function revokeStaffSessions(staffId) {
+  await q('update staff set token_valid_after=$1 where id=$2', [Date.now(), staffId]);
 }
 
 // Role gate for actions beyond "is some admin logged in". Owner + manager: everything.
@@ -103,4 +144,4 @@ function can(actor, action) {
 }
 
 module.exports = { adminToken, staffToken, checkAdmin, can, hashPassword, verifyPassword, timingEq,
-                   STAFF_DOMAIN, normalizeStaffUsername, staffLoginId };
+                   revokeStaffSessions, STAFF_DOMAIN, normalizeStaffUsername, staffLoginId };

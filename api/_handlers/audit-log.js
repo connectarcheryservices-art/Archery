@@ -12,7 +12,7 @@ module.exports = async (req, res) => {
   cors(res);
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'GET') return json(res, { error: 'Method not allowed' }, 405);
-  const actor = checkAdmin(req);
+  const actor = await checkAdmin(req);
   if (!actor) return json(res, { error: 'Unauthorised' }, 401);
   if (!can(actor, 'settings')) return json(res, { error: 'Only the owner or a manager can view the audit log.' }, 403);
 

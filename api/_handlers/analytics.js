@@ -26,7 +26,7 @@ module.exports = async (req, res) => {
   }
 
   // Admin: aggregated dashboard
-  if (!checkAdmin(req)) return json(res, { error: 'Unauthorised' }, 401);
+  if (!(await checkAdmin(req))) return json(res, { error: 'Unauthorised' }, 401);
   try {
     const [paid, revenue, byStatus, events, cities, recent, series, counts, activity, sources, fills, topPages] = await Promise.all([
       q("select count(*)::int n from orders where payment_status='paid'"),

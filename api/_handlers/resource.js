@@ -30,7 +30,7 @@ module.exports = async (req, res) => {
     // NOT fall back to fiction.
     if (resource === 'stats') {
       if (req.method !== 'GET') {
-        if (!checkAdmin(req)) return json(res, { error: 'Unauthorised' }, 401);
+        if (!(await checkAdmin(req))) return json(res, { error: 'Unauthorised' }, 401);
         return json(res, { error: 'stats are computed from live data and cannot be set' }, 400);
       }
       try {
@@ -62,7 +62,7 @@ module.exports = async (req, res) => {
           return json(res, SEED);
         }
       }
-      const actor = checkAdmin(req);
+      const actor = await checkAdmin(req);
       if (!actor) return json(res, { error: 'Unauthorised' }, 401);
       const body = readBody(req);
       // Best-effort snapshot for the audit row only — the merge itself below

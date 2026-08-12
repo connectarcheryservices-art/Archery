@@ -9,7 +9,7 @@ module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'POST') return json(res, { error: 'Method not allowed' }, 405);
   if (req.query.action !== 'reply') return json(res, { error: 'Unknown action' }, 404);
-  if (!checkAdmin(req)) return json(res, { error: 'Unauthorised' }, 401);
+  if (!(await checkAdmin(req))) return json(res, { error: 'Unauthorised' }, 401);
   const id = parseInt(req.query.id, 10);
   if (!Number.isFinite(id)) return json(res, { error: 'Bad id' }, 400);
   try {
