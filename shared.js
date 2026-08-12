@@ -151,6 +151,118 @@
     } catch (e) {}
   })();
 
+  // ── SITE-WIDE SEARCH — one real search across everything a viewer is
+  // actually authorised to see (GET /api/search?q=...). Same icon, same
+  // input, on every page, because search that only works from one page
+  // isn't site-wide search. A signed-in staff member's admin token (if
+  // present in this browser) is sent along so they also see inactive/draft
+  // rows — same query, wider visibility, matching api/_handlers/search.js's
+  // capability check server-side, never decided client-side alone. ──
+  (function buildSearch(){
+    if (window.__asSearch) return; window.__asSearch = true;
+    var navRight = document.querySelector('.nav-right');
+    if (!navRight) return;
+
+    var btnHTML = '<button type="button" class="as-nav-ico as-search-btn" id="as-search-btn" aria-label="Search">' +
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' +
+      '</button>';
+    navRight.insertAdjacentHTML('afterbegin', btnHTML);
+
+    var panelHTML =
+      '<div id="as-search-panel" class="as-search-panel">' +
+        '<div class="as-search-box">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' +
+          '<input id="as-search-input" type="text" placeholder="Search athletes, events, clubs, knowledge, forum, shop…" autocomplete="off">' +
+          '<button type="button" id="as-search-close" aria-label="Close search">&times;</button>' +
+        '</div>' +
+        '<div id="as-search-results" class="as-search-results"></div>' +
+      '</div>';
+    document.body.insertAdjacentHTML('beforeend', panelHTML);
+
+    var css = document.createElement('style');
+    css.id = 'as-search-css';
+    css.textContent =
+      '.as-search-panel{position:fixed;top:64px;left:0;right:0;z-index:600;background:#131316;border-bottom:1px solid rgba(201,162,39,.35);box-shadow:0 12px 30px rgba(0,0,0,.4);display:none;max-height:80vh;overflow:hidden;flex-direction:column;}' +
+      '.as-search-panel.open{display:flex;}' +
+      '.as-search-box{display:flex;align-items:center;gap:12px;padding:16px clamp(16px,4vw,40px);border-bottom:1px solid rgba(255,255,255,.08);}' +
+      '.as-search-box svg{width:20px;height:20px;color:#7E8290;flex-shrink:0;}' +
+      '#as-search-input{flex:1;background:none;border:none;outline:none;color:#F5F6F8;font-family:"Inter",sans-serif;font-size:16px;}' +
+      '#as-search-input::placeholder{color:#7E8290;}' +
+      '#as-search-close{background:none;border:none;color:#7E8290;font-size:26px;line-height:1;cursor:pointer;padding:0 4px;}' +
+      '#as-search-close:hover{color:#F5F6F8;}' +
+      '.as-search-results{overflow-y:auto;padding:8px 0;}' +
+      '.as-sr-group{padding:6px clamp(16px,4vw,40px);}' +
+      '.as-sr-group-label{font-family:"Oswald",sans-serif;font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#B79A2E;padding:8px 0 4px;}' +
+      '.as-sr-item{display:block;padding:9px 10px;border-radius:6px;text-decoration:none;color:#F5F6F8;}' +
+      '.as-sr-item:hover{background:rgba(201,162,39,.1);}' +
+      '.as-sr-title{font-size:14px;font-weight:500;}' +
+      '.as-sr-subtitle{font-size:12px;color:#9CA1AD;margin-top:1px;}' +
+      '.as-sr-empty,.as-sr-hint{padding:24px clamp(16px,4vw,40px);color:#7E8290;font-size:13px;}';
+    document.head.appendChild(css);
+
+    var panel = document.getElementById('as-search-panel');
+    var input = document.getElementById('as-search-input');
+    var results = document.getElementById('as-search-results');
+    var btn = document.getElementById('as-search-btn');
+    var closeBtn = document.getElementById('as-search-close');
+
+    var TYPE_LABELS = { athlete: 'Athletes', event: 'Events', club: 'Clubs', news: 'News',
+      knowledge: 'Knowledge', forum: 'Forum', job: 'Jobs', product: 'Shop', profile: 'Profiles' };
+
+    function openPanel(){ panel.classList.add('open'); setTimeout(function(){ input.focus(); }, 30); }
+    function closePanel(){ panel.classList.remove('open'); }
+    btn.addEventListener('click', function(){ panel.classList.contains('open') ? closePanel() : openPanel(); });
+    closeBtn.addEventListener('click', closePanel);
+    document.addEventListener('keydown', function(e){
+      if (e.key === 'Escape') closePanel();
+      if ((e.ctrlKey || e.metaKey) && e.key === '/') { e.preventDefault(); openPanel(); }
+    });
+    document.addEventListener('click', function(e){
+      if (!panel.classList.contains('open')) return;
+      if (panel.contains(e.target) || btn.contains(e.target)) return;
+      closePanel();
+    });
+
+    function render(items){
+      if (!items.length) { results.innerHTML = '<div class="as-sr-empty">No results.</div>'; return; }
+      var byType = {};
+      items.forEach(function(it){ (byType[it.type] = byType[it.type] || []).push(it); });
+      var html = '';
+      Object.keys(byType).forEach(function(t){
+        html += '<div class="as-sr-group"><div class="as-sr-group-label">' + (TYPE_LABELS[t] || t) + '</div>';
+        byType[t].forEach(function(it){
+          html += '<a class="as-sr-item" href="' + escAttr(it.url) + '">' +
+            '<div class="as-sr-title">' + escHtml(it.title) + '</div>' +
+            (it.subtitle ? '<div class="as-sr-subtitle">' + escHtml(it.subtitle) + '</div>' : '') +
+            '</a>';
+        });
+        html += '</div>';
+      });
+      results.innerHTML = html;
+    }
+    // Minimal local escaping — esc.js is not guaranteed loaded before shared.js
+    // on every page, so this stays self-contained like the rest of shared.js.
+    function escHtml(v){ return String(v == null ? '' : v).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+    function escAttr(v){ return escHtml(v); }
+
+    var debounceTimer = null;
+    input.addEventListener('input', function(){
+      var term = input.value.trim();
+      clearTimeout(debounceTimer);
+      if (!term) { results.innerHTML = '<div class="as-sr-hint">Type to search across the whole platform.</div>'; return; }
+      debounceTimer = setTimeout(function(){
+        var headers = {};
+        var adminToken = sessionStorage.getItem('archery_admin_token');
+        if (adminToken) headers['Authorization'] = 'Bearer ' + adminToken;
+        fetch('/api/search?q=' + encodeURIComponent(term), { headers: headers })
+          .then(function(r){ return r.json(); })
+          .then(function(j){ if (input.value.trim() === term) render((j && j.results) || []); })
+          .catch(function(){ results.innerHTML = '<div class="as-sr-empty">Search is unavailable right now.</div>'; });
+      }, 250);
+    });
+    results.innerHTML = '<div class="as-sr-hint">Type to search across the whole platform.</div>';
+  })();
+
   // ── VIDEO-FAITHFUL THEME (approved homepage standard) ──
   // Flat bands: royal blue · gold #C9A227 · red #D22730 · black · white, Oswald type.
   // Injected last on every page so it overrides each page's own inline tokens.
