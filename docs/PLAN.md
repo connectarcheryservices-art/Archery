@@ -380,9 +380,27 @@ a row**. Grievance Officer published; 48-hour clock instrumented.
       exceptions). Attendance, scheduling, coach assignment, and finance are still **not** built.
       Tested: `club-federation-test.js` + `club-federation-ui-test.js`, 33 assertions, all green.
 - [~] Coaching: **consent-based coach-athlete linking is real** (migration 024 — either side can
-      initiate, the other must accept, either can revoke). Licensing/certification for
-      coaches specifically (as opposed to judges — see below), rosters, session plans, and
-      progression-on-real-arrows are **not** built.
+      initiate, the other must accept, either can revoke). **Licensing is now real too**
+      (2026-08-12, migration 032): a separate `coach_certifications` table, not a reuse of
+      `official_certifications` — that table is `unique(user_id)` (one cert per person, built for
+      judges), and a person can plausibly hold both a coach license and a judge cert at once, so
+      forcing them into one row would silently lose whichever was set second. Same honesty as
+      that table's own header: levels (club/state/national/international) are platform-defined
+      administrative tiers, not a World Archery citation — coach accreditation is a national-
+      federation matter, not a rulebook article the way scoring/classification are. Requesting or
+      holding a license grants **no capability by itself** — coach-link still works identically
+      with zero license, unchanged — it exists purely so the athlete/parent in the "My Coaches"
+      list sees a real, staff-approved credential instead of a bare name (previously zero
+      information beyond who accepted a link). Also fixed the same pass: inviting a coach
+      required a raw numeric user id with no way to find one — now works by email (same fix
+      pattern already applied to federation officer assignment). Tested:
+      `coach-licensing-test.js` (18 assertions — coach-link unchanged with no license, a license
+      request grants nothing alone, a person can hold a coach license AND a judge cert
+      simultaneously, staff-only approve/revoke, the athlete's view updates live on revoke, the
+      coach-athlete relationship survives a license revocation because they're deliberately
+      independent, audit trail) + `coach-licensing-ui-test.js` (8 assertions, real signup →
+      dashboard request → admin approval → dashboard reflects it, headless Chrome). 26 total, all
+      green. Rosters, session plans, and progression-on-real-arrows are still **not** built.
 - [x] Officials & judges: certification (staff-approved, never self-granted — migration 024's
       `official_certifications`) + per-event assignment (`event_officials`, so a certified
       official is scoped to the events they're actually assigned to, not omnipotent platform-

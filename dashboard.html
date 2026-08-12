@@ -148,10 +148,15 @@ function render(){
       } else if (c.status === 'active') {
         actions = `<button class="btn btn-ghost" onclick="revokeCoachLink(${c.id})">Remove coach</button>`;
       }
-      html += `<div class="row"><div>${esc(c.coachName || c.coach_name)} <span class="badge ${badgeClass}">${esc(c.status)}</span></div><div>${actions}</div></div>`;
+      const licenseStatus = c.coachLicenseStatus || c.coach_license_status;
+      const licenseLevel = c.coachLicenseLevel || c.coach_license_level;
+      const licenseBadge = licenseStatus === 'approved'
+        ? `<span class="badge badge-active" title="Coach license">${esc(licenseLevel)} licensed</span>`
+        : `<span class="badge" style="opacity:.6;" title="No approved coach license on file">unlicensed</span>`;
+      html += `<div class="row"><div>${esc(c.coachName || c.coach_name)} ${licenseBadge} <span class="badge ${badgeClass}">${esc(c.status)}</span></div><div>${actions}</div></div>`;
     });
     html += `<div class="inline-form">
-      <input class="field-input" id="invite-coach-id" type="number" placeholder="Coach's user ID to invite">
+      <input class="field-input" id="invite-coach-email" placeholder="Coach's email to invite">
       <button class="btn btn-primary" onclick="inviteCoach()">Invite coach</button>
     </div></div>`;
   }
@@ -175,6 +180,28 @@ function render(){
     <button class="btn btn-primary" onclick="requestCoachLink()">Request to coach</button>
   </div>`;
   if (!STATUS.memberRole) html += `<div class="inline-form"><button class="btn btn-ghost" onclick="becomeCoach()">I'm a coach</button></div>`;
+  html += '</div>';
+
+  // ── COACH LICENSE — a separate credential from official/judge
+  // certification below (migration 032): a coach can hold both. Requesting
+  // it grants no capability by itself — coach-link still works either way —
+  // this exists so the athlete/parent in "My Coaches" above sees something
+  // real instead of a bare name. ──
+  html += '<div class="card"><h2>Coach License</h2>';
+  if (STATUS.coachLicense) {
+    const cl = STATUS.coachLicense;
+    const badgeClass = cl.status === 'approved' ? 'badge-active' : cl.status === 'pending' ? 'badge-pending' : 'badge-revoked';
+    const issuingBody = cl.issuingBody || cl.issuing_body;
+    html += `<div class="row"><div>${esc(cl.level)} level${cl.discipline ? ' · ' + esc(cl.discipline) : ''}${issuingBody ? ' · ' + esc(issuingBody) : ''}</div><span class="badge ${badgeClass}">${esc(cl.status)}</span></div>`;
+  } else {
+    html += `<div class="msg msg-info">No coach license on file. Requesting is optional but is what athletes/parents see before accepting a coach-link.</div>
+      <div class="inline-form">
+        <select class="field-input" id="coach-license-level"><option value="club">Club</option><option value="state">State</option><option value="national">National</option><option value="international">International</option></select>
+        <select class="field-input" id="coach-license-discipline"><option value="">Any discipline</option><option value="recurve">Recurve</option><option value="compound">Compound</option><option value="barebow">Barebow</option></select>
+        <input class="field-input" id="coach-license-body" placeholder="Issuing body (optional)">
+        <button class="btn btn-gold" onclick="requestCoachLicense()">Request coach license</button>
+      </div>`;
+  }
   html += '</div>';
 
   // ── OFFICIATING ──
@@ -234,10 +261,17 @@ async function requestCoachLink(){
   if (r && r.ok) { await loadStatus(); } else { notify((r && r.error) || 'Could not send request.', false); }
 }
 async function inviteCoach(){
-  const coachUserId = parseInt(document.getElementById('invite-coach-id').value, 10);
-  if (!coachUserId) return;
-  const r = await jpost('/members/coach-link', { coachUserId });
+  const coachEmail = document.getElementById('invite-coach-email').value.trim();
+  if (!coachEmail) return;
+  const r = await jpost('/members/coach-link', { coachEmail });
   if (r && r.ok) { await loadStatus(); } else { notify((r && r.error) || 'Could not send invite.', false); }
+}
+async function requestCoachLicense(){
+  const level = document.getElementById('coach-license-level').value;
+  const discipline = document.getElementById('coach-license-discipline').value;
+  const issuingBody = document.getElementById('coach-license-body').value;
+  const r = await jpost('/members/request-coach-license', { level, discipline, issuingBody });
+  if (r && r.ok) { await loadStatus(); } else { notify((r && r.error) || 'Could not submit request.', false); }
 }
 async function respondCoachLink(linkId, accept){ const r = await jpost('/members/coach-link-respond', { linkId, accept }); if (r && r.ok) { await loadStatus(); } else { notify((r && r.error) || 'Could not respond to this request.', false); } }
 async function revokeCoachLink(linkId){ const r = await jpost('/members/revoke-coach-link', { linkId }); if (r && r.ok) { await loadStatus(); } else { notify((r && r.error) || 'Could not remove this relationship.', false); } }

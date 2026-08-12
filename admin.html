@@ -878,6 +878,15 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
       </div>
 
       <div class="card">
+        <div class="card-title">Coach Licenses <span class="td-badge badge-soon" style="font-size:11px;" id="coach-licenses-count">0 Pending</span></div>
+        <p style="font-size:13px;color:var(--text-2);margin-bottom:14px;">A separate credential from judge certification above — a coach can hold both. Coach-athlete linking already works without this; approving here only makes the coach's license visible to the athletes/parents deciding whether to link with them.</p>
+        <table class="data-table">
+          <thead><tr><th>Name</th><th>Level</th><th>Discipline</th><th>Issuing body</th><th>Requested</th><th>Actions</th></tr></thead>
+          <tbody id="coach-licenses-tbody"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
         <div class="card-title">Para Classification Requests <span class="td-badge badge-soon" style="font-size:11px;" id="classifications-count">0 Pending</span></div>
         <p style="font-size:13px;color:var(--text-2);margin-bottom:14px;">The platform performs no medical or functional assessment — record the outcome of a REAL classification panel here (name the actual classifier(s) of record). Sport classes are PI1/PI2 (physical) and VI1/VI2 (vision) — the codes World Archery's current Para Archery Classification Rules (2026-01-27) actually use.</p>
         <table class="data-table">
@@ -1558,15 +1567,16 @@ async function loadAudit(reset){
 
 // ── OFFICIATING: claims, certifications, event assignments ──
 async function loadOfficiating(){
-  const [claims, certs, approved, events, classifications] = await Promise.all([
+  const [claims, certs, approved, events, classifications, coachLicenses] = await Promise.all([
     get('members/pending-claims'), get('members/pending-certifications'),
     get('members/approved-officials'), get('scoring/events'),
-    get('members/pending-classifications'),
+    get('members/pending-classifications'), get('members/pending-coach-licenses'),
   ]);
 
   const claimsRows = Array.isArray(claims) ? claims : [];
   const classRows = Array.isArray(classifications) ? classifications : [];
-  setBadge('officiating-badge', claimsRows.length + (Array.isArray(certs) ? certs.length : 0) + classRows.length);
+  const coachLicenseRows = Array.isArray(coachLicenses) ? coachLicenses : [];
+  setBadge('officiating-badge', claimsRows.length + (Array.isArray(certs) ? certs.length : 0) + classRows.length + coachLicenseRows.length);
   const cc = document.getElementById('claims-count'); if (cc) cc.textContent = claimsRows.length + ' Pending';
   document.getElementById('claims-tbody').innerHTML = claimsRows.length ? claimsRows.map(c => `<tr>
       <td class="td-name">${escA(c.userName||c.user_name||'—')}<br><span style="color:var(--text-2);font-size:11px;">${escA(c.email||'')}</span></td>
@@ -1600,6 +1610,16 @@ async function loadOfficiating(){
   eventSelect.innerHTML = eventRows.length
     ? eventRows.map(e => `<option value="${e.id}">${escA(e.name)}${e.startsOn ? ' — ' + new Date(e.startsOn).toLocaleDateString('de-CH') : ''}</option>`).join('')
     : '<option value="">No events yet</option>';
+
+  const clic = document.getElementById('coach-licenses-count'); if (clic) clic.textContent = coachLicenseRows.length + ' Pending';
+  document.getElementById('coach-licenses-tbody').innerHTML = coachLicenseRows.length ? coachLicenseRows.map(c => `<tr>
+      <td class="td-name">${escA(c.name||'—')}<br><span style="color:var(--text-2);font-size:11px;">${escA(c.email||'')}</span></td>
+      <td>${escA(c.level||'')}</td>
+      <td>${escA(c.discipline||'—')}</td>
+      <td>${escA(c.issuingBody||c.issuing_body||'—')}</td>
+      <td style="font-size:12px;">${c.createdAt||c.created_at ? new Date(c.createdAt||c.created_at).toLocaleString('de-CH') : ''}</td>
+      <td class="td-actions"><button class="btn-toggle" onclick="respondCoachLicense(${c.id},true)">Approve</button><button class="btn-delete" onclick="respondCoachLicense(${c.id},false)">Reject</button></td>
+    </tr>`).join('') : '<tr><td colspan="6" style="padding:22px;color:var(--text-2);">No pending coach license requests.</td></tr>';
 
   const clc = document.getElementById('classifications-count'); if (clc) clc.textContent = classRows.length + ' Pending';
   document.getElementById('classifications-tbody').innerHTML = classRows.length ? classRows.map(c => `<tr>
@@ -1641,6 +1661,12 @@ async function respondCertification(certificationId, approve){
   const r = await post('members/approve-certification', { certificationId, approve });
   if (!r || r.error || r.ok === false) { toast((r&&r.error) || 'Could not process this certification.'); return; }
   toast(approve ? 'Certification approved.' : 'Certification revoked.');
+  loadOfficiating();
+}
+async function respondCoachLicense(licenseId, approve){
+  const r = await post('members/approve-coach-license', { licenseId, approve });
+  if (!r || r.error || r.ok === false) { toast((r&&r.error) || 'Could not process this coach license.'); return; }
+  toast(approve ? 'Coach license approved.' : 'Coach license revoked.');
   loadOfficiating();
 }
 async function assignOfficialToEvent(){

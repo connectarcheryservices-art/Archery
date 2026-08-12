@@ -63,11 +63,18 @@ module.exports = async (req, res) => {
         `select ca.id, ca.athlete_id, ca.status, ca.requested_by, a.name as athlete_name
            from coach_athletes ca join athletes a on a.id = ca.athlete_id
           where ca.coach_user_id=$1 order by ca.created_at desc`, [member.id])).rows;
+      // Coach license joined in here too — the whole reason coach licensing
+      // exists is so an athlete/parent deciding whether to accept a link
+      // sees something real, not a bare name (previously the entire visible
+      // credential was zero information beyond who accepted).
       const myCoaches = athlete ? (await q(
-        `select ca.id, ca.coach_user_id, ca.status, ca.requested_by, u.name as coach_name
+        `select ca.id, ca.coach_user_id, ca.status, ca.requested_by, u.name as coach_name,
+                cc.level as coach_license_level, cc.status as coach_license_status
            from coach_athletes ca join users u on u.id = ca.coach_user_id
+           left join coach_certifications cc on cc.user_id = ca.coach_user_id
           where ca.athlete_id=$1 order by ca.created_at desc`, [athlete.id])).rows : [];
       const certification = (await q('select level, issuing_body, status, approved_at from official_certifications where user_id=$1', [member.id])).rows[0] || null;
+      const coachLicense = (await q('select level, discipline, issuing_body, status, approved_at from coach_certifications where user_id=$1', [member.id])).rows[0] || null;
       const assignments = (await q(
         `select eo.event_id, eo.role, ev.name as event_name from event_officials eo
            join events ev on ev.id = eo.event_id where eo.user_id=$1 order by eo.created_at desc`, [member.id])).rows;
@@ -79,7 +86,7 @@ module.exports = async (req, res) => {
       const pendingClassificationRequest = athlete ? (await q(
         `select sport_class_requested from classification_requests where athlete_id=$1 and status='pending'`,
         [athlete.id])).rows[0] || null : null;
-      return json(res, { ok: true, memberRole: member.member_role, athlete, coaching, myCoaches, certification, assignments,
+      return json(res, { ok: true, memberRole: member.member_role, athlete, coaching, myCoaches, certification, coachLicense, assignments,
         classification, pendingClassificationRequest,
         isMinor: minor === true, parentConsentStatus: dobRow ? dobRow.parent_consent_status : 'not_required',
         consentBlocked: minor === true && dobRow && dobRow.parent_consent_status !== 'granted' });
@@ -145,6 +152,61 @@ module.exports = async (req, res) => {
       return json(res, { ok: true });
     }
 
+    // ── REQUEST-COACH-LICENSE: self-declare, staff-approved — separate
+    // table from official_certifications (migration 032's header explains
+    // why: a person can hold a coach license AND a judge certification at
+    // once). Requesting this grants no capability by itself — coach-link
+    // still works without it (unchanged); this exists so an athlete/parent
+    // deciding whether to accept a coach-link request can see something
+    // real instead of nothing (see my-status below). ──
+    if (action === 'request-coach-license' && req.method === 'POST') {
+      const member = await requireConsentedMember(req);
+      if (!member) return json(res, { error: 'Unauthorised' }, 401);
+      if (member.blocked) return json(res, { error: CONSENT_REQUIRED_MSG }, 403);
+      const b = readBody(req);
+      const level = ['club', 'state', 'national', 'international'].includes(b.level) ? b.level : 'club';
+      const discipline = ['recurve', 'compound', 'barebow'].includes(b.discipline) ? b.discipline : null;
+      const r = await q(
+        `insert into coach_certifications (user_id, level, discipline, issuing_body, status)
+         values ($1,$2,$3,$4,'pending')
+         on conflict (user_id) do update
+           set level=excluded.level, discipline=excluded.discipline, issuing_body=excluded.issuing_body, status='pending', approved_by=null, approved_at=null
+           where coach_certifications.status='revoked'
+         returning id, status`,
+        [member.id, level, discipline, String(b.issuingBody || '').slice(0, 120) || null]);
+      if (r.rows[0]) {
+        await writeAudit({ req, actor: memberActor(member, 'coach'), action: 'create', resourceType: 'coach_certifications', resourceId: r.rows[0].id, after: { level, discipline, status: r.rows[0].status } });
+        return json(res, { ok: true, licenseId: r.rows[0].id, status: r.rows[0].status });
+      }
+      const existing = (await q('select id, status, level from coach_certifications where user_id=$1', [member.id])).rows[0];
+      return json(res, { ok: true, licenseId: existing.id, status: existing.status, unchanged: true });
+    }
+
+    if (action === 'pending-coach-licenses' && req.method === 'GET') {
+      const staff = await requireStaff(req);
+      if (!staff) return json(res, { error: 'Unauthorised' }, 401);
+      const rows = (await q(
+        `select cc.id, cc.user_id, cc.level, cc.discipline, cc.issuing_body, cc.created_at, u.name, u.email
+           from coach_certifications cc join users u on u.id = cc.user_id
+          where cc.status='pending' order by cc.created_at`)).rows;
+      return json(res, rows);
+    }
+
+    if (action === 'approve-coach-license' && req.method === 'POST') {
+      const staff = await requireStaff(req);
+      if (!staff) return json(res, { error: 'Unauthorised' }, 401);
+      const b = readBody(req);
+      const licenseId = parseInt(b.licenseId, 10);
+      if (!licenseId) return json(res, { error: 'licenseId is required' }, 400);
+      const newStatus = b.approve ? 'approved' : 'revoked';
+      const r = await q(
+        `update coach_certifications set status=$1, approved_by=$2, approved_at=now() where id=$3 returning id`,
+        [newStatus, staff.name, licenseId]);
+      if (!r.rows[0]) return json(res, { error: 'Unknown coach license' }, 404);
+      await writeAudit({ req, actor: staff, action: 'update', resourceType: 'coach_certifications', resourceId: licenseId, after: { status: newStatus } });
+      return json(res, { ok: true, status: newStatus });
+    }
+
     // ── COACH-LINK: request a relationship. Either the coach requests an
     // athlete, or an athlete invites a coach — the OTHER side must accept
     // (coach-link-respond) before it's active. ──
@@ -156,12 +218,23 @@ module.exports = async (req, res) => {
       let coachUserId, athleteId, requestedBy;
       if (b.athleteId) {
         coachUserId = member.id; athleteId = parseInt(b.athleteId, 10); requestedBy = 'coach';
-      } else if (b.coachUserId) {
+      } else if (b.coachUserId || b.coachEmail) {
         athleteId = await ownAthleteId(member.id);
         if (!athleteId) return json(res, { error: 'You need an athlete profile before inviting a coach — see become-athlete.' }, 400);
-        coachUserId = parseInt(b.coachUserId, 10); requestedBy = 'athlete';
+        // A bare numeric id was the only way to invite a coach — no way for
+        // an athlete to find one without already knowing their raw id.
+        // Email lookup (same fix already applied to federation officer
+        // assignment) at least lets them use something they'd actually have.
+        if (b.coachEmail) {
+          const u = (await q('select id from users where email=$1', [String(b.coachEmail).trim().toLowerCase()])).rows[0];
+          if (!u) return json(res, { error: 'No registered user with that email.' }, 404);
+          coachUserId = u.id;
+        } else {
+          coachUserId = parseInt(b.coachUserId, 10);
+        }
+        requestedBy = 'athlete';
       } else {
-        return json(res, { error: 'athleteId (as coach) or coachUserId (as athlete) is required' }, 400);
+        return json(res, { error: 'athleteId (as coach) or coachUserId/coachEmail (as athlete) is required' }, 400);
       }
       if (!coachUserId || !athleteId) return json(res, { error: 'Invalid athleteId/coachUserId' }, 400);
       if (coachUserId === (await q('select user_id from athletes where id=$1', [athleteId])).rows[0]?.user_id) {
