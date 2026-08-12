@@ -202,7 +202,7 @@ module.exports = async (req, res) => {
 
     // ── RANKING RESULT: record a final position for an entry, compute its
     // ranking_score from the (partially verified) percentage table — see
-    // migration 022 for why an unconfigured position is refused, not guessed. ──
+    // migration 022 for the platform's own always-computable percentage curve. ──
     if (action === 'ranking-result' && req.method === 'POST') {
       const actor = await requireScorer(req);
       if (!actor) return json(res, { error: 'Unauthorised' }, 401);
@@ -215,11 +215,11 @@ module.exports = async (req, res) => {
         return json(res, { error: 'athleteId, eventCategoryId, finalPosition and eventGroup are required' }, 400);
       }
       const pctRows = (await q('select position, percent from ranking_position_percentages')).rows;
-      const positionPercentages = Object.fromEntries(pctRows.map(r => [r.position, Number(r.percent)]));
+      const overrides = Object.fromEntries(pctRows.map(r => [r.position, Number(r.percent)]));
       const monthsOld = Number(b.monthsOld) || 0;
-      const computed = rankingScoreForResult({ eventGroup, finalPosition, monthsOld }, positionPercentages);
+      const computed = rankingScoreForResult({ eventGroup, finalPosition, monthsOld }, overrides);
       if (computed.score == null) {
-        return json(res, { ok: false, error: `Cannot compute a ranking score: ${computed.reason}. ${computed.reason === 'position_percentage_not_configured' ? 'Position ' + finalPosition + ' has no verified percentage yet — add it to ranking_position_percentages once sourced from the primary document.' : ''}` }, 422);
+        return json(res, { ok: false, error: `Cannot compute a ranking score: ${computed.reason}` }, 422);
       }
       const r = await q(
         `insert into ranking_results (athlete_id,event_category_id,final_position,base_points,position_pct,period_multiplier,ranking_score)

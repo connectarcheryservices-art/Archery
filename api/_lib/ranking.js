@@ -1,6 +1,17 @@
-// Ranking engine — pure computation, no DB. Cited to docs/DOMAIN.md §4
-// (World Ranking Calculation System, 01 Oct 2022 v1.0; ranking overhaul
-// announcement Oct 2022). See migration 022 for what is and isn't verified.
+// Ranking engine — pure computation, no DB. Formula structure cited to
+// docs/DOMAIN.md §4 (World Ranking Calculation System, 01 Oct 2022 v1.0;
+// ranking overhaul announcement Oct 2022). See migration 022 for what is
+// and isn't independently verified against that primary source.
+//
+// This is Archery.Services' OWN ranking, computed from participation
+// recorded on the platform — not a byte-for-byte replica of World
+// Archery's global ranking (explicit product direction: rank on the
+// platform's own available data, for events run through the platform,
+// not gated on data this environment could not fetch/verify). It reuses
+// the SAME verified formula shape (base_points × position_% × period
+// decay) and event-group base points, because that structure is real and
+// confirmed — but the position->percentage curve below is Archery.Services
+// policy, not a claimed WA citation.
 'use strict';
 
 const EVENT_GROUP_BASE_POINTS = { 1: 100, 2: 80, 3: 60, 4: 40, 5: 20 };
@@ -15,15 +26,28 @@ function periodMultiplier(monthsOld) {
   return 0; // expired
 }
 
-// positionPercentages: Map/object of {position: percent}, e.g. from
-// ranking_position_percentages (migration 022) — NEVER hardcoded here, since
-// most of that table is unverified (see the migration's own comment). A
-// position with no configured percentage returns null rather than a guess.
-function rankingScoreForResult({ eventGroup, finalPosition, monthsOld }, positionPercentages) {
+// Archery.Services position-percentage curve. Anchored to the three points
+// independently corroborated for World Archery's own system (1st=100%,
+// 2nd=85%, 3rd=70%) with a geometric decay (rate 0.85, matching the
+// verified 1st->2nd drop exactly) extended smoothly to every position
+// beyond — never a lookup table that runs out and blocks scoring. Floored
+// at MIN_PCT so real participation always counts for something rather than
+// decaying to zero. `overrides` (from ranking_position_percentages) lets an
+// admin hand-tune specific positions later — e.g. if a fuller verified WA
+// curve is sourced — without changing this formula for everyone else.
+const DECAY_RATE = 0.85;
+const MIN_PCT = 5;
+function positionPercent(position, overrides = {}) {
+  if (overrides[position] != null) return Number(overrides[position]);
+  if (position < 1) return 0;
+  return Math.max(MIN_PCT, round2(100 * Math.pow(DECAY_RATE, position - 1)));
+}
+
+function rankingScoreForResult({ eventGroup, finalPosition, monthsOld }, overrides = {}) {
   const basePoints = EVENT_GROUP_BASE_POINTS[eventGroup];
   if (!basePoints) return { score: null, reason: 'unknown_event_group' };
-  const pct = positionPercentages[finalPosition];
-  if (pct == null) return { score: null, reason: 'position_percentage_not_configured' };
+  if (!(finalPosition >= 1)) return { score: null, reason: 'invalid_position' };
+  const pct = positionPercent(finalPosition, overrides);
   const mult = periodMultiplier(monthsOld);
   if (mult === 0) return { score: null, reason: 'expired' };
   const score = round2(basePoints * (pct / 100) * mult);
@@ -52,4 +76,4 @@ function selectBest7(results) {
   return { chosen, total, complete: chosen.length === 7 };
 }
 
-module.exports = { EVENT_GROUP_BASE_POINTS, periodMultiplier, rankingScoreForResult, selectBest7, round2 };
+module.exports = { EVENT_GROUP_BASE_POINTS, periodMultiplier, positionPercent, rankingScoreForResult, selectBest7, round2 };

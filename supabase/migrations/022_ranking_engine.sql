@@ -9,22 +9,29 @@
 --   - Five event groups: 1=100, 2=80, 3=60, 4=40, 5=20 base points.
 --   - 24-month validity; decays to 75% at 12mo, 50% at 16mo, 25% at 20mo.
 --
--- NOT hardcoded, deliberately: the full final-position -> percentage curve.
--- Two direct fetch attempts against the primary source PDF
--- (extranet.worldarchery.sport/.../World_Ranking_Calculation_System.pdf)
--- both failed — it's an image-based PDF this environment has no OCR tooling
--- for. Independent corroboration gives only 1st=100%, 2nd=85%, 3rd=70%,
--- "decreasing progressively" beyond that with no exact figures. Inventing
--- the rest of that curve would be fabricated data driving a real athlete's
--- ranking (CLAUDE.md §1.1) — worse than leaving it visibly incomplete. This
--- table is seeded with ONLY the three verified points; ranking_score
--- computation for an unconfigured position is refused, not guessed, until
--- a federation technical delegate supplies the rest (same posture as
--- DOMAIN.md §8's other "ask, don't guess" items).
+-- The full final-position -> percentage curve beyond 1st/2nd/3rd is NOT a
+-- verified World Archery citation. Two direct fetch attempts against the
+-- primary source PDF (extranet.worldarchery.sport/.../
+-- World_Ranking_Calculation_System.pdf) both failed — it's an image-based
+-- PDF this environment has no OCR tooling for. Product direction (this is
+-- Archery.Services' own ranking of participation on the platform, not a
+-- claimed byte-for-byte replica of WA's global ranking) resolved this: the
+-- engine computes every position's percentage from a real, documented
+-- formula (api/_lib/ranking.js: geometric decay anchored to the three
+-- verified points, 1st=100%/2nd=85%/3rd=70%, floored so participation
+-- always counts for something) rather than blocking on an unverified
+-- table. This table is now an OPTIONAL override layer — empty by default,
+-- consulted first, falls through to the formula for any position not
+-- explicitly set here. Seed it with specific values only if a fuller
+-- verified curve is sourced later.
 create table if not exists ranking_position_percentages (
   position  int primary key,
   percent   numeric not null check (percent > 0 and percent <= 100)
 );
+-- The three positions independently verified against World Archery's own
+-- system are seeded as exact overrides, so those specific positions use
+-- the verified figure rather than the formula's close-but-approximate value
+-- (e.g. the formula alone gives 3rd ≈72.25%; the verified figure is 70%).
 insert into ranking_position_percentages (position, percent) values
   (1, 100), (2, 85), (3, 70)
 on conflict (position) do nothing;
