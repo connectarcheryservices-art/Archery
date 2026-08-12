@@ -238,13 +238,33 @@ blocks merges.
       `is_miss`, `superseded_by`+`correction_reason` for corrections — never an overwrite).
       Engine in `api/_lib/scoring.js` (pure functions, no DB), DB bridge in
       `api/_lib/scoring-db.js`, API in `api/_handlers/scoring.js`.
-- [~] **2.2** Offline-*friendly*, not yet offline-*capable*. What's real: `ends`/`arrows` have
-      client-generated `client_id` idempotency keys (ADR-0006) — a dropped connection mid-submit
-      is safe to retry, never double-scores (tested: `scoring-api-test.js`). What's **not**
-      built: an actual client that works with **zero network** (a service-worker cache, a local
-      write queue, background sync when connectivity returns). `score.html` still requires a
-      live `fetch()` per end — "gloves, sun, cheap Android, no network" is not yet true. This is
-      the one substantial piece of Phase 2's original scope still genuinely open.
+- [x] **2.2** Offline-*capable*, not just offline-*friendly* (2026-08-12). `score.html` now
+      writes every end to IndexedDB **before** attempting the network — a dropped connection or a
+      crashed tab after that write loses nothing. A pending/conflict/offline banner shows sync
+      state; `window`'s `online` event, a 15s interval fallback, and page load all trigger
+      `flushQueue()`, which replays queued ends through the same idempotent `client_id` path
+      already in place. Verified end-to-end with headless Chrome + CDP request-blocking
+      (`offline-queue-test.js`, 15 assertions): happy path, offline entry, survives a full page
+      reload while still offline, auto-syncs on reconnect.
+      **A real, pre-existing correctness bug was found and fixed while building this**: `ends`'
+      migration-021 `unique(match_entry_id, end_number, shootoff_sequence)` constraint never
+      actually worked for a regular (non-shoot-off) end, because SQL treats every NULL
+      `shootoff_sequence` as distinct — so a genuine resubmission under a fresh `client_id`
+      silently inserted a SECOND end instead of colliding, and `loadMatchEntryEnds` would have
+      summed both. Migration `029_ends_uniqueness_fix.sql` replaces it with two correct partial
+      unique indexes. This is now load-bearing for the conflict system below — closes
+      THREAT_MODEL T13.
+      **Migration `028_scoring_conflicts.sql`** + new `api/_handlers/scoring.js` actions close
+      the rest of ADR-0006 §5 / ADR-0007, both of which existed only as schema (`superseded_by`,
+      `correction_reason`) with no write path before today: a genuine two-devices-one-end
+      disagreement is refused (409) and logged as a `scoring_conflicts` row — never silently
+      summed — for a judge to resolve (keep existing / use the second submission / enter a fresh
+      value), each resolution going through the same append-only arrow-supersede mechanism a
+      standalone `correct-arrow` correction uses. A judge-facing conflict card renders directly
+      on `score.html`. Verified: `scoring-conflicts-test.js` (27 assertions — benign duplicates,
+      genuine conflicts, all three resolutions, standalone corrections, audit trail) and
+      `conflict-ui-test.js` (9 assertions, real UI interaction). 51 assertions total across the
+      three new test files, all green, re-run clean on a fresh rebuild of the local DB.
 - [x] **2.3** Match formats per division — `setPlayState`/`cumulativeState` in `scoring.js`,
       Art. 12.1.4.1/.2 (set-play, recurve/barebow) vs Art. 12.1.4.3/.4 (cumulative, compound),
       format auto-derived from division in `generate-draw`. Team/individual/mixed-team target

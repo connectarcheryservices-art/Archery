@@ -10,7 +10,7 @@
 'use strict';
 const { cors, json, readBody } = require('../_lib/respond');
 const { checkAdmin } = require('../_lib/auth');
-const { q } = require('../_lib/db');
+const { q, withTransaction } = require('../_lib/db');
 const { writeAudit } = require('../_lib/audit');
 const { computeMatchState, maybeAdvanceWinner } = require('../_lib/scoring-db');
 const { rankingScoreForResult, selectBest7 } = require('../_lib/ranking');
@@ -193,23 +193,178 @@ module.exports = async (req, res) => {
         const existing = await q('select id from ends where client_id=$1', [b.clientId]);
         if (existing.rows[0]) return json(res, { ok: true, id: existing.rows[0].id, alreadyRecorded: true });
       }
-      const endRow = await q(
-        `insert into ends (match_entry_id,end_number,is_shootoff,shootoff_sequence,judge,client_id)
-         values ($1,$2,$3,$4,$5,$6) returning id`,
-        [matchEntryId, endNumber, !!b.isShootoff, b.shootoffSequence || null, b.judge || (actor.name || null), b.clientId || null]);
-      const endId = endRow.rows[0].id;
-      for (let i = 0; i < arrows.length; i++) {
-        const a = arrows[i];
-        await q(
-          `insert into arrows (end_id,sequence,value,is_x,is_miss,x_coord,y_coord,client_id,actor)
-           values ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
-          [endId, i + 1, Number(a.value), !!a.isX, !!a.isMiss, a.x ?? null, a.y ?? null, a.clientId || null, actor.name || actor.username || 'owner']);
+      const actorLabel = actor.name || actor.username || 'owner';
+      // (match_entry_id, end_number, shootoff_sequence) is UNIQUE (migration
+      // 029 — the original migration-021 constraint never actually enforced
+      // this: NULL shootoff_sequence made every regular end "distinct" from
+      // every other, so a resubmission under a fresh client_id silently
+      // inserted a SECOND end instead of colliding). Checked up front, not
+      // caught after the fact — an in-transaction rollback-after-error round
+      // trip is exactly the kind of edge case a lightweight local Postgres
+      // bridge is least likely to get byte-for-byte right, and checking
+      // first is also just clearer: the client_id check right above does
+      // the same "look before you insert" idempotency check for the same
+      // reason. Two real cases: (1) the exact same values resubmitted from
+      // a second device/session with no client_id match — benign, same
+      // idempotency as above; (2) a genuine disagreement — never silently
+      // pick a winner, log it for a judge (ADR-0006 §5, THREAT_MODEL T13
+      // "judge-adjudicated conflicts").
+      const existingEnd = (await q(
+        `select id from ends where match_entry_id=$1 and end_number=$2 and shootoff_sequence is not distinct from $3`,
+        [matchEntryId, endNumber, b.shootoffSequence || null])).rows[0];
+      if (existingEnd) {
+        const existingArrows = (await q(
+          `select value, is_x, is_miss from arrows where end_id=$1 and superseded_by is null order by sequence`,
+          [existingEnd.id])).rows;
+        const same = existingArrows.length === arrows.length && existingArrows.every((ea, i) =>
+          Number(ea.value) === Number(arrows[i].value) && !!ea.is_x === !!arrows[i].isX && !!ea.is_miss === !!arrows[i].isMiss);
+        if (same) return json(res, { ok: true, id: existingEnd.id, alreadyRecorded: true });
+        const conflict = await q(
+          `insert into scoring_conflicts (match_entry_id,end_number,existing_end_id,submitted_arrows,submitted_client_id,submitted_device_id,submitted_by)
+           values ($1,$2,$3,$4,$5,$6,$7) returning id`,
+          [matchEntryId, endNumber, existingEnd.id, JSON.stringify(arrows), b.clientId || null, b.deviceId || null, actorLabel]);
+        await writeAudit({ req, actor, action: 'create', resourceType: 'scoring_conflicts', resourceId: conflict.rows[0].id,
+          after: { matchEntryId, endNumber, existingEndId: existingEnd.id } });
+        return json(res, { error: 'This end was already recorded with different values by another device — a judge needs to review it.',
+          conflict: true, conflictId: conflict.rows[0].id, existingEndId: existingEnd.id }, 409);
       }
+      // Genuine race (two requests both passed the check above before
+      // either inserted) still can't double-score — the unique index is the
+      // real backstop — it just surfaces as a plain 500 in that rare case
+      // rather than a clean conflict record. Deliberately not caught here:
+      // see the comment above for why an in-transaction catch-and-recover
+      // isn't the mechanism this relies on.
+      const endId = await withTransaction(async (client) => {
+        const endRow = await client.query(
+          `insert into ends (match_entry_id,end_number,is_shootoff,shootoff_sequence,judge,client_id,device_id)
+           values ($1,$2,$3,$4,$5,$6,$7) returning id`,
+          [matchEntryId, endNumber, !!b.isShootoff, b.shootoffSequence || null, b.judge || (actor.name || null), b.clientId || null, b.deviceId || null]);
+        const id = endRow.rows[0].id;
+        for (let i = 0; i < arrows.length; i++) {
+          const a = arrows[i];
+          await client.query(
+            `insert into arrows (end_id,sequence,value,is_x,is_miss,x_coord,y_coord,client_id,actor)
+             values ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+            [id, i + 1, Number(a.value), !!a.isX, !!a.isMiss, a.x ?? null, a.y ?? null, a.clientId || null, actorLabel]);
+        }
+        return id;
+      });
       await writeAudit({ req, actor, action: 'create', resourceType: 'ends', resourceId: endId,
         after: { matchEntryId, endNumber, arrowCount: arrows.length } });
       const meRow = (await q('select match_id from match_entries where id=$1', [matchEntryId])).rows[0];
       const advanced = meRow ? await maybeAdvanceWinner(meRow.match_id) : null;
       return json(res, { ok: true, id: endId, advanced });
+    }
+
+    // ── CORRECT-ARROW: supersede one already-recorded arrow with a new value
+    // + a reason (ADR-0007 — the write path the schema has had since
+    // migration 021 but nothing ever used: correction_reason/superseded_by/
+    // actor). Never an UPDATE on the old row — a new row, old row points
+    // forward. computeMatchState already filters `superseded_by is null`, so
+    // this takes effect immediately without touching that read path. ──
+    if (action === 'correct-arrow' && req.method === 'POST') {
+      const b = readBody(req);
+      const arrowId = parseInt(b.arrowId, 10);
+      const reason = String(b.reason || '').trim();
+      const v = Number(b.value);
+      if (!arrowId || !reason) return json(res, { error: 'arrowId and reason are required' }, 400);
+      if (!Number.isFinite(v) || v < 0 || v > 10) return json(res, { error: 'value must be 0-10' }, 400);
+      if (b.isX && v !== 10) return json(res, { error: 'is_x can only be set on a value-10 arrow (Art. 12.2)' }, 400);
+      const old = (await q('select id, end_id, sequence, value, is_x, is_miss, superseded_by from arrows where id=$1', [arrowId])).rows[0];
+      if (!old) return json(res, { error: 'Not found' }, 404);
+      if (old.superseded_by) return json(res, { error: 'This arrow was already corrected once — correct the newer row instead.' }, 409);
+      const actor = await requireScorerForEnd(req, old.end_id);
+      if (!actor) return json(res, { error: 'Unauthorised' }, 401);
+      const actorLabel = actor.name || actor.username || 'owner';
+      const newArrowId = await withTransaction(async (client) => {
+        const inserted = await client.query(
+          `insert into arrows (end_id,sequence,value,is_x,is_miss,correction_reason,actor)
+           values ($1,$2,$3,$4,$5,$6,$7) returning id`,
+          [old.end_id, old.sequence, v, !!b.isX, !!b.isMiss, reason, actorLabel]);
+        await client.query('update arrows set superseded_by=$1 where id=$2', [inserted.rows[0].id, old.id]);
+        return inserted.rows[0].id;
+      });
+      await writeAudit({ req, actor, action: 'update', resourceType: 'arrows', resourceId: old.id,
+        before: { value: old.value, isX: old.is_x, isMiss: old.is_miss },
+        after: { value: v, isX: !!b.isX, isMiss: !!b.isMiss, reason, newArrowId } });
+      const endRow3 = (await q('select match_entry_id from ends where id=$1', [old.end_id])).rows[0];
+      const meRow3 = endRow3 ? (await q('select match_id from match_entries where id=$1', [endRow3.match_entry_id])).rows[0] : null;
+      const advanced = meRow3 ? await maybeAdvanceWinner(meRow3.match_id) : null;
+      return json(res, { ok: true, oldArrowId: old.id, newArrowId, advanced });
+    }
+
+    // ── CONFLICTS: list open scoring conflicts for a match entry, side by
+    // side with the end already on record, so a judge can actually compare
+    // before deciding (ADR-0006 §5). ──
+    if (action === 'conflicts' && req.method === 'GET') {
+      const matchEntryId = parseInt(req.query.matchEntryId, 10);
+      if (!matchEntryId) return json(res, { error: 'matchEntryId is required' }, 400);
+      const actor = await requireScorerForMatchEntry(req, matchEntryId);
+      if (!actor) return json(res, { error: 'Unauthorised' }, 401);
+      const rows = (await q(
+        `select * from scoring_conflicts where match_entry_id=$1 and status='open' order by created_at`, [matchEntryId])).rows;
+      const withExisting = await Promise.all(rows.map(async (c) => {
+        const existingArrows = (await q(
+          `select value, is_x, is_miss from arrows where end_id=$1 and superseded_by is null order by sequence`, [c.existing_end_id])).rows;
+        return { ...rowToObj(c), existingArrows };
+      }));
+      return json(res, { ok: true, conflicts: withExisting });
+    }
+
+    // ── RESOLVE-CONFLICT: a judge's decision closes a scoring_conflicts row.
+    // Never auto-resolved — a human always picks. Whatever is picked goes
+    // through the SAME correct-arrow supersede mechanism above, so the
+    // resolution itself is just as auditable as any other correction. ──
+    if (action === 'resolve-conflict' && req.method === 'POST') {
+      const b = readBody(req);
+      const conflictId = parseInt(b.conflictId, 10);
+      const resolution = b.resolution;
+      if (!conflictId || !['kept_existing', 'used_submitted', 'entered_new'].includes(resolution)) {
+        return json(res, { error: 'conflictId and a valid resolution are required' }, 400);
+      }
+      const conflict = (await q('select * from scoring_conflicts where id=$1', [conflictId])).rows[0];
+      if (!conflict) return json(res, { error: 'Not found' }, 404);
+      if (conflict.status !== 'open') return json(res, { error: 'This conflict was already resolved.' }, 409);
+      const actor = await requireScorerForMatchEntry(req, conflict.match_entry_id);
+      if (!actor) return json(res, { error: 'Unauthorised' }, 401);
+      const actorLabel = actor.name || actor.username || 'owner';
+      let newValues = null;
+      if (resolution === 'used_submitted') newValues = conflict.submitted_arrows;
+      if (resolution === 'entered_new') {
+        newValues = Array.isArray(b.arrows) ? b.arrows : [];
+        if (!newValues.length) return json(res, { error: 'entered_new requires an arrows array' }, 400);
+        for (const a of newValues) {
+          const v = Number(a.value);
+          if (!Number.isFinite(v) || v < 0 || v > 10) return json(res, { error: 'Every arrow value must be 0-10' }, 400);
+        }
+      }
+      const reasonNote = String(b.resolutionNote || '').trim() ||
+        (resolution === 'kept_existing' ? 'Judge confirmed the originally recorded values.'
+          : resolution === 'used_submitted' ? "Judge accepted the second device's submitted values."
+            : 'Judge entered a fresh corrected value.');
+      if (newValues) {
+        const existingArrows = (await q(
+          `select id, sequence, value, is_x, is_miss from arrows where end_id=$1 and superseded_by is null order by sequence`,
+          [conflict.existing_end_id])).rows;
+        await withTransaction(async (client) => {
+          for (let i = 0; i < existingArrows.length && i < newValues.length; i++) {
+            const oldA = existingArrows[i], newA = newValues[i];
+            const inserted = await client.query(
+              `insert into arrows (end_id,sequence,value,is_x,is_miss,correction_reason,actor)
+               values ($1,$2,$3,$4,$5,$6,$7) returning id`,
+              [conflict.existing_end_id, oldA.sequence, Number(newA.value), !!newA.isX, !!newA.isMiss, reasonNote, actorLabel]);
+            await client.query('update arrows set superseded_by=$1 where id=$2', [inserted.rows[0].id, oldA.id]);
+          }
+        });
+      }
+      await q(
+        `update scoring_conflicts set status='resolved', resolved_by=$1, resolution=$2, resolution_note=$3, resolved_at=now() where id=$4`,
+        [actorLabel, resolution, reasonNote, conflictId]);
+      await writeAudit({ req, actor, action: 'update', resourceType: 'scoring_conflicts', resourceId: conflictId,
+        after: { resolution, resolutionNote: reasonNote } });
+      const meRow4 = (await q('select match_id from match_entries where id=$1', [conflict.match_entry_id])).rows[0];
+      const advanced = meRow4 ? await maybeAdvanceWinner(meRow4.match_id) : null;
+      return json(res, { ok: true, advanced });
     }
 
     // ── SHOOTOFF JUDGE DECISION: record closest-to-centre (Art. 12.5.2.2) ──

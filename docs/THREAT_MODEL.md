@@ -211,6 +211,29 @@ When scoring goes offline: a malicious/buggy device could replay, reorder, or fo
 → **Idempotent event IDs, causal ordering, judge-adjudicated conflicts, append-only (ADR-0007).
 Test adversarially: partition, dupe, reorder, clock skew, two devices one target.**
 
+**Status: fixed (2026-08-12).** Idempotent event IDs already existed (`client_id`); everything
+else here did not. Fixed while building this, not by design: migration 021's
+`unique(match_entry_id, end_number, shootoff_sequence)` never actually enforced anything for a
+regular end — NULL `shootoff_sequence` made every one "distinct" — so a resubmission under a
+fresh `client_id` silently inserted a second `ends` row, and `computeMatchState` would have
+summed both. Migration `029_ends_uniqueness_fix.sql` replaces it with two correct partial unique
+indexes. **Reorder** doesn't need a causal-ordering mechanism beyond what already exists: each
+end carries its own `end_number`, and score computation sums by end regardless of insert order,
+so out-of-order delivery is a non-issue by construction, not by added machinery — noted here
+rather than building unneeded complexity. **Two devices, one target**: `scoring_conflicts`
+(migration 028) + `api/_handlers/scoring.js`'s `end` action now refuse (409) a genuine
+disagreement instead of silently accepting it, and log it for a judge — `conflicts`/
+`resolve-conflict` actions, resolution via the same append-only arrow-supersede path
+`correct-arrow` uses (ADR-0007, previously schema-only with no write path). **Dupe** — already
+covered by `client_id` idempotency, now also covers the case where the DUPLICATE arrives via a
+different `client_id` (benign resubmission, same values → treated as idempotent, not a
+conflict). Adversarial tests actually run: `scoring-conflicts-test.js` (27 assertions — benign
+dupe, genuine conflict, all 3 resolutions, standalone correction, audit trail),
+`offline-queue-test.js` (15 assertions — real network blocking via CDP, IndexedDB persistence
+across a reload, auto-resync), `conflict-ui-test.js` (9 assertions). **Not covered**: forged
+arrows from a compromised client are out of scope here — `requireScorerForMatchEntry` (auth) is
+the control for that, not this fix. Full detail: `docs/PLAN.md` 2.2.
+
 ### T14 — Polymorphic analytics column · **MEDIUM**
 `analytics_events.value` holds **product IDs and rupee totals**; `crud.js:46` casts
 `value::bigint`. One bad row = 500 on trending. → **ADR-0004.**

@@ -53,6 +53,10 @@ table.end-table th{color:var(--faint);font-weight:600;font-size:11px;text-transf
 .msg-err{background:rgba(210,39,48,.12);color:#B91C24;}
 .msg-info{background:rgba(15,95,168,.1);color:#0F5FA8;}
 .badge{display:inline-block;padding:3px 9px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;background:var(--bg);color:var(--dim);border:1px solid var(--line);}
+#sync-status{display:none;position:sticky;top:0;z-index:250;padding:8px 20px;font-size:12px;font-weight:600;text-align:center;font-family:'Oswald',sans-serif;letter-spacing:.03em;}
+#sync-status.pending{display:block;background:#C9A227;color:#1A1A1A;}
+#sync-status.conflict{display:block;background:#D22730;color:#fff;}
+#sync-status.offline{display:block;background:#334155;color:#fff;}
 </style>
 </head>
 <body>
@@ -64,6 +68,7 @@ table.end-table th{color:var(--faint);font-weight:600;font-size:11px;text-transf
   </div>
 </nav>
 
+<div id="sync-status"></div>
 <div class="page-hero">
   <h1>Live <em>Scoring</em></h1>
   <p>Record arrows end by end. Every value is an adjudicated fact, written once, never overwritten — corrections are new events with a reason (DOMAIN.md §3.1).</p>
@@ -109,6 +114,106 @@ let ME_ROLE=sessionStorage.getItem('archery_admin_role')||'';
 let currentMatch=null;
 let currentMatchId=null;
 const ecArrowsPerEndCache={};
+
+// ── OFFLINE QUEUE (ADR-0006) ────────────────────────────────────────────
+// "gloves, sun, cheap Android, no network" (docs/PLAN.md 2.2). Every end is
+// written to IndexedDB BEFORE the network is even attempted, so a dropped
+// connection, a crashed tab, or a device that dies mid-match never loses an
+// entered arrow — only an in-memory queue could do that. A device id
+// (distinct from the signed-in account — several people can share one
+// tablet) travels with every submission so a judge reviewing a conflict can
+// see which physical device said what.
+const DEVICE_ID=(()=>{ let d=localStorage.getItem('archery_device_id'); if(!d){ d=(crypto.randomUUID?crypto.randomUUID():String(Date.now())+'-'+Math.random().toString(16).slice(2)); localStorage.setItem('archery_device_id',d); } return d; })();
+const QUEUE_DB='archery-offline-scoring', QUEUE_STORE='pending_ends';
+function openQueueDb(){
+  return new Promise((resolve,reject)=>{
+    const req=indexedDB.open(QUEUE_DB,1);
+    req.onupgradeneeded=()=>{ req.result.createObjectStore(QUEUE_STORE,{keyPath:'clientId'}); };
+    req.onsuccess=()=>resolve(req.result);
+    req.onerror=()=>reject(req.error);
+  });
+}
+async function queuePut(record){
+  const db=await openQueueDb();
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction(QUEUE_STORE,'readwrite');
+    tx.objectStore(QUEUE_STORE).put(record);
+    tx.oncomplete=()=>resolve(); tx.onerror=()=>reject(tx.error);
+  });
+}
+async function queueDelete(clientId){
+  const db=await openQueueDb();
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction(QUEUE_STORE,'readwrite');
+    tx.objectStore(QUEUE_STORE).delete(clientId);
+    tx.oncomplete=()=>resolve(); tx.onerror=()=>reject(tx.error);
+  });
+}
+async function queueAll(){
+  const db=await openQueueDb();
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction(QUEUE_STORE,'readonly');
+    const req=tx.objectStore(QUEUE_STORE).getAll();
+    req.onsuccess=()=>resolve(req.result||[]); req.onerror=()=>reject(req.error);
+  });
+}
+function updateSyncBanner(items){
+  const el=document.getElementById('sync-status');
+  const pending=items.filter(i=>i.status==='pending').length;
+  const conflicts=items.filter(i=>i.status==='conflict').length;
+  const errors=items.filter(i=>i.status==='error').length;
+  el.className='';
+  if(conflicts>0){ el.className='conflict'; el.textContent=`${conflicts} end${conflicts>1?'s':''} conflict with what's already recorded — a judge needs to review before they'll sync.`; }
+  else if(navigator.onLine===false && pending>0){ el.className='offline'; el.textContent=`Offline — ${pending} end${pending>1?'s':''} saved on this device, will sync automatically once you're back online.`; }
+  else if(pending>0 || errors>0){ el.className='pending'; el.textContent=`Syncing ${pending+errors} end${(pending+errors)>1?'s':''}…`; }
+}
+async function refreshSyncBanner(){ updateSyncBanner(await queueAll()); }
+
+// Actually attempts the network write for one queued end. Never called
+// directly for a fresh submission — submitEnd() always queues first, then
+// calls this, so the code path is identical whether this is the first try
+// or a reconnect retry (no separate "happy path" that could drift from the
+// offline path and rot, per DOMAIN.md's "our client is a scorecard, not the
+// authority" — the server's answer is the only one that counts either way).
+async function trySync(item){
+  const body={ matchEntryId:item.matchEntryId, endNumber:item.endNumber, arrows:item.arrows, isShootoff:!!item.isShootoff, clientId:item.clientId, deviceId:DEVICE_ID };
+  if(item.isShootoff) body.shootoffSequence=item.shootoffSequence;
+  let res;
+  try{ res=await fetch('/api/scoring/end',{method:'POST',headers:authHeaders(),body:JSON.stringify(body)}); }
+  catch(e){ return {outcome:'network-error'}; } // stays queued, retried later
+  if(res.status===401) return {outcome:'unauthorised'}; // stays queued, retried after re-login
+  const r=await res.json().catch(()=>({error:'Could not record this end.'}));
+  if(res.status===409 && r&&r.conflict) return {outcome:'conflict', message:r.error};
+  if(!r||r.error) return {outcome:'error', message:(r&&r.error)||'Could not record this end.'};
+  return {outcome:'ok', result:r};
+}
+
+let flushing=false;
+async function flushQueue(){
+  if(flushing) return; flushing=true;
+  try{
+    const items=(await queueAll()).filter(i=>i.status==='pending');
+    let touchedCurrentMatch=false;
+    for(const item of items){
+      const outcome=await trySync(item);
+      if(outcome.outcome==='ok'){
+        await queueDelete(item.clientId);
+        if(item.msgKey){ const el=document.getElementById('msg-'+item.msgKey); if(el) el.innerHTML='<div class="msg msg-ok">End recorded (synced from offline queue).</div>'; }
+        if(String(currentMatchId)===String(item.originMatchId)) touchedCurrentMatch=true;
+      }else if(outcome.outcome==='conflict'){
+        await queuePut({...item, status:'conflict', lastError:outcome.message});
+      }else if(outcome.outcome==='error'){
+        await queuePut({...item, status:'error', lastError:outcome.message});
+      }
+      // network-error / unauthorised: leave as 'pending', try again next flush
+    }
+    await refreshSyncBanner();
+    if(touchedCurrentMatch) await loadMatch(currentMatchId);
+  } finally { flushing=false; }
+}
+window.addEventListener('online', flushQueue);
+window.addEventListener('load', ()=>{ refreshSyncBanner(); flushQueue(); });
+setInterval(()=>{ if(navigator.onLine!==false) flushQueue(); }, 15000);
 
 function authHeaders(){
   const h={'Content-Type':'application/json'};
@@ -168,15 +273,68 @@ function athleteLabel(entry){
   return entry.athlete_name?esc(entry.athlete_name):('Entry #'+esc(entry.entry_id));
 }
 
+// ── SCORING CONFLICTS (ADR-0006 §5) ─────────────────────────────────────
+// A judge is the only thing allowed to resolve a genuine disagreement
+// between two devices — never picked automatically, never hidden. Rendered
+// as its own card ABOVE the score itself, because an unresolved conflict
+// means the score on screen is provisional, not final.
+async function loadConflicts(matchEntryIds){
+  if(!AUTH_TOKEN) return [];
+  const lists=await Promise.all(matchEntryIds.map(id=>
+    fetch('/api/scoring/conflicts?matchEntryId='+id,{headers:authHeaders()}).then(r=>r.json()).catch(()=>null)));
+  return lists.filter(l=>l&&l.ok).flatMap(l=>l.conflicts);
+}
+function arrowsSummary(arrows){
+  return (arrows||[]).map(a=>a.isX?'X':(a.isMiss?'M':String(a.value))).join(', ');
+}
+function renderConflictCard(c){
+  const newValueFormId='conflict-new-'+c.id;
+  let arrowsHtml='';
+  for(let i=0;i<c.existingArrows.length;i++){
+    arrowsHtml+=`<select class="arrow-select" id="${newValueFormId}-${i}">${ARROW_VALUES.map(v=>`<option value="${v}">${v}</option>`).join('')}</select>`;
+  }
+  return `<div class="card" style="border-color:#D22730;">
+    <h2 style="color:#D22730;">⚠ Scoring conflict — end ${esc(c.endNumber)}</h2>
+    <div class="msg msg-err" style="margin-top:0;">Two different submissions exist for this end. The score shown elsewhere on this page still reflects the "already recorded" values below, provisionally, until a judge decides (Art. 12.1.3 — disagreement is resolved by the judge).</div>
+    <table class="end-table"><thead><tr><th></th><th>Already recorded</th><th>Second submission${c.submittedDeviceId?' ('+esc(c.submittedDeviceId)+')':''}</th></tr></thead>
+    <tbody><tr><td>Arrows</td><td>${esc(arrowsSummary(c.existingArrows))}</td><td>${esc(arrowsSummary(c.submittedArrows))}</td></tr></tbody></table>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">
+      <button class="btn btn-primary" onclick="resolveConflict(${c.id},'kept_existing')">Keep recorded values</button>
+      <button class="btn btn-primary" onclick="resolveConflict(${c.id},'used_submitted')">Use second submission</button>
+    </div>
+    <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line);">
+      <div style="font-size:12px;color:var(--faint);margin-bottom:6px;">Or the judge re-measures and enters a fresh value:</div>
+      <div class="arrow-row">${arrowsHtml}</div>
+      <button class="btn btn-gold" onclick="resolveConflict(${c.id},'entered_new','${newValueFormId}',${c.existingArrows.length})">Enter judge's value</button>
+    </div>
+    <div id="msg-conflict-${c.id}"></div>
+  </div>`;
+}
+async function resolveConflict(conflictId, resolution, formId, count){
+  const msgEl=document.getElementById('msg-conflict-'+conflictId);
+  const body={conflictId, resolution};
+  if(resolution==='entered_new'){
+    const selects=[...Array(count)].map((_,i)=>document.getElementById(formId+'-'+i));
+    body.arrows=selects.map(arrowSelectValue);
+  }
+  const res=await fetch('/api/scoring/resolve-conflict',{method:'POST',headers:authHeaders(),body:JSON.stringify(body)}).catch(()=>null);
+  if(!res){ if(msgEl) msgEl.innerHTML='<div class="msg msg-err">Network error — try again.</div>'; return; }
+  const r=await res.json().catch(()=>({error:'Could not resolve this conflict.'}));
+  if(!r||r.error){ if(msgEl) msgEl.innerHTML=`<div class="msg msg-err">${esc((r&&r.error)||'Could not resolve this conflict.')}</div>`; return; }
+  await loadMatch(currentMatchId);
+}
+
 async function renderMatch(){
   const panel=document.getElementById('match-panel');
   const m=currentMatch;
   const match=m.match;
   const entries=m.entries||[];
   const a=entries.find(e=>e.side===1), b=entries.find(e=>e.side===2);
+  const conflicts=await loadConflicts(entries.map(e=>e.id).filter(Boolean));
+  const conflictsHtml=conflicts.map(renderConflictCard).join('');
 
   if(m.error || !m.state){
-    panel.innerHTML=`<div class="card">
+    panel.innerHTML=conflictsHtml+`<div class="card">
       <div class="match-title">${athleteLabel(a)} vs ${athleteLabel(b)}</div>
       <div class="match-sub">${esc(match.kind)} · ${esc(match.format)}</div>
       <div class="msg msg-info">This match isn't ready to score yet — it's waiting on an earlier round to determine both sides.</div>
@@ -187,7 +345,7 @@ async function renderMatch(){
   const arrowsPerEnd=await eventCategoryArrowsPerEnd(match.event_category_id);
 
   if(match.kind==='qualification'){
-    renderQualification(match, entries[0], m.state, arrowsPerEnd);
+    renderQualification(match, entries[0], m.state, arrowsPerEnd, conflictsHtml);
     return;
   }
 
@@ -197,7 +355,7 @@ async function renderMatch(){
   const scoreB=isSet?st.setPointsB:st.totalB;
   const winnerSide=st.winnerSide;
 
-  let html=`<div class="card">
+  let html=conflictsHtml+`<div class="card">
     <div class="match-title">${athleteLabel(a)} <span style="color:var(--faint);font-weight:400;">vs</span> ${athleteLabel(b)}</div>
     <div class="match-sub"><span class="badge">${esc(match.kind)}</span> <span class="badge">${isSet?'Set play':'Cumulative'}</span> <span class="badge">${esc(match.team_type)}</span></div>
     <div class="score-row">
@@ -232,9 +390,9 @@ async function renderMatch(){
   }
 }
 
-function renderQualification(match, entryA, st, arrowsPerEnd){
+function renderQualification(match, entryA, st, arrowsPerEnd, conflictsHtml){
   const panel=document.getElementById('match-panel');
-  let html=`<div class="card">
+  let html=(conflictsHtml||'')+`<div class="card">
     <div class="match-title">${athleteLabel(entryA)}</div>
     <div class="match-sub"><span class="badge">qualification</span></div>
     <div class="score-row"><div class="score-name">Running total</div><div class="score-val">${esc(st.total)}</div></div>
@@ -338,20 +496,36 @@ async function submitEnd(key, matchEntryId, isShootoff, shootoffSequence){
   // fallback (for a browser without crypto.randomUUID) uses real entropy,
   // not Math.random().
   const fallbackId=()=>{ const b=new Uint8Array(16); crypto.getRandomValues(b); return String(Date.now())+'-'+[...b].map(x=>x.toString(16).padStart(2,'0')).join(''); };
-  const body={ matchEntryId, endNumber, arrows, isShootoff: !!isShootoff, clientId: (crypto.randomUUID?crypto.randomUUID():fallbackId()) };
-  if(isShootoff) body.shootoffSequence=shootoffSequence;
-  const res=await fetch('/api/scoring/end',{method:'POST',headers:authHeaders(),body:JSON.stringify(body)}).catch(()=>null);
-  if(!res){ if(msgEl) msgEl.innerHTML='<div class="msg msg-err">Network error.</div>'; return; }
-  if(res.status===401){ showLogin(); return; }
-  const r=await res.json().catch(()=>({error:'Could not record this end.'}));
-  if(!r||r.error){
-    if(msgEl) msgEl.innerHTML=`<div class="msg msg-err">${esc((r&&r.error)||'Could not record this end.')}</div>`;
-    return;
+  const clientId=(crypto.randomUUID?crypto.randomUUID():fallbackId());
+  const item={ clientId, matchEntryId, endNumber, arrows, isShootoff:!!isShootoff, shootoffSequence: isShootoff?shootoffSequence:null,
+    status:'pending', msgKey:key, originMatchId:currentMatchId, createdAt:Date.now() };
+  // Written to IndexedDB BEFORE the network is even attempted — the whole
+  // point is that a dropped connection or a crashed tab after this line
+  // never loses the arrows the operator just entered.
+  await queuePut(item);
+  await refreshSyncBanner();
+  if(msgEl) msgEl.innerHTML='<div class="msg msg-info">Saved on this device — syncing…</div>';
+  const outcome=await trySync(item);
+  if(outcome.outcome==='ok'){
+    await queueDelete(clientId);
+    let note='';
+    if(outcome.result.advanced) note=` — winner advanced to match #${outcome.result.advanced.nextMatchId}`;
+    if(msgEl) msgEl.innerHTML=`<div class="msg msg-ok">End recorded${esc(note)}.</div>`;
+    await loadMatch(currentMatchId);
+  }else if(outcome.outcome==='unauthorised'){
+    showLogin(); // stays queued — flushQueue() retries it once signed back in
+  }else if(outcome.outcome==='conflict'){
+    await queuePut({...item, status:'conflict', lastError:outcome.message});
+    if(msgEl) msgEl.innerHTML=`<div class="msg msg-err">${esc(outcome.message)}</div>`;
+  }else if(outcome.outcome==='error'){
+    await queuePut({...item, status:'error', lastError:outcome.message});
+    if(msgEl) msgEl.innerHTML=`<div class="msg msg-err">${esc(outcome.message)}</div>`;
+  }else{
+    // network-error: stays 'pending' — this IS the offline path succeeding
+    // at its one job (nothing lost), not a failure to report as one.
+    if(msgEl) msgEl.innerHTML='<div class="msg msg-info">No network — saved on this device, will sync automatically when back online.</div>';
   }
-  let note='';
-  if(r.advanced) note=` — winner advanced to match #${r.advanced.nextMatchId}`;
-  if(msgEl) msgEl.innerHTML=`<div class="msg msg-ok">End recorded${esc(note)}.</div>`;
-  await loadMatch(currentMatchId);
+  await refreshSyncBanner();
 }
 
 async function submitShootoffJudge(endId){
