@@ -49,7 +49,11 @@ async function loadShootoffRounds(matchEntryIdA, matchEntryIdB) {
 async function computeMatchState(matchId) {
   const match = (await q('select * from matches where id=$1', [matchId])).rows[0];
   if (!match) return null;
-  const entries = (await q('select * from match_entries where match_id=$1 order by side', [matchId])).rows;
+  const entries = (await q(
+    `select me.*, a.name as athlete_name from match_entries me
+       join entries e on e.id = me.entry_id
+       join athletes a on a.id = e.athlete_id
+      where me.match_id=$1 order by me.side`, [matchId])).rows;
   if (entries.length !== 2 && match.kind !== 'qualification') {
     return { match, entries, state: null, error: 'match does not have both sides recorded yet' };
   }

@@ -409,6 +409,28 @@ module.exports = async (req, res) => {
       return json(res, { ok: true, rounds: byRound });
     }
 
+    // ── ACTIVE-DRAWS: public list of event_categories that have a real
+    // generated draw (at least one elimination match), for a directory
+    // view like draw.html's "Active Draws" tab. Completion state is left
+    // to the bracket view (computeMatchState is per-match and too costly
+    // to run for every match of every draw just to list them). ──
+    if (action === 'active-draws') {
+      const rows = (await q(`
+        select ec.id as event_category_id, ec.round_name, ec.distance_m,
+               ev.name as event_name, ev.starts_on, ev.venue,
+               c.division, c.gender, c.age_class,
+               count(m.id)::int as total_matches,
+               max(m.round) as total_rounds
+          from event_categories ec
+          join events ev on ev.id = ec.event_id
+          join categories c on c.id = ec.category_id
+          join matches m on m.event_category_id = ec.id and m.kind = 'elimination'
+         group by ec.id, ec.round_name, ec.distance_m, ev.name, ev.starts_on, ev.venue, c.division, c.gender, c.age_class
+         order by ev.starts_on desc nulls last, ec.id desc
+         limit 100`)).rows;
+      return json(res, { ok: true, draws: rows.map(rowToObj) });
+    }
+
     return json(res, { error: 'Not found' }, 404);
   } catch (e) {
     console.error('scoring:', e?.message);
