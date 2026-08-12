@@ -85,7 +85,13 @@ async function requireScorerForMatchEntry(req, matchEntryId) {
   const eventId = await eventIdForMatchEntry(matchEntryId);
   if (!eventId) return null;
   if (!(await isAssignedCertifiedOfficial(member.id, eventId))) return null;
-  return { role: 'official', name: member.name || ('member#' + member.id), userId: member.id };
+  // sid (not userId) — writeAudit (api/_lib/audit.js) computes actor_id as
+  // String(actor.sid ?? 'owner'). Every other actor object in this codebase
+  // (checkAdmin's staff actor, memberActor in members.js) uses sid for
+  // exactly this reason; getting the field name wrong here silently
+  // collapses every official's audit rows onto the literal 'owner' sentinel
+  // (caught by adversarial security review, 2026-08-12 — see git log).
+  return { role: 'official', name: member.name || ('member#' + member.id), sid: member.id };
 }
 
 // Same gate, resolved from an ends.id instead (shootoff-judge action).
@@ -97,7 +103,13 @@ async function requireScorerForEnd(req, endId) {
   const eventId = await eventIdForEnd(endId);
   if (!eventId) return null;
   if (!(await isAssignedCertifiedOfficial(member.id, eventId))) return null;
-  return { role: 'official', name: member.name || ('member#' + member.id), userId: member.id };
+  // sid (not userId) — writeAudit (api/_lib/audit.js) computes actor_id as
+  // String(actor.sid ?? 'owner'). Every other actor object in this codebase
+  // (checkAdmin's staff actor, memberActor in members.js) uses sid for
+  // exactly this reason; getting the field name wrong here silently
+  // collapses every official's audit rows onto the literal 'owner' sentinel
+  // (caught by adversarial security review, 2026-08-12 — see git log).
+  return { role: 'official', name: member.name || ('member#' + member.id), sid: member.id };
 }
 
 module.exports = {

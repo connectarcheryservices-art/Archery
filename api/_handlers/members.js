@@ -83,12 +83,19 @@ module.exports = async (req, res) => {
       const athlete = (await q('select id, user_id from athletes where id=$1', [athleteId])).rows[0];
       if (!athlete) return json(res, { error: 'Unknown athlete' }, 404);
       if (athlete.user_id) return json(res, { ok: false, error: 'This athlete profile is already linked to an account.' }, 409);
+      if (await ownAthleteId(member.id)) return json(res, { ok: false, error: 'Your account is already linked to an athlete profile.' }, 409);
       const already = (await q('select id from athlete_claim_requests where athlete_id=$1 and status=$2', [athleteId, 'pending'])).rows[0];
       if (already) {
         const mine = (await q('select 1 from athlete_claim_requests where id=$1 and user_id=$2', [already.id, member.id])).rows[0];
         if (mine) return json(res, { ok: true, claimId: already.id, alreadyPending: true });
         return json(res, { ok: false, error: 'This athlete profile already has a pending claim.' }, 409);
       }
+      // One outstanding claim per ACCOUNT, not just per athlete — otherwise
+      // a single account can pending-squat every unclaimed athlete profile
+      // platform-wide (athlete_claim_pending_idx only limits per-athlete;
+      // caught by adversarial security review, 2026-08-12).
+      const myPending = (await q(`select id, athlete_id from athlete_claim_requests where user_id=$1 and status='pending'`, [member.id])).rows[0];
+      if (myPending) return json(res, { ok: false, error: 'You already have a pending claim on another athlete profile — withdraw or wait for that one to be reviewed first.', existingClaimId: myPending.id }, 409);
       const r = await q('insert into athlete_claim_requests (user_id, athlete_id) values ($1,$2) returning id', [member.id, athleteId]);
       await writeAudit({ req, actor: memberActor(member, 'athlete'), action: 'create', resourceType: 'athlete_claim_requests', resourceId: r.rows[0].id, after: { athleteId } });
       return json(res, { ok: true, claimId: r.rows[0].id });
@@ -133,9 +140,16 @@ module.exports = async (req, res) => {
            where coach_athletes.status='revoked'
          returning id, status`,
         [coachUserId, athleteId, requestedBy]);
-      const row = r.rows[0] || (await q('select id, status from coach_athletes where coach_user_id=$1 and athlete_id=$2', [coachUserId, athleteId])).rows[0];
-      await writeAudit({ req, actor: memberActor(member, member.member_role || 'athlete'), action: 'create', resourceType: 'coach_athletes', resourceId: row.id, after: { coachUserId, athleteId, requestedBy } });
-      return json(res, { ok: true, linkId: row.id, status: row.status });
+      // r.rows[0] is empty when the ON CONFLICT ... WHERE guard didn't match
+      // (an existing pending/active link) — nothing was actually written, so
+      // don't write an audit row asserting a 'create' that didn't happen
+      // (caught by adversarial security review, 2026-08-12).
+      if (r.rows[0]) {
+        await writeAudit({ req, actor: memberActor(member, requestedBy), action: 'create', resourceType: 'coach_athletes', resourceId: r.rows[0].id, after: { coachUserId, athleteId, requestedBy } });
+        return json(res, { ok: true, linkId: r.rows[0].id, status: r.rows[0].status });
+      }
+      const existing = (await q('select id, status from coach_athletes where coach_user_id=$1 and athlete_id=$2', [coachUserId, athleteId])).rows[0];
+      return json(res, { ok: true, linkId: existing.id, status: existing.status, unchanged: true });
     }
 
     // ── COACH-LINK-RESPOND: the non-requesting party accepts or declines. ──
@@ -172,10 +186,16 @@ module.exports = async (req, res) => {
       const link = (await q('select * from coach_athletes where id=$1', [linkId])).rows[0];
       if (!link) return json(res, { error: 'Unknown link' }, 404);
       const athlete = (await q('select user_id from athletes where id=$1', [link.athlete_id])).rows[0];
-      const isParty = link.coach_user_id === member.id || (athlete && athlete.user_id === member.id);
-      if (!isParty) return json(res, { error: 'Only a party to this relationship can revoke it.' }, 403);
+      const revokerIsCoach = link.coach_user_id === member.id;
+      const revokerIsAthlete = athlete && athlete.user_id === member.id;
+      if (!revokerIsCoach && !revokerIsAthlete) return json(res, { error: 'Only a party to this relationship can revoke it.' }, 403);
       await q(`update coach_athletes set status='revoked', responded_at=now() where id=$1`, [linkId]);
-      await writeAudit({ req, actor: memberActor(member, member.member_role || 'athlete'), action: 'update', resourceType: 'coach_athletes', resourceId: linkId, after: { status: 'revoked' } });
+      // The actor's CAPACITY IN THIS RELATIONSHIP (coach or athlete), not
+      // their possibly-unset/unrelated self-declared member_role — the
+      // latter defaulted to 'athlete' even when a coach revoked, which is
+      // the only place this relationship's audit trail records who acted
+      // (caught by adversarial security review, 2026-08-12).
+      await writeAudit({ req, actor: memberActor(member, revokerIsCoach ? 'coach' : 'athlete'), action: 'update', resourceType: 'coach_athletes', resourceId: linkId, after: { status: 'revoked' } });
       return json(res, { ok: true });
     }
 
@@ -195,10 +215,18 @@ module.exports = async (req, res) => {
            where official_certifications.status='revoked'
          returning id, status`,
         [member.id, level, String(b.issuingBody || '').slice(0, 120) || null]);
-      const row = r.rows[0] || (await q('select id, status from official_certifications where user_id=$1', [member.id])).rows[0];
       await q('update users set member_role=$1 where id=$2', ['official', member.id]);
-      await writeAudit({ req, actor: memberActor(member, 'official'), action: 'create', resourceType: 'official_certifications', resourceId: row.id, after: { level, status: row.status } });
-      return json(res, { ok: true, certificationId: row.id, status: row.status });
+      // r.rows[0] is empty when the ON CONFLICT ... WHERE guard didn't match
+      // (an existing pending/approved certification) — the row (and its real
+      // level/status) is untouched, so don't audit-log the request-supplied
+      // level as if it had taken effect (caught by adversarial security
+      // review, 2026-08-12).
+      if (r.rows[0]) {
+        await writeAudit({ req, actor: memberActor(member, 'official'), action: 'create', resourceType: 'official_certifications', resourceId: r.rows[0].id, after: { level, status: r.rows[0].status } });
+        return json(res, { ok: true, certificationId: r.rows[0].id, status: r.rows[0].status });
+      }
+      const existing = (await q('select id, status, level from official_certifications where user_id=$1', [member.id])).rows[0];
+      return json(res, { ok: true, certificationId: existing.id, status: existing.status, unchanged: true });
     }
 
     // ── EVENT-OFFICIALS: public read (who's judging this event). ──
@@ -235,6 +263,14 @@ module.exports = async (req, res) => {
       if (b.approve) {
         const athlete = (await q('select user_id from athletes where id=$1', [claim.athlete_id])).rows[0];
         if (athlete && athlete.user_id) return json(res, { ok: false, error: 'This athlete was linked to a different account in the meantime.' }, 409);
+        // The claimant may have created (or been approved onto) a DIFFERENT
+        // athletes row after filing this claim (e.g. via become-athlete) —
+        // athletes.user_id is unique, so approving here would otherwise hit
+        // a raw constraint violation, 500, and strand this claim at
+        // 'pending' forever (caught by adversarial security review,
+        // 2026-08-12). Refuse cleanly instead.
+        const existingRow = (await q('select id from athletes where user_id=$1', [claim.user_id])).rows[0];
+        if (existingRow) return json(res, { ok: false, error: 'This account is already linked to a different athlete profile — reject this claim, or unlink the other profile first.' }, 409);
         await q('update athletes set user_id=$1 where id=$2', [claim.user_id, claim.athlete_id]);
         await q('update users set member_role=$1 where id=$2', ['athlete', claim.user_id]);
         await q(`update athlete_claim_requests set status='approved', reviewed_by=$1, reviewed_at=now() where id=$2`, [staff.name, claimId]);
