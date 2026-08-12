@@ -77,4 +77,24 @@ async function computeMatchState(matchId) {
   return { match, entries, state, shootoff };
 }
 
-module.exports = { loadMatchEntryEnds, loadShootoffRounds, computeMatchState };
+// If a match is now decided AND wired to a next-round match
+// (matches.next_match_id/next_side, migration 023), insert the winner's
+// entry into that next match's slot — real bracket advancement, not just a
+// round-1 pairing tool. Idempotent (ON CONFLICT DO NOTHING via the existing
+// unique(match_id,side,entry_id) constraint acting as a natural guard —
+// re-checking an already-decided match after another end/judge-call retry
+// must not error or duplicate the advancement).
+async function maybeAdvanceWinner(matchId) {
+  const result = await computeMatchState(matchId);
+  if (!result || !result.state || !result.state.done || result.state.winnerSide == null) return null;
+  const match = result.match;
+  if (!match.next_match_id || !match.next_side) return null;
+  const winnerEntry = result.entries.find(e => e.side === result.state.winnerSide);
+  if (!winnerEntry) return null;
+  const existing = await q('select 1 from match_entries where match_id=$1 and side=$2', [match.next_match_id, match.next_side]);
+  if (existing.rows[0]) return null; // already advanced
+  await q('insert into match_entries (match_id,side,entry_id) values ($1,$2,$3)', [match.next_match_id, match.next_side, winnerEntry.entry_id]);
+  return { nextMatchId: match.next_match_id, nextSide: match.next_side, entryId: winnerEntry.entry_id };
+}
+
+module.exports = { loadMatchEntryEnds, loadShootoffRounds, computeMatchState, maybeAdvanceWinner };

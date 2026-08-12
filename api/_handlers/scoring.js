@@ -10,9 +10,9 @@ const { cors, json, readBody } = require('../_lib/respond');
 const { checkAdmin } = require('../_lib/auth');
 const { q } = require('../_lib/db');
 const { writeAudit } = require('../_lib/audit');
-const { computeMatchState } = require('../_lib/scoring-db');
+const { computeMatchState, maybeAdvanceWinner } = require('../_lib/scoring-db');
 const { rankingScoreForResult, selectBest7 } = require('../_lib/ranking');
-const { generateBracket } = require('../_lib/seeding');
+const { generateBracket, roundCount, advancesTo } = require('../_lib/seeding');
 
 const rowToObj = row => { const o = {}; for (const [k, v] of Object.entries(row)) o[k.replace(/_([a-z])/g, (_, c) => c.toUpperCase())] = v; return o; };
 async function requireScorer(req) {
@@ -185,7 +185,9 @@ module.exports = async (req, res) => {
       }
       await writeAudit({ req, actor, action: 'create', resourceType: 'ends', resourceId: endId,
         after: { matchEntryId, endNumber, arrowCount: arrows.length } });
-      return json(res, { ok: true, id: endId });
+      const meRow = (await q('select match_id from match_entries where id=$1', [matchEntryId])).rows[0];
+      const advanced = meRow ? await maybeAdvanceWinner(meRow.match_id) : null;
+      return json(res, { ok: true, id: endId, advanced });
     }
 
     // ── SHOOTOFF JUDGE DECISION: record closest-to-centre (Art. 12.5.2.2) ──
@@ -197,7 +199,10 @@ module.exports = async (req, res) => {
       if (!endId) return json(res, { error: 'endId is required' }, 400);
       await q('update ends set judged_closest_to_centre=$1, judge=$2 where id=$3', [!!b.closest, b.judge || actor.name || null, endId]);
       await writeAudit({ req, actor, action: 'update', resourceType: 'ends', resourceId: endId, after: { judgedClosestToCentre: !!b.closest } });
-      return json(res, { ok: true });
+      const endRow = (await q('select match_entry_id from ends where id=$1', [endId])).rows[0];
+      const meRow2 = endRow ? (await q('select match_id from match_entries where id=$1', [endRow.match_entry_id])).rows[0] : null;
+      const advanced = meRow2 ? await maybeAdvanceWinner(meRow2.match_id) : null;
+      return json(res, { ok: true, advanced });
     }
 
     // ── RANKING RESULT: record a final position for an entry, compute its
@@ -317,10 +322,16 @@ module.exports = async (req, res) => {
       return json(res, { ok: true, ranked: ranked.map((r, i) => ({ entryId: r.id, qualRank: i + 1, total: r.total, tiedGroup: r.tiedGroup })) });
     }
 
-    // ── GENERATE-DRAW: build the elimination bracket from qual_rank
-    // (DOMAIN.md: "seeds elimination (1v64, 2v63)"). Creates a real match
-    // row for every pairing that has TWO real entries; a bye is reported
-    // but never given a fabricated match. ──
+    // ── GENERATE-DRAW: build the FULL elimination bracket (every round, not
+    // just round 1) from qual_rank (DOMAIN.md: "seeds elimination (1v64,
+    // 2v63)"). Round 1 uses seeding.js's bracket-correct pairing/slot order
+    // (fixed to properly separate top seeds — see that file's header
+    // comment). Rounds 2+ are created as empty skeleton matches wired via
+    // next_match_id/next_side (migration 023); a round-1 bye advances its
+    // entry into the skeleton immediately, and a real match's winner
+    // advances automatically when it resolves (maybeAdvanceWinner, called
+    // from the 'end' and 'shootoff-judge' actions below). A bye is reported
+    // but never given a fabricated match row. ──
     if (action === 'generate-draw' && req.method === 'POST') {
       const actor = await requireScorer(req);
       if (!actor) return json(res, { error: 'Unauthorised' }, 401);
@@ -336,21 +347,66 @@ module.exports = async (req, res) => {
       const format = ecRow.division === 'compound' ? 'cumulative' : 'set'; // Art. 12.1.4
       const targetPointsToWin = format === 'set' ? 6 : null;
       const endsToPlay = format === 'cumulative' ? 5 : null;
+      const totalRounds = roundCount(bracket.bracketSize);
+
+      // Skeleton matches for rounds 2..totalRounds, built from the final
+      // backward so each round's next_match_id can point at an already-
+      // created row. Keyed by "round-matchIndex" -> matches.id.
+      const skeletonIds = {};
+      for (let round = totalRounds; round >= 2; round--) {
+        const matchesInRound = bracket.bracketSize / Math.pow(2, round);
+        for (let idx = 0; idx < matchesInRound; idx++) {
+          const nextId = round < totalRounds ? skeletonIds[`${round + 1}-${Math.floor(idx / 2)}`] : null;
+          const nextSide = idx % 2 === 0 ? 1 : 2;
+          const label = round === totalRounds ? 'Final' : `Round ${round} #${idx + 1}`;
+          const row = await q(
+            `insert into matches (event_category_id,kind,format,team_type,bracket_position,target_points_to_win,ends_to_play,round,next_match_id,next_side)
+             values ($1,'elimination',$2,'individual',$3,$4,$5,$6,$7,$8) returning id`,
+            [eventCategoryId, format, label, targetPointsToWin, endsToPlay, round, nextId || null, nextId ? nextSide : null]);
+          skeletonIds[`${round}-${idx}`] = row.rows[0].id;
+        }
+      }
+
+      // Round 1: real matches (wired to the round-2 skeleton) or byes
+      // (whose entry advances into the skeleton immediately, no match row).
       const createdMatches = [];
       for (const m of bracket.matches) {
-        if (m.bye || !m.entryA || !m.entryB) { createdMatches.push({ ...m, matchId: null }); continue; }
+        const { nextMatchIndex, nextSide } = advancesTo(m.matchIndex);
+        const nextMatchId = totalRounds >= 2 ? skeletonIds[`2-${nextMatchIndex}`] : null;
+        if (m.bye || !m.entryA || !m.entryB) {
+          if (nextMatchId && m.entryA) {
+            await q('insert into match_entries (match_id,side,entry_id) values ($1,$2,$3) on conflict do nothing', [nextMatchId, nextSide, m.entryA.id]);
+          }
+          createdMatches.push({ ...m, matchId: null, round: 1 });
+          continue;
+        }
         const matchRow = await q(
-          `insert into matches (event_category_id,kind,format,team_type,bracket_position,target_points_to_win,ends_to_play)
-           values ($1,'elimination',$2,'individual',$3,$4,$5) returning id`,
-          [eventCategoryId, format, m.bracketPosition, targetPointsToWin, endsToPlay]);
+          `insert into matches (event_category_id,kind,format,team_type,bracket_position,target_points_to_win,ends_to_play,round,next_match_id,next_side)
+           values ($1,'elimination',$2,'individual',$3,$4,$5,1,$6,$7) returning id`,
+          [eventCategoryId, format, m.bracketPosition, targetPointsToWin, endsToPlay, nextMatchId, nextMatchId ? nextSide : null]);
         const matchId = matchRow.rows[0].id;
         await q('insert into match_entries (match_id,side,entry_id) values ($1,1,$2)', [matchId, m.entryA.id]);
         await q('insert into match_entries (match_id,side,entry_id) values ($1,2,$2)', [matchId, m.entryB.id]);
-        createdMatches.push({ ...m, matchId });
+        createdMatches.push({ ...m, matchId, round: 1 });
       }
       await writeAudit({ req, actor, action: 'create', resourceType: 'matches', resourceId: eventCategoryId,
-        after: { bracketSize: bracket.bracketSize, matchesCreated: createdMatches.filter(m => m.matchId).length, byes: createdMatches.filter(m => m.bye).length } });
-      return json(res, { ok: true, bracketSize: bracket.bracketSize, matches: createdMatches });
+        after: { bracketSize: bracket.bracketSize, totalRounds, matchesCreated: createdMatches.filter(m => m.matchId).length, byes: createdMatches.filter(m => m.bye).length } });
+      return json(res, { ok: true, bracketSize: bracket.bracketSize, totalRounds, matches: createdMatches });
+    }
+
+    // ── BRACKET: public read of every match in an event_category's draw,
+    // grouped by round, each with live computed state ("live results are a
+    // view" — DOMAIN.md §1). ──
+    if (action === 'bracket') {
+      const eventCategoryId = parseInt(req.query.eventCategoryId, 10);
+      if (!eventCategoryId) return json(res, { error: 'eventCategoryId is required' }, 400);
+      const rows = (await q(`select id, round, bracket_position from matches where event_category_id=$1 and kind='elimination' order by round, id`, [eventCategoryId])).rows;
+      const byRound = {};
+      for (const row of rows) {
+        const state = await computeMatchState(row.id);
+        (byRound[row.round] = byRound[row.round] || []).push({ matchId: row.id, bracketPosition: row.bracket_position, ...state });
+      }
+      return json(res, { ok: true, rounds: byRound });
     }
 
     return json(res, { error: 'Not found' }, 404);
