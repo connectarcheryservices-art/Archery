@@ -423,6 +423,11 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
       Audit Log
     </button>
+    <button class="nav-item" id="nav-officiating-item" onclick="showPanel('officiating',this);loadOfficiating();">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 15a4 4 0 100-8 4 4 0 000 8z"/><path d="M8.5 13.5L6 22l6-4 6 4-2.5-8.5"/></svg>
+      Officiating
+      <span class="badge-count badge-red" id="officiating-badge" style="display:none;">0</span>
+    </button>
   </nav>
 
   <!-- MAIN CONTENT -->
@@ -850,6 +855,54 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
       </div>
     </div>
 
+    <!-- ── OFFICIATING: claims, certifications, event assignments ── -->
+    <div class="panel" id="panel-officiating">
+      <div class="breadcrumb">Admin <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg> <span>Officiating</span></div>
+
+      <div class="card">
+        <div class="card-title">Athlete Profile Claims <span class="td-badge badge-soon" style="font-size:11px;" id="claims-count">0 Pending</span></div>
+        <p style="font-size:13px;color:var(--text-2);margin-bottom:14px;">A member asking to link their account to an EXISTING athlete directory row. Only approve if you can confirm this is genuinely them — the platform never links these automatically.</p>
+        <table class="data-table">
+          <thead><tr><th>Requested by</th><th>Athlete profile</th><th>Requested</th><th>Actions</th></tr></thead>
+          <tbody id="claims-tbody"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Official / Judge Certifications <span class="td-badge badge-soon" style="font-size:11px;" id="certs-count">0 Pending</span></div>
+        <p style="font-size:13px;color:var(--text-2);margin-bottom:14px;">Approving does NOT let them score anything by itself — they also need to be assigned to a specific event below (an approved official is scoped to the events they're actually assigned to).</p>
+        <table class="data-table">
+          <thead><tr><th>Name</th><th>Level</th><th>Issuing body</th><th>Requested</th><th>Actions</th></tr></thead>
+          <tbody id="certs-tbody"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Assign an Approved Official to an Event</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin-bottom:14px;">
+          <div class="form-group" style="margin-bottom:0;min-width:220px;"><label class="form-label">Official</label>
+            <select class="form-input" id="assign-official-select"></select>
+          </div>
+          <div class="form-group" style="margin-bottom:0;min-width:220px;"><label class="form-label">Event</label>
+            <select class="form-input" id="assign-event-select"></select>
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label class="form-label">Role</label>
+            <select class="form-input" id="assign-role-select">
+              <option value="judge">Judge</option>
+              <option value="technical_delegate">Technical Delegate</option>
+              <option value="chief_judge">Chief Judge</option>
+            </select>
+          </div>
+          <button class="btn-save" style="margin-bottom:0;" onclick="assignOfficialToEvent()">Assign</button>
+        </div>
+        <table class="data-table">
+          <thead><tr><th>Name</th><th>Certified level</th><th>Email</th></tr></thead>
+          <tbody id="approved-officials-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- ── ANALYTICS ── -->
     <div class="panel" id="panel-analytics">
       <div class="breadcrumb">Admin <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg> <span>Analytics</span></div>
@@ -1152,6 +1205,7 @@ function applyRole(){
   const setNav=document.getElementById('nav-settings-item'); if(setNav) setNav.style.display=canStaff?'':'none';
   const mailNav=document.getElementById('nav-mail-item'); if(mailNav) mailNav.style.display=canStaff?'':'none';
   const auditNav=document.getElementById('nav-audit-item'); if(auditNav) auditNav.style.display=canStaff?'':'none';
+  const officiatingNav=document.getElementById('nav-officiating-item'); if(officiatingNav) officiatingNav.style.display=canStaff?'':'none';
   const badge=document.querySelector('.admin-badge'); if(badge) badge.textContent=ME_ROLE.toUpperCase();
   const av=document.querySelector('.topbar-avatar'); if(av) av.textContent=(ME_NAME||'A').charAt(0).toUpperCase();
 }
@@ -1453,6 +1507,71 @@ async function loadAudit(reset){
   tbody.innerHTML = reset ? html : tbody.innerHTML + html;
   AUDIT_CURSOR = r && r.nextBefore;
   document.getElementById('audit-more-btn').style.display = AUDIT_CURSOR ? '' : 'none';
+}
+
+// ── OFFICIATING: claims, certifications, event assignments ──
+async function loadOfficiating(){
+  const [claims, certs, approved, events] = await Promise.all([
+    get('members/pending-claims'), get('members/pending-certifications'),
+    get('members/approved-officials'), get('scoring/events'),
+  ]);
+
+  const claimsRows = Array.isArray(claims) ? claims : [];
+  setBadge('officiating-badge', claimsRows.length + (Array.isArray(certs) ? certs.length : 0));
+  const cc = document.getElementById('claims-count'); if (cc) cc.textContent = claimsRows.length + ' Pending';
+  document.getElementById('claims-tbody').innerHTML = claimsRows.length ? claimsRows.map(c => `<tr>
+      <td class="td-name">${escA(c.userName||c.user_name||'—')}<br><span style="color:var(--text-2);font-size:11px;">${escA(c.email||'')}</span></td>
+      <td>${escA(c.athleteName||c.athlete_name||'—')}</td>
+      <td style="font-size:12px;">${c.createdAt||c.created_at ? new Date(c.createdAt||c.created_at).toLocaleString('de-CH') : ''}</td>
+      <td class="td-actions"><button class="btn-toggle" onclick="respondClaim(${c.id},true)">Approve</button><button class="btn-delete" onclick="respondClaim(${c.id},false)">Reject</button></td>
+    </tr>`).join('') : '<tr><td colspan="4" style="padding:22px;color:var(--text-2);">No pending claims.</td></tr>';
+
+  const certRows = Array.isArray(certs) ? certs : [];
+  const ctc = document.getElementById('certs-count'); if (ctc) ctc.textContent = certRows.length + ' Pending';
+  document.getElementById('certs-tbody').innerHTML = certRows.length ? certRows.map(c => `<tr>
+      <td class="td-name">${escA(c.name||'—')}<br><span style="color:var(--text-2);font-size:11px;">${escA(c.email||'')}</span></td>
+      <td>${escA(c.level||'')}</td>
+      <td>${escA(c.issuingBody||c.issuing_body||'—')}</td>
+      <td style="font-size:12px;">${c.createdAt||c.created_at ? new Date(c.createdAt||c.created_at).toLocaleString('de-CH') : ''}</td>
+      <td class="td-actions"><button class="btn-toggle" onclick="respondCertification(${c.id},true)">Approve</button><button class="btn-delete" onclick="respondCertification(${c.id},false)">Reject</button></td>
+    </tr>`).join('') : '<tr><td colspan="5" style="padding:22px;color:var(--text-2);">No pending certification requests.</td></tr>';
+
+  const approvedRows = Array.isArray(approved) ? approved : [];
+  document.getElementById('approved-officials-tbody').innerHTML = approvedRows.length ? approvedRows.map(o => `<tr>
+      <td class="td-name">${escA(o.name||'—')}</td><td>${escA(o.level||'')}</td><td>${escA(o.email||'')}</td>
+    </tr>`).join('') : '<tr><td colspan="3" style="padding:22px;color:var(--text-2);">No approved officials yet.</td></tr>';
+
+  const officialSelect = document.getElementById('assign-official-select');
+  officialSelect.innerHTML = approvedRows.length
+    ? approvedRows.map(o => `<option value="${o.userId||o.user_id}">${escA(o.name)} (${escA(o.level)})</option>`).join('')
+    : '<option value="">No approved officials</option>';
+
+  const eventRows = Array.isArray(events) ? events : [];
+  const eventSelect = document.getElementById('assign-event-select');
+  eventSelect.innerHTML = eventRows.length
+    ? eventRows.map(e => `<option value="${e.id}">${escA(e.name)}${e.startsOn ? ' — ' + new Date(e.startsOn).toLocaleDateString('de-CH') : ''}</option>`).join('')
+    : '<option value="">No events yet</option>';
+}
+async function respondClaim(claimId, approve){
+  const r = await post('members/approve-claim', { claimId, approve });
+  if (!r || r.error || r.ok === false) { toast((r&&r.error) || 'Could not process this claim.'); return; }
+  toast(approve ? 'Claim approved — athlete profile linked.' : 'Claim rejected.');
+  loadOfficiating();
+}
+async function respondCertification(certificationId, approve){
+  const r = await post('members/approve-certification', { certificationId, approve });
+  if (!r || r.error || r.ok === false) { toast((r&&r.error) || 'Could not process this certification.'); return; }
+  toast(approve ? 'Certification approved.' : 'Certification revoked.');
+  loadOfficiating();
+}
+async function assignOfficialToEvent(){
+  const userId = document.getElementById('assign-official-select').value;
+  const eventId = document.getElementById('assign-event-select').value;
+  const role = document.getElementById('assign-role-select').value;
+  if (!userId || !eventId) { toast('Choose an official and an event.'); return; }
+  const r = await post('members/assign-official', { userId, eventId, role });
+  if (!r || r.error || r.ok === false) { toast((r&&r.error) || 'Could not assign this official.'); return; }
+  toast('Official assigned to event.');
 }
 
 async function savePricing(){

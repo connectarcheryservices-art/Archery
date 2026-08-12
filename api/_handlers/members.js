@@ -291,6 +291,18 @@ module.exports = async (req, res) => {
       return json(res, rows);
     }
 
+    // ── APPROVED-OFFICIALS: staff-only list of currently-approved officials,
+    // for the "assign to event" workflow (admin.html). ──
+    if (action === 'approved-officials' && req.method === 'GET') {
+      const staff = await requireStaff(req);
+      if (!staff) return json(res, { error: 'Unauthorised' }, 401);
+      const rows = (await q(
+        `select oc.user_id, oc.level, oc.issuing_body, oc.approved_at, u.name, u.email
+           from official_certifications oc join users u on u.id = oc.user_id
+          where oc.status='approved' order by u.name`)).rows;
+      return json(res, rows);
+    }
+
     if (action === 'approve-certification' && req.method === 'POST') {
       const staff = await requireStaff(req);
       if (!staff) return json(res, { error: 'Unauthorised' }, 401);
