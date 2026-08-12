@@ -150,10 +150,11 @@ h1 em{font-style:normal;color:var(--gold);}
   </div>
 </div>
 
+<script src="esc.js"></script>
 <script src="shared.js"></script>
 <script>
 let POSTS=[],FILTER='latest',OPEN=null;
-const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+// esc comes from esc.js — one shared, correct escaper (CLAUDE.md §1.7).
 const initials=n=>(n||'?').trim().split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase()||'?';
 function ago(ts){if(!ts)return'';const s=(Date.now()-ts)/1000;if(s<60)return'just now';const m=s/60|0;if(m<60)return m+'m ago';const h=m/60|0;if(h<24)return h+'h ago';const d=h/24|0;if(d<30)return d+'d ago';return new Date(ts).toLocaleDateString('en-IN');}
 function me(){try{const u=JSON.parse(localStorage.getItem('archery_user')||'null');return u?u.name:'';}catch(e){return'';}}
@@ -169,7 +170,7 @@ function render(){
   feed.innerHTML=list.map(p=>{
     const r=(p.replies||[]).length,ex=(p.body||'').slice(0,170)+((p.body||'').length>170?'…':'');
     return `<div class="post" onclick="openPost('${p.id}')">
-      <div class="pm"><div class="av">${initials(p.author)}</div><div><div class="who">${esc(p.author)}</div><div class="when">${ago(p.createdAt)}</div></div>${p.pinned?'<span class="pin">Pinned</span>':''}<span class="cat">${esc(p.category||'General')}</span></div>
+      <div class="pm"><div class="av">${esc(initials(p.author))}</div><div><div class="who">${esc(p.author)}</div><div class="when">${ago(p.createdAt)}</div></div>${p.pinned?'<span class="pin">Pinned</span>':''}<span class="cat">${esc(p.category||'General')}</span></div>
       <div class="pt">${esc(p.title)}</div><div class="px">${esc(ex)}</div>
       <div class="acts">
         <button class="act" onclick="event.stopPropagation();like('${p.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3z"/></svg>${p.likes||0}</button>

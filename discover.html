@@ -180,13 +180,13 @@ function renderTrending(){
     <div class="card">
       <div class="card-img">${EMOJIS[t.type]||'📄'}</div>
       <div class="card-body">
-        <div class="card-type">${t.type} · ${t.country}</div>
-        <div class="card-title">${t.title}</div>
-        <div class="card-desc">${t.desc}</div>
+        <div class="card-type">${escA(t.type)} · ${escA(t.country)}</div>
+        <div class="card-title">${escA(t.title)}</div>
+        <div class="card-desc">${escA(t.desc)}</div>
         <!-- View/like counts removed 2026-07-13: they were invented (CLAUDE.md
              §1.1). Reinstate only from real analytics_events. -->
         <div class="card-meta">
-          <span>🏷 ${t.style}</span>
+          <span>🏷 ${escA(t.style)}</span>
         </div>
       </div>
     </div>`).join('');
@@ -228,12 +228,12 @@ function renderEvents(){
         <div class="ed-mon">${MONTHS[d.getMonth()]}</div>
       </div>
       <div class="event-info">
-        <div class="event-name">${e.name}</div>
-        <div class="event-detail">📍 ${e.city}, ${e.country} · ${e.style}</div>
+        <div class="event-name">${escA(e.name)}</div>
+        <div class="event-detail">📍 ${escA(e.city)}, ${escA(e.country)} · ${escA(e.style)}</div>
         <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
-        <div style="font-size:10.5px;color:var(--faint);margin-top:3px;">${e.registered}/${e.capacity} registered (${pct}%)</div>
+        <div style="font-size:10.5px;color:var(--faint);margin-top:3px;">${escA(e.registered)}/${escA(e.capacity)} registered (${pct}%)</div>
       </div>
-      <span class="event-badge ${TYPE_CLS[e.type]||'badge-t'}">${e.type}</span>
+      <span class="event-badge ${TYPE_CLS[e.type]||'badge-t'}">${escA(e.type)}</span>
     </div>`;
   }).join('');
 }

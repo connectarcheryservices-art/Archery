@@ -214,6 +214,7 @@
   </div>
 </div>
 
+<script src="esc.js"></script>
 <script src="shared.js"></script>
 <script>
 // Real articles come from /api/knowledge — the same table admin.html's
@@ -237,7 +238,7 @@ async function loadKnowledge(){
   renderArticles(data);
 }
 
-function escK(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+// esc comes from esc.js — one shared, correct escaper (CLAUDE.md §1.7).
 
 function renderCategoryCards(){
   for (let i=1;i<=6;i++){
@@ -246,7 +247,7 @@ function renderCategoryCards(){
     if (!list || !count) continue;
     const catName = Object.keys(CAT_CARD).find(k=>CAT_CARD[k]===i);
     const items = ARTICLES.filter(a=>a.category===catName);
-    list.innerHTML = items.slice(0,3).map(a=>'<li>'+escK(a.title)+'</li>').join('');
+    list.innerHTML = items.slice(0,3).map(a=>'<li>'+esc(a.title)+'</li>').join('');
     count.textContent = items.length===0 ? 'No guides yet' : (items.length+(items.length===1?' guide →':' guides →'));
   }
 }
@@ -277,9 +278,9 @@ function renderArticles(data){
     const icon = K_ICONS[a.category] || K_ICONS.Technique;
     const badge = K_BADGE[a.category] || 'background:rgba(245,240,232,.08);color:var(--ivory-2);';
     return '<div class="article-card reveal" onclick="kOpen(\''+a.id+'\')">'+
-      '<div class="article-img" style="background:var(--forest-3);"><span class="art-cat" style="'+badge+'">'+escK(a.category||'')+'</span>'+icon+'</div>'+
-      '<div class="art-body"><div class="art-title">'+escK(a.title)+'</div><div class="art-excerpt">'+escK(a.excerpt||'')+'</div>'+
-      '<div class="art-footer"><span class="art-meta">'+escK(a.readTime||'')+(a.level?' · '+escK(a.level):'')+'</span><span class="art-read">Read →</span></div></div></div>';
+      '<div class="article-img" style="background:var(--forest-3);"><span class="art-cat" style="'+badge+'">'+esc(a.category||'')+'</span>'+icon+'</div>'+
+      '<div class="art-body"><div class="art-title">'+esc(a.title)+'</div><div class="art-excerpt">'+esc(a.excerpt||'')+'</div>'+
+      '<div class="art-footer"><span class="art-meta">'+esc(a.readTime||'')+(a.level?' · '+esc(a.level):'')+'</span><span class="art-read">Read →</span></div></div></div>';
   }).join('');
 }
 

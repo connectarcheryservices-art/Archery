@@ -58,11 +58,12 @@
 
 <footer><div class="footer-inner"><div class="footer-top"><div><div class="footer-brand-name">Archery<span>.</span>Services</div><p class="footer-tagline">The world's complete digital infrastructure for archery.</p></div><div class="footer-col"><h4>Athletes</h4><ul><li><a href="profile.html">Archery Profiles</a></li><li><a href="athletes.html">World Rankings</a></li><li><a href="tournaments.html">Events</a></li></ul></div><div class="footer-col"><h4>Platform</h4><ul><li><a href="index.html">Home</a></li><li><a href="shop.html">Shop</a></li><li><a href="community.html">Community</a></li></ul></div><div class="footer-col"><h4>Company</h4><ul><li><a href="about.html">About</a></li></ul></div></div><div class="footer-bottom"><p class="footer-copy">© 2025 Archery.Services</p><div class="footer-legal"><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="refund-policy.html">Refunds</a><a href="shipping-policy.html">Shipping</a></div></div></div></footer>
 
+<script src="esc.js"></script>
 <script src="shared.js"></script>
 <script>
 const API='/api';
 const root=document.getElementById('pf-root');
-const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+// esc/escUrl come from esc.js — one shared, correct escaper (CLAUDE.md §1.7).
 const initials=n=>(n||'A').split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
 const linkIcon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7"/><path d="M8 7h9v9"/></svg>';
 
@@ -76,7 +77,7 @@ function emptyState(){
 }
 
 function render(p, isOwn){
-  const links=(p.links||[]).map(l=>`<a class="pf-link" href="${esc(l.url||'#')}" target="_blank" rel="noopener"><span>${esc(l.label||'Link')}</span>${linkIcon}</a>`).join('') || '<p style="color:var(--ivory-3);font-size:13px;">No links added yet.</p>';
+  const links=(p.links||[]).map(l=>`<a class="pf-link" href="${escUrl(l.url||'#')}" target="_blank" rel="noopener"><span>${esc(l.label||'Link')}</span>${linkIcon}</a>`).join('') || '<p style="color:var(--ivory-3);font-size:13px;">No links added yet.</p>';
   const ach=(p.achievements||[]).map(a=>`<div class="pf-tl"><div class="pf-tl-dot"></div><div class="pf-tl-y">${esc(a.year||'')}</div><div class="pf-tl-t">${esc(a.text||'')}</div></div>`).join('') || '<p style="color:var(--ivory-3);font-size:13px;">No achievements listed.</p>';
   const exp=(p.experience||[]).map(e=>`<div class="pf-tl"><div class="pf-tl-dot"></div><div class="pf-tl-t"><strong>${esc(e.role||'')}</strong>${esc(e.org||'')} · ${esc(e.period||'')}</div></div>`).join('') || '';
   const certs=(p.certifications||[]).map(c=>`<span class="pf-chip">${esc(c)}</span>`).join('') || '';
