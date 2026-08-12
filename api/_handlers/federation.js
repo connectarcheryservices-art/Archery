@@ -117,9 +117,18 @@ module.exports = async (req, res) => {
     if (action === 'assign-officer' && req.method === 'POST') {
       const b = readBody(req);
       const federationId = parseInt(b.federationId, 10);
-      const userId = parseInt(b.userId, 10);
+      // Unlike an official (who must already be a certified, approved
+      // official — see approved-officials), any registered user can become
+      // a federation officer, so there's no bounded list to pick from in
+      // the UI — resolve by email so staff don't need to know a raw id.
+      let userId = parseInt(b.userId, 10) || null;
+      if (!userId && b.email) {
+        const u = (await q('select id from users where email=$1', [String(b.email).trim().toLowerCase()])).rows[0];
+        if (!u) return json(res, { error: 'No registered user with that email.' }, 404);
+        userId = u.id;
+      }
       const office = b.office;
-      if (!federationId || !userId) return json(res, { error: 'federationId and userId are required' }, 400);
+      if (!federationId || !userId) return json(res, { error: 'federationId and userId (or email) are required' }, 400);
       if (!['president', 'secretary', 'treasurer', 'executive_member'].includes(office)) return json(res, { error: 'Invalid office' }, 400);
       const fed = (await q('select id from federations where id=$1', [federationId])).rows[0];
       if (!fed) return json(res, { error: 'Unknown federation' }, 404);

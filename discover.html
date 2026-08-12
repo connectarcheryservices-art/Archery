@@ -154,7 +154,17 @@ section.disc-section{margin-bottom:48px;}
 </div>
 
 <script src="esc.js"></script>
+<script src="auth.js"></script>
 <script>
+async function requestJoinClub(clubId, btn){
+  btn.disabled = true; btn.textContent = 'Requesting…';
+  const r = await fetch('/api/members/request-join-club', { method:'POST', headers: ArcheryAuth.authHeaders() ? {...ArcheryAuth.authHeaders(),'Content-Type':'application/json'} : {'Content-Type':'application/json'}, body: JSON.stringify({ clubId }) })
+    .then(x=>x.json()).catch(()=>null);
+  if (r && r.alreadyMember) { btn.textContent = 'Already a member'; return; }
+  if (r && r.ok) { btn.textContent = r.unchanged ? 'Request pending' : 'Request sent'; return; }
+  btn.disabled = false; btn.textContent = 'Request to join';
+  alert((r && r.error) || 'Could not submit request.');
+}
 // Fabricated directory removed 2026-07-22 (CLAUDE.md §1.1).
 // This page — "Coaches & Clubs" in the main nav — made ZERO API calls and served
 // three invented datasets as if they were platform listings: 12 trending items,
@@ -211,6 +221,7 @@ function renderRanges(){
         <div><div class="rs-val">${escA(r.country||'—')}</div><div class="rs-label">Country</div></div>
         <div><div class="rs-val">${escA(r.style||'—')}</div><div class="rs-label">Discipline</div></div>
       </div>
+      ${window.ArcheryAuth && ArcheryAuth.isLoggedIn() ? `<button class="btn-join-club" onclick="requestJoinClub(${r.id}, this)" style="margin-top:10px;width:100%;padding:9px;background:#1F3E9C;color:#fff;border:none;border-radius:4px;font-family:'Oswald',sans-serif;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;">Request to join</button>` : ''}
     </div>`).join('');
 }
 
@@ -290,7 +301,7 @@ renderTrending();renderRanges();renderEvents();
     if(!Array.isArray(data)) return;              // 503 {unavailable} → keep empty state
     RANGES.length=0;
     data.forEach(c=>RANGES.push({
-      name:c.name, city:c.city||'', country:c.country||'',
+      id:c.id, name:c.name, city:c.city||'', country:c.country||'',
       style:c.discipline||'', region:c.region||''
     }));
     renderRanges();

@@ -1084,6 +1084,44 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
           <tbody id="applications-tbody"></tbody>
         </table>
       </div>
+
+      <div class="card">
+        <div class="card-title">Federation Hierarchy (National &rarr; State &rarr; District)</div>
+        <p style="font-size:13px;color:var(--text-2);margin-bottom:14px;">Structural only — no billing depends on this. Creating a node requires staff, or an officer of its parent; appointing an officer requires staff, or the federation's own president (governance decisions can't self-promote — see migration 026).</p>
+        <div id="federation-tree" style="font-size:13px;line-height:2;margin-bottom:16px;color:var(--text);"></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin-bottom:14px;padding-top:14px;border-top:1px solid var(--line);">
+          <div class="form-group" style="margin-bottom:0;"><label class="form-label">Tier</label>
+            <select class="form-input" id="fed-new-tier" onchange="renderFederationParentSelect()">
+              <option value="national">National</option><option value="state">State</option><option value="district">District</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom:0;min-width:200px;"><label class="form-label">Parent</label>
+            <select class="form-input" id="fed-new-parent"></select>
+          </div>
+          <div class="form-group" style="margin-bottom:0;"><label class="form-label">Name</label>
+            <input class="form-input" id="fed-new-name" placeholder="e.g. Karnataka State Archery Association">
+          </div>
+          <div class="form-group" style="margin-bottom:0;"><label class="form-label">Region (optional)</label>
+            <input class="form-input" id="fed-new-region">
+          </div>
+          <button class="btn-save" style="margin-bottom:0;" onclick="createFederationNode()">Create</button>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:end;">
+          <div class="form-group" style="margin-bottom:0;min-width:200px;"><label class="form-label">Federation</label>
+            <select class="form-input" id="fed-officer-fed"></select>
+          </div>
+          <div class="form-group" style="margin-bottom:0;"><label class="form-label">Officer's email</label>
+            <input class="form-input" id="fed-officer-email" placeholder="registered user email">
+          </div>
+          <div class="form-group" style="margin-bottom:0;"><label class="form-label">Office</label>
+            <select class="form-input" id="fed-officer-office">
+              <option value="president">President</option><option value="secretary">Secretary</option>
+              <option value="treasurer">Treasurer</option><option value="executive_member">Executive Member</option>
+            </select>
+          </div>
+          <button class="btn-save" style="margin-bottom:0;" onclick="assignFederationOfficer()">Assign officer</button>
+        </div>
+      </div>
     </div>
 
     <!-- ── LIVE CHAT ── -->
@@ -1802,6 +1840,57 @@ async function loadApplications(){
   }).join(''):'<tr><td colspan="6" style="padding:22px;color:var(--text-2);">No applications yet.</td></tr>';
 }
 
+// ── FEDERATION HIERARCHY (migration 026 tree — structural only, no billing) ──
+let FEDERATION_TREE = [];
+function flattenFederations(nodes, depth, out){
+  for (const n of nodes) { out.push({ ...n, depth }); if (n.children && n.children.length) flattenFederations(n.children, depth + 1, out); }
+  return out;
+}
+async function loadFederationTree(){
+  const r = await get('federation/tree');
+  FEDERATION_TREE = (r && r.ok && Array.isArray(r.tree)) ? r.tree : [];
+  const flat = flattenFederations(FEDERATION_TREE, 0, []);
+  const treeEl = document.getElementById('federation-tree');
+  treeEl.innerHTML = flat.length ? flat.map(f => `<div style="padding-left:${f.depth*22}px;">${f.depth?'&#8627; ':''}<b>${escA(f.name)}</b> <span class="td-badge" style="font-size:10px;">${escA(f.tier)}</span>${f.region?' · '+escA(f.region):''}</div>`).join('')
+    : '<div style="color:var(--text-2);">No federations yet — create the first (national) node below.</div>';
+  const parentSelect = document.getElementById('fed-new-parent');
+  const officerSelect = document.getElementById('fed-officer-fed');
+  const opts = flat.map(f => `<option value="${f.id}">${'— '.repeat(f.depth)}${escA(f.name)} (${escA(f.tier)})</option>`).join('');
+  officerSelect.innerHTML = opts || '<option value="">No federations yet</option>';
+  renderFederationParentSelect();
+}
+function renderFederationParentSelect(){
+  const tier = document.getElementById('fed-new-tier').value;
+  const parentTier = { state: 'national', district: 'state' }[tier];
+  const parentSelect = document.getElementById('fed-new-parent');
+  if (!parentTier) { parentSelect.innerHTML = '<option value="">(national has no parent)</option>'; parentSelect.disabled = true; return; }
+  parentSelect.disabled = false;
+  const flat = flattenFederations(FEDERATION_TREE, 0, []).filter(f => f.tier === parentTier);
+  parentSelect.innerHTML = flat.length ? flat.map(f => `<option value="${f.id}">${escA(f.name)}</option>`).join('') : `<option value="">No ${parentTier} federation exists yet</option>`;
+}
+async function createFederationNode(){
+  const tier = document.getElementById('fed-new-tier').value;
+  const parentId = document.getElementById('fed-new-parent').value || undefined;
+  const name = document.getElementById('fed-new-name').value.trim();
+  const region = document.getElementById('fed-new-region').value.trim() || undefined;
+  if (!name) { toast('Name is required.'); return; }
+  const r = await post('federation/create', { tier, parentId, name, region });
+  if (!r || r.error || r.ok === false) { toast((r && r.error) || 'Could not create this federation.'); return; }
+  toast('Federation created.');
+  document.getElementById('fed-new-name').value = '';
+  loadFederationTree();
+}
+async function assignFederationOfficer(){
+  const federationId = document.getElementById('fed-officer-fed').value;
+  const email = document.getElementById('fed-officer-email').value.trim();
+  const office = document.getElementById('fed-officer-office').value;
+  if (!federationId || !email) { toast('Choose a federation and enter the officer\'s email.'); return; }
+  const r = await post('federation/assign-officer', { federationId, email, office });
+  if (!r || r.error || r.ok === false) { toast((r && r.error) || 'Could not assign this officer.'); return; }
+  toast(r.unchanged ? 'Already holds that office.' : 'Officer assigned.');
+  document.getElementById('fed-officer-email').value = '';
+}
+
 // ── SELLERS ──
 async function loadSellers(){
   const data=await get('sellers'); const tb=document.getElementById('sellers-tbody'); if(!tb)return;
@@ -2073,7 +2162,7 @@ function loadPanel(name){
   else if(name==='forum'){loadForum();}
   else if(name==='registrations'){loadRegistrations();}
   else if(name==='reports'){loadReports();}
-  else if(name==='applications'){loadApplications();}
+  else if(name==='applications'){loadApplications();loadFederationTree();}
   else if(name==='chat'){loadChat();}
   else if(name==='settings'){loadSettings();}
   else if(name==='announcements'){loadSettings();}

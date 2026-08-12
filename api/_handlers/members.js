@@ -12,7 +12,7 @@ const { checkAdmin } = require('../_lib/auth');
 const { authedUserChecked } = require('../_lib/userauth');
 const { writeAudit } = require('../_lib/audit');
 const { isMinor } = require('../_lib/age');
-const { canActForAthlete } = require('../_lib/member-capability');
+const { canActForAthlete, isClubAdmin } = require('../_lib/member-capability');
 
 const SPORT_CLASSES = ['PI1', 'PI2', 'VI1', 'VI2'];
 
@@ -312,6 +312,41 @@ module.exports = async (req, res) => {
       return json(res, { ok: true, classification: row, pendingRequest: pendingReq });
     }
 
+    // ── REQUEST-JOIN-CLUB: self-service. Approved by that club's admin
+    // (migration 031) or staff — never automatic. ──
+    if (action === 'request-join-club' && req.method === 'POST') {
+      const member = await requireConsentedMember(req);
+      if (!member) return json(res, { error: 'Unauthorised' }, 401);
+      if (member.blocked) return json(res, { error: CONSENT_REQUIRED_MSG }, 403);
+      const b = readBody(req);
+      const clubId = parseInt(b.clubId, 10);
+      if (!clubId) return json(res, { error: 'clubId is required' }, 400);
+      const club = (await q('select id from clubs where id=$1 and active=true', [clubId])).rows[0];
+      if (!club) return json(res, { error: 'That club does not exist.' }, 404);
+      const already = (await q(`select id from club_members where club_id=$1 and user_id=$2 and status='active'`, [clubId, member.id])).rows[0];
+      if (already) return json(res, { ok: true, alreadyMember: true });
+      const pending = (await q(`select id from club_join_requests where club_id=$1 and user_id=$2 and status='pending'`, [clubId, member.id])).rows[0];
+      if (pending) return json(res, { ok: true, requestId: pending.id, status: 'pending', unchanged: true });
+      const r = await q(
+        `insert into club_join_requests (club_id, user_id, discipline, note) values ($1,$2,$3,$4) returning id`,
+        [clubId, member.id, String(b.discipline || '').slice(0, 40) || null, String(b.note || '').slice(0, 500) || null]);
+      await writeAudit({ req, actor: memberActor(member, 'member'), action: 'create', resourceType: 'club_join_requests', resourceId: r.rows[0].id, after: { clubId } });
+      return json(res, { ok: true, requestId: r.rows[0].id, status: 'pending' });
+    }
+
+    // ── MY-CLUBS: a member's own active memberships + pending requests. ──
+    if (action === 'my-clubs' && req.method === 'GET') {
+      const member = await requireMember(req);
+      if (!member) return json(res, { error: 'Unauthorised' }, 401);
+      const memberships = (await q(
+        `select cm.club_id, c.name as club_name, cm.member_role, cm.status
+           from club_members cm join clubs c on c.id = cm.club_id where cm.user_id=$1`, [member.id])).rows;
+      const pendingRequests = (await q(
+        `select cjr.club_id, c.name as club_name, cjr.created_at
+           from club_join_requests cjr join clubs c on c.id = cjr.club_id where cjr.user_id=$1 and cjr.status='pending'`, [member.id])).rows;
+      return json(res, { ok: true, memberships, pendingRequests });
+    }
+
     // ── EVENT-OFFICIALS: public read (who's judging this event). ──
     if (action === 'event-officials' && req.method === 'GET') {
       const eventId = parseInt(req.query.eventId, 10);
@@ -465,6 +500,57 @@ module.exports = async (req, res) => {
       await q(`update classification_requests set status='approved', reviewed_by=$1, reviewed_at=now() where id=$2`, [staff.name, requestId]);
       await writeAudit({ req, actor: staff, action: 'create', resourceType: 'classifications', resourceId: newRowId, after: { athleteId: reqRow.athlete_id, sportClass, status } });
       return json(res, { ok: true, classificationId: newRowId, status });
+    }
+
+    // ── CLUB ADMIN (scoped, not global staff) OR staff: review join requests.
+    // The first real use of migration 031's club-scoped capability — a club
+    // admin manages their own club without needing owner/manager access to
+    // every club on the platform. ──
+    if (action === 'pending-club-joins' && req.method === 'GET') {
+      const clubId = parseInt(req.query.clubId, 10);
+      if (!clubId) return json(res, { error: 'clubId is required' }, 400);
+      const staff = await checkAdmin(req);
+      let authorized = !!staff;
+      if (!authorized) {
+        const member = await authedUserChecked(req);
+        authorized = !!(member && await isClubAdmin(member.id, clubId));
+      }
+      if (!authorized) return json(res, { error: 'Unauthorised' }, 401);
+      const rows = (await q(
+        `select cjr.id, cjr.user_id, cjr.discipline, cjr.note, cjr.created_at, u.name, u.email
+           from club_join_requests cjr join users u on u.id = cjr.user_id
+          where cjr.club_id=$1 and cjr.status='pending' order by cjr.created_at`, [clubId])).rows;
+      return json(res, rows);
+    }
+
+    if (action === 'approve-club-join' && req.method === 'POST') {
+      const b = readBody(req);
+      const requestId = parseInt(b.requestId, 10);
+      if (!requestId) return json(res, { error: 'requestId is required' }, 400);
+      const reqRow = (await q(`select * from club_join_requests where id=$1 and status='pending'`, [requestId])).rows[0];
+      if (!reqRow) return json(res, { error: 'No pending request with that id' }, 404);
+      const staff = await checkAdmin(req);
+      let actor = staff;
+      if (!actor) {
+        const member = await authedUserChecked(req);
+        if (member && await isClubAdmin(member.id, reqRow.club_id)) actor = { role: 'member:club-admin', sid: member.id, name: member.name };
+      }
+      if (!actor) return json(res, { error: 'Unauthorised' }, 401);
+      const actorLabel = actor.name || actor.username || 'owner';
+      if (!b.approve) {
+        await q(`update club_join_requests set status='rejected', reviewed_by=$1, reviewed_at=now() where id=$2`, [actorLabel, requestId]);
+        await writeAudit({ req, actor, action: 'update', resourceType: 'club_join_requests', resourceId: requestId, after: { approved: false } });
+        return json(res, { ok: true });
+      }
+      const userRow = (await q('select name, email from users where id=$1', [reqRow.user_id])).rows[0];
+      const memberRow = await q(
+        `insert into club_members (club_id, user_id, name, email, discipline, member_role, status)
+         values ($1,$2,$3,$4,$5,'archer','active')
+         on conflict (club_id, user_id) do update set status='active' returning id`,
+        [reqRow.club_id, reqRow.user_id, userRow.name, userRow.email, reqRow.discipline || '']);
+      await q(`update club_join_requests set status='approved', reviewed_by=$1, reviewed_at=now() where id=$2`, [actorLabel, requestId]);
+      await writeAudit({ req, actor, action: 'create', resourceType: 'club_members', resourceId: memberRow.rows[0].id, after: { clubId: reqRow.club_id, userId: reqRow.user_id, viaJoinRequest: true } });
+      return json(res, { ok: true, memberId: memberRow.rows[0].id });
     }
 
     if (action === 'assign-official' && req.method === 'POST') {

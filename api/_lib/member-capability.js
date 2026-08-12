@@ -128,8 +128,23 @@ async function requireScorerForEnd(req, endId) {
   return { role: 'official', name: member.name || ('member#' + member.id), sid: member.id };
 }
 
+// Is userId an ACTIVE admin of THIS specific club (migration 031)? Scoped,
+// not global — a club admin manages their own club's roster/join requests
+// without needing owner/manager/editor/support access to every club on the
+// platform. This is the club-scoped counterpart to what federation.js
+// already does ad hoc for federation officers (hasJurisdiction) — CLAUDE.md
+// §3's "a club admin is an actor within a club" only existed for
+// federations before this.
+async function isClubAdmin(userId, clubId) {
+  if (!userId || !clubId) return false;
+  const row = (await q(
+    `select 1 from club_members where user_id=$1 and club_id=$2 and member_role='admin' and status='active'`,
+    [userId, clubId])).rows[0];
+  return !!row;
+}
+
 module.exports = {
   isOwnAthlete, isActiveCoach, canActForAthlete, isAthleteConsentBlocked,
   isAssignedCertifiedOfficial, eventIdForMatchEntry, eventIdForEnd,
-  requireScorerForMatchEntry, requireScorerForEnd,
+  requireScorerForMatchEntry, requireScorerForEnd, isClubAdmin,
 };

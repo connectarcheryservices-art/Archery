@@ -66,7 +66,9 @@ async function jget(path){
 }
 
 async function loadStatus(){
-  STATUS = await jget('/members/my-status');
+  const [status, clubs] = await Promise.all([jget('/members/my-status'), jget('/members/my-clubs')]);
+  STATUS = status;
+  if (STATUS && STATUS.ok && clubs && clubs.ok) { STATUS.memberships = clubs.memberships; STATUS.pendingClubRequests = clubs.pendingRequests; }
   render();
 }
 
@@ -119,6 +121,19 @@ function render(){
     }
     html += '</div>';
   }
+
+  // ── MY CLUBS — memberships come from a club admin (or staff) approving a
+  // request (migration 031); requesting one here never adds you automatically. ──
+  html += '<div class="card"><h2>My Clubs</h2>';
+  const memberships = STATUS.memberships || [];
+  const pendingClubs = STATUS.pendingClubRequests || [];
+  if (!memberships.length && !pendingClubs.length) {
+    html += '<div class="msg msg-info">Not a member of any club yet. Request to join one from the Discover page.</div>';
+  } else {
+    memberships.forEach(m => { html += `<div class="row"><div>${esc(m.clubName || m.club_name)}</div><span class="badge badge-active">${esc(m.memberRole || m.member_role)}${(m.status||'').toLowerCase()==='inactive'?' · inactive':''}</span></div>`; });
+    pendingClubs.forEach(p => { html += `<div class="msg msg-info" style="margin-top:6px;">Requested to join ${esc(p.clubName || p.club_name)} — awaiting the club admin.</div>`; });
+  }
+  html += '</div>';
 
   // ── MY COACHES (if I'm an athlete) ──
   if (STATUS.athlete) {

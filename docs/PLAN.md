@@ -369,7 +369,16 @@ a row**. Grievance Officer published; 48-hour clock instrumented.
 > Why the domain is `.services`, not `.shop`. `fees.js` already **sells** these at
 > ₹7,999–₹8,99,999 — now make them exist.
 
-- [ ] Clubs & ranges: membership, attendance, scheduling, coach assignment, finance, listing.
+- [~] Clubs & ranges (2026-08-12): directory + admin-managed roster were already real (migration
+      013). **Now real:** self-service "request to join" (`club_join_requests`, mirroring
+      `athlete_claim_requests`'s request→adjudicate shape) and a genuine scoped **club admin**
+      role (`club_members.member_role='admin'`, CHECK-constrained — previously unenforced) who
+      can review/approve their own club's join requests without needing global staff access
+      (`isClubAdmin()` in `member-capability.js`) — only staff can grant the admin role itself,
+      preventing self-service admin proliferation. `club-members.js` previously wrote **zero**
+      audit rows despite being a mutation endpoint — fixed in the same pass (§1.5 has no
+      exceptions). Attendance, scheduling, coach assignment, and finance are still **not** built.
+      Tested: `club-federation-test.js` + `club-federation-ui-test.js`, 33 assertions, all green.
 - [~] Coaching: **consent-based coach-athlete linking is real** (migration 024 — either side can
       initiate, the other must accept, either can revoke). Licensing/certification for
       coaches specifically (as opposed to judges — see below), rosters, session plans, and
@@ -382,9 +391,16 @@ a row**. Grievance Officer published; 48-hour clock instrumented.
       attribution was caught by adversarial review and fixed, see session note above).
 - [~] Federation tier (district → state → national): **the structural hierarchy tree is real**
       (migration 026 — parent/child tier ordering enforced, officer jurisdiction cascades down
-      the tree, a self-promotion-to-president bug was caught by adversarial audit and fixed).
-      Licensing, sanctioning, member sync, rankings roll-up, compliance dashboard, and an API for
-      federations to consume are **not** built. **Explicitly and deliberately NOT connected** to
+      the tree, a self-promotion-to-president bug was caught by adversarial audit and fixed) —
+      **but until 2026-08-12 it had literally zero UI reachability.** A fully built, already
+      security-hardened API existed that nobody on the platform could actually use. Closed:
+      `admin.html`'s Federation Applications panel now has a real Federation Hierarchy card —
+      view the tree, create a child node (staff or an officer of the parent), assign an officer
+      by email (staff or the federation's own president/an ancestor's — unchanged security
+      posture, just now reachable). `assign-officer` also gained email-based lookup (previously
+      required a raw numeric userId with no way to find one). Licensing, sanctioning, member
+      sync, rankings roll-up, compliance dashboard, and an API for federations to consume are
+      still **not** built. **Explicitly and deliberately NOT connected** to
       `checkout-fee.js`'s district/state/national paid tiers, which remain switched off there
       (`FOR_SALE` is an intentionally empty set) after a 2026-07-22 audit found the platform
       charging real money for federation-portal features that didn't exist. Building the
