@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="day">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Dashboard — Archery.Services</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+:root{--tw:#FFFFFF;--tb:#1A1A1A;--tbl:#0F5FA8;--tr:#D22730;--ty:#C9A227;--bg:#F5F7FA;--bg2:#FFFFFF;--ink:#0D1B2E;--dim:#334155;--faint:#8899AA;--line:rgba(15,95,168,.1);}
+body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;margin:0;}
+[data-theme="night"]{--bg:#0D1117;--bg2:#161B22;--ink:#E6EDF3;--dim:#8B949E;--faint:#4A5568;--line:rgba(255,255,255,.08);}
+.page-hero{background:linear-gradient(135deg,#131316,#0F5FA8);padding:44px 24px 32px;text-align:center;color:#fff;}
+.page-hero h1{font-family:'Oswald',sans-serif;font-size:clamp(26px,5vw,42px);font-weight:700;text-transform:uppercase;margin:0 0 8px;}
+.page-hero h1 em{color:#C9A227;font-style:normal;}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 60px;}
+.card{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:20px 22px;margin-bottom:20px;}
+.card h2{font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);margin:0 0 14px;}
+.field-input{padding:10px 14px;border:1.5px solid var(--line);border-radius:6px;font-size:14px;font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);outline:none;}
+.btn{padding:9px 18px;border:none;border-radius:6px;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;}
+.btn-primary{background:#0F5FA8;color:#fff;}
+.btn-gold{background:#C9A227;color:#1A1A1A;}
+.btn-ghost{background:none;border:1.5px solid var(--line);color:var(--dim);}
+.row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);gap:10px;flex-wrap:wrap;}
+.row:last-child{border-bottom:none;}
+.badge{display:inline-block;padding:3px 9px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;background:var(--bg);color:var(--dim);border:1px solid var(--line);}
+.badge-pending{background:rgba(201,162,39,.15);color:#8a6d16;border-color:transparent;}
+.badge-active{background:rgba(34,197,94,.15);color:#16803C;border-color:transparent;}
+.badge-revoked{background:rgba(210,39,48,.12);color:#B91C24;border-color:transparent;}
+.msg{padding:10px 14px;border-radius:6px;font-size:12px;margin-top:8px;}
+.msg-info{background:rgba(15,95,168,.1);color:#0F5FA8;}
+.inline-form{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+</style>
+</head>
+<body>
+
+<nav style="position:sticky;top:0;z-index:300;background:#fff;border-bottom:1px solid rgba(15,95,168,.1);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;column-gap:12px;padding:6px clamp(14px,4vw,32px);min-height:60px;">
+  <a href="/" style="font-family:'Oswald',sans-serif;font-size:20px;font-weight:700;color:#0F5FA8;text-decoration:none;">Archery<span style="color:#C9A227">.</span>Services</a>
+</nav>
+
+<div class="page-hero">
+  <h1>My <em>Dashboard</em></h1>
+  <p style="color:rgba(255,255,255,.75);font-size:14px;max-width:520px;margin:0 auto;">Your athlete profile, coaching relationships, and officiating status — all in one place.</p>
+</div>
+
+<div class="wrap" id="dash-wrap">
+  <div id="signed-out" class="card" style="display:none;text-align:center;padding:40px;">
+    <p style="color:var(--faint);margin-bottom:14px;">Sign in to see your athlete, coach, and officiating status.</p>
+    <a class="btn btn-primary" href="signin.html">Sign In</a>
+  </div>
+  <div id="dash-content" style="display:none;"></div>
+</div>
+
+<script src="esc.js"></script>
+<script src="auth.js"></script>
+<script>
+let STATUS = null;
+
+async function jpost(path, body){
+  const r = await fetch('/api' + path, { method: 'POST', headers: { 'Content-Type': 'application/json', ...ArcheryAuth.authHeaders() }, body: JSON.stringify(body || {}) });
+  return r.json().catch(() => ({ error: 'Network error' }));
+}
+async function jget(path){
+  const r = await fetch('/api' + path, { headers: ArcheryAuth.authHeaders() });
+  return r.json().catch(() => null);
+}
+
+async function loadStatus(){
+  STATUS = await jget('/members/my-status');
+  render();
+}
+
+function render(){
+  const el = document.getElementById('dash-content');
+  if (!STATUS || !STATUS.ok) { el.innerHTML = '<div class="card"><div class="msg msg-info">Could not load your status.</div></div>'; return; }
+
+  let html = '';
+
+  // ── ATHLETE ──
+  html += '<div class="card"><h2>Athlete Profile</h2>';
+  if (STATUS.athlete) {
+    html += `<div class="row"><div>${esc(STATUS.athlete.name)}</div><span class="badge badge-active">linked</span></div>`;
+  } else {
+    html += `<div class="msg msg-info">You don't have an athlete profile yet.</div>
+      <div class="inline-form">
+        <button class="btn btn-gold" onclick="becomeAthlete()">Create my athlete profile</button>
+      </div>
+      <div class="inline-form">
+        <input class="field-input" id="claim-athlete-id" type="number" placeholder="Existing athlete profile ID to claim">
+        <button class="btn btn-ghost" onclick="claimAthlete()">Request claim</button>
+      </div>`;
+  }
+  html += '</div>';
+
+  // ── MY COACHES (if I'm an athlete) ──
+  if (STATUS.athlete) {
+    html += '<div class="card"><h2>My Coaches</h2>';
+    const coaches = STATUS.myCoaches || [];
+    if (!coaches.length) html += '<div class="msg msg-info">No coaches linked yet.</div>';
+    coaches.forEach(c => {
+      const badgeClass = c.status === 'active' ? 'badge-active' : c.status === 'pending' ? 'badge-pending' : 'badge-revoked';
+      let actions = '';
+      if (c.status === 'pending' && c.requestedBy === 'coach' || c.status === 'pending' && c.requested_by === 'coach') {
+        actions = `<button class="btn btn-gold" onclick="respondCoachLink(${c.id},true)">Accept</button><button class="btn btn-ghost" onclick="respondCoachLink(${c.id},false)">Decline</button>`;
+      } else if (c.status === 'active') {
+        actions = `<button class="btn btn-ghost" onclick="revokeCoachLink(${c.id})">Remove coach</button>`;
+      }
+      html += `<div class="row"><div>${esc(c.coachName || c.coach_name)} <span class="badge ${badgeClass}">${esc(c.status)}</span></div><div>${actions}</div></div>`;
+    });
+    html += `<div class="inline-form">
+      <input class="field-input" id="invite-coach-id" type="number" placeholder="Coach's user ID to invite">
+      <button class="btn btn-primary" onclick="inviteCoach()">Invite coach</button>
+    </div></div>`;
+  }
+
+  // ── COACHING (athletes I coach) ──
+  html += '<div class="card"><h2>Athletes I Coach</h2>';
+  const coaching = STATUS.coaching || [];
+  if (!coaching.length) html += '<div class="msg msg-info">You are not coaching anyone yet.</div>';
+  coaching.forEach(c => {
+    const badgeClass = c.status === 'active' ? 'badge-active' : c.status === 'pending' ? 'badge-pending' : 'badge-revoked';
+    let actions = '';
+    if ((c.requestedBy === 'athlete' || c.requested_by === 'athlete') && c.status === 'pending') {
+      actions = `<button class="btn btn-gold" onclick="respondCoachLink(${c.id},true)">Accept</button><button class="btn btn-ghost" onclick="respondCoachLink(${c.id},false)">Decline</button>`;
+    } else if (c.status === 'active') {
+      actions = `<button class="btn btn-ghost" onclick="revokeCoachLink(${c.id})">Stop coaching</button>`;
+    }
+    html += `<div class="row"><div>${esc(c.athleteName || c.athlete_name)} <span class="badge ${badgeClass}">${esc(c.status)}</span></div><div>${actions}</div></div>`;
+  });
+  html += `<div class="inline-form">
+    <input class="field-input" id="request-coach-athlete-id" type="number" placeholder="Athlete's profile ID to coach">
+    <button class="btn btn-primary" onclick="requestCoachLink()">Request to coach</button>
+  </div>`;
+  if (!STATUS.memberRole) html += `<div class="inline-form"><button class="btn btn-ghost" onclick="becomeCoach()">I'm a coach</button></div>`;
+  html += '</div>';
+
+  // ── OFFICIATING ──
+  html += '<div class="card"><h2>Officiating</h2>';
+  if (STATUS.certification) {
+    const badgeClass = STATUS.certification.status === 'approved' ? 'badge-active' : STATUS.certification.status === 'pending' ? 'badge-pending' : 'badge-revoked';
+    const issuingBody = STATUS.certification.issuingBody || STATUS.certification.issuing_body;
+    html += `<div class="row"><div>${esc(STATUS.certification.level)} level${issuingBody ? ' · ' + esc(issuingBody) : ''}</div><span class="badge ${badgeClass}">${esc(STATUS.certification.status)}</span></div>`;
+  } else {
+    html += `<div class="msg msg-info">You have not requested judge/technical-delegate certification.</div>
+      <div class="inline-form">
+        <select class="field-input" id="cert-level"><option value="club">Club</option><option value="state">State</option><option value="national">National</option><option value="international">International</option></select>
+        <input class="field-input" id="cert-body" placeholder="Issuing body (optional)">
+        <button class="btn btn-gold" onclick="requestCertification()">Request certification</button>
+      </div>`;
+  }
+  const assignments = STATUS.assignments || [];
+  if (assignments.length) {
+    html += '<div style="margin-top:12px;">';
+    assignments.forEach(a => { html += `<div class="row"><div>${esc(a.eventName || a.event_name)}</div><span class="badge">${esc(a.role)}</span></div>`; });
+    html += '</div>';
+  }
+  html += '</div>';
+
+  el.innerHTML = html;
+}
+
+async function becomeAthlete(){ const r = await jpost('/members/become-athlete', {}); if (r && r.ok) { await loadStatus(); } else { alert((r && r.error) || 'Could not create profile.'); } }
+async function claimAthlete(){
+  const athleteId = parseInt(document.getElementById('claim-athlete-id').value, 10);
+  if (!athleteId) return;
+  const r = await jpost('/members/claim-athlete', { athleteId });
+  alert(r && r.ok ? 'Claim submitted — a staff member will review it.' : ((r && r.error) || 'Could not submit claim.'));
+}
+async function becomeCoach(){ const r = await jpost('/members/become-coach', {}); if (r && r.ok) await loadStatus(); }
+async function requestCoachLink(){
+  const athleteId = parseInt(document.getElementById('request-coach-athlete-id').value, 10);
+  if (!athleteId) return;
+  const r = await jpost('/members/coach-link', { athleteId });
+  if (r && r.ok) { await loadStatus(); } else { alert((r && r.error) || 'Could not send request.'); }
+}
+async function inviteCoach(){
+  const coachUserId = parseInt(document.getElementById('invite-coach-id').value, 10);
+  if (!coachUserId) return;
+  const r = await jpost('/members/coach-link', { coachUserId });
+  if (r && r.ok) { await loadStatus(); } else { alert((r && r.error) || 'Could not send invite.'); }
+}
+async function respondCoachLink(linkId, accept){ const r = await jpost('/members/coach-link-respond', { linkId, accept }); if (r && r.ok) await loadStatus(); }
+async function revokeCoachLink(linkId){ const r = await jpost('/members/revoke-coach-link', { linkId }); if (r && r.ok) await loadStatus(); }
+async function requestCertification(){
+  const level = document.getElementById('cert-level').value;
+  const issuingBody = document.getElementById('cert-body').value;
+  const r = await jpost('/members/request-certification', { level, issuingBody });
+  if (r && r.ok) { await loadStatus(); } else { alert((r && r.error) || 'Could not submit request.'); }
+}
+
+(function init(){
+  if (!ArcheryAuth.isLoggedIn()) { document.getElementById('signed-out').style.display = 'block'; return; }
+  document.getElementById('dash-content').style.display = 'block';
+  loadStatus();
+})();
+</script>
+<script src="shared.js"></script>
+</body>
+</html>

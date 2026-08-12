@@ -619,6 +619,16 @@
         acct.title = 'Your profile and account';
         right.insertBefore(acct, out);
       }
+      // Athlete/coach/officiating status (migration 024) lives on its own
+      // page, not folded into account.html's e-commerce profile editor.
+      if (!right.querySelector('a[href*="dashboard.html"]')) {
+        var dash = document.createElement('a');
+        dash.href = 'dashboard.html';
+        dash.className = 'nav-acct';
+        dash.textContent = 'Dashboard';
+        dash.title = 'Your athlete, coaching, and officiating status';
+        right.insertBefore(dash, out);
+      }
     }
     if (nm) {
       // "Sign out" used to carry class="nm-join" — the solid-gold JOIN button.
