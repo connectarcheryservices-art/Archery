@@ -435,34 +435,26 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
         <div class="stat-card" style="--c:rgba(201,162,39,.15);">
           <div class="stat-label">Registered Athletes</div>
           <div class="stat-value" id="s-athletes">—</div>
-          <div class="stat-change up">↑ +842 this month</div>
-          <div class="mini-chart"><div class="bar" style="height:30%"></div><div class="bar" style="height:45%"></div><div class="bar" style="height:38%"></div><div class="bar" style="height:60%"></div><div class="bar" style="height:52%"></div><div class="bar" style="height:75%"></div><div class="bar" style="height:100%"></div></div>
         </div>
         <div class="stat-card" style="--c:rgba(59,130,246,.15);">
           <div class="stat-label">Active Clubs</div>
           <div class="stat-value" id="s-clubs">—</div>
-          <div class="stat-change up">↑ +38 this month</div>
-          <div class="mini-chart"><div class="bar" style="height:40%;background:rgba(59,130,246,.25);"></div><div class="bar" style="height:55%;background:rgba(59,130,246,.25);"></div><div class="bar" style="height:48%;background:rgba(59,130,246,.25);"></div><div class="bar" style="height:70%;background:rgba(59,130,246,.25);"></div><div class="bar" style="height:62%;background:rgba(59,130,246,.25);"></div><div class="bar" style="height:85%;background:rgba(59,130,246,.25);"></div><div class="bar" style="height:100%;background:rgba(59,130,246,.4);"></div></div>
         </div>
         <div class="stat-card" style="--c:rgba(34,197,94,.15);">
           <div class="stat-label">Tournaments This Year</div>
           <div class="stat-value" id="s-tournaments">—</div>
-          <div class="stat-change up">↑ 12 upcoming</div>
         </div>
         <div class="stat-card" style="--c:rgba(239,68,68,.15);">
           <div class="stat-label">Total Revenue</div>
           <div class="stat-value" id="s-revenue">—</div>
-          <div class="stat-change up">↑ +18% vs last month</div>
         </div>
         <div class="stat-card" style="--c:rgba(168,85,247,.15);">
           <div class="stat-label">Page Views (30d)</div>
           <div class="stat-value" id="s-views">—</div>
-          <div class="stat-change up">↑ +24% growth</div>
         </div>
         <div class="stat-card" style="--c:rgba(249,115,22,.15);">
           <div class="stat-label">New Sign-ups (30d)</div>
           <div class="stat-value" id="s-signups">—</div>
-          <div class="stat-change up">↑ Best month yet</div>
         </div>
       </div>
 
@@ -615,7 +607,7 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
         <div id="kn-form" style="display:none;background:rgba(255,255,255,.03);border:1px solid rgba(201,162,39,.25);border-radius:10px;padding:16px;margin-bottom:16px;">
           <div class="form-grid">
             <div class="form-group"><label class="form-label">Title</label><input class="form-input" id="kn-title" placeholder="e.g. Paper Tuning a Recurve Bow"></div>
-            <div class="form-group"><label class="form-label">Category</label><select class="form-select" id="kn-cat"><option>Technique</option><option>Equipment</option><option>Rules</option><option>Training</option><option>Mental Game</option></select></div>
+            <div class="form-group"><label class="form-label">Category</label><select class="form-select" id="kn-cat"><option>Technique</option><option>Equipment</option><option>Rules</option><option>Training</option><option>Bow Types</option><option>Para Archery</option></select></div>
             <div class="form-group"><label class="form-label">Level</label><input class="form-input" id="kn-level" placeholder="e.g. Beginner"></div>
             <div class="form-group"><label class="form-label">Read Time</label><input class="form-input" id="kn-read" placeholder="e.g. 8 min"></div>
             <div class="form-group" style="grid-column:1/-1;"><label class="form-label">Excerpt</label><input class="form-input" id="kn-excerpt" placeholder="One-line summary shown on the card"></div>
@@ -1197,8 +1189,7 @@ async function loadStats(){
     const el = document.getElementById(id); if(!el) return;
     el.innerHTML = val;
     const card = el.closest('.stat-card');
-    if(card){ const lb = card.querySelector('.stat-label'); if(lb && label) lb.textContent = label;
-              const ch = card.querySelector('.stat-change'); if(ch) ch.remove(); }
+    if(card){ const lb = card.querySelector('.stat-label'); if(lb && label) lb.textContent = label; }
   };
   setCard('s-athletes', inr(c.athletes), 'Athletes');
   setCard('s-clubs', inr(c.products), 'Products Listed');
@@ -1308,13 +1299,13 @@ async function loadTournaments(){
   if(!data) return;
   document.getElementById('tournaments-tbody').innerHTML = data.map(t=>`
     <tr>
-      <td class="td-name">${t.name}</td>
-      <td>${t.date}</td>
-      <td>${t.location}</td>
+      <td class="td-name">${escA(t.name)}</td>
+      <td>${escA(t.date)}</td>
+      <td>${escA(t.location)}</td>
       <td>CHF ${Number(t.prize).toLocaleString('de-CH')}</td>
-      <td>${t.slots}</td>
-      <td>${t.registered}</td>
-      <td><span class="td-badge badge-${t.status}">${t.status}</span></td>
+      <td>${escA(t.slots)}</td>
+      <td>${escA(t.registered)}</td>
+      <td><span class="td-badge badge-${escA(t.status)}">${escA(t.status)}</span></td>
       <td class="td-actions">
         <button class="btn-edit" onclick="openEdit('tournaments',${t.id})">Edit</button>
         <button class="btn-delete" onclick="deleteItem('tournaments',${t.id})">Delete</button>
@@ -1336,11 +1327,11 @@ async function loadAthletes(){
   if(!data) return;
   document.getElementById('athletes-tbody').innerHTML = data.map(a=>`
     <tr>
-      <td>#${a.rank}</td>
-      <td class="td-name">${a.name}</td>
-      <td>${a.state}</td>
-      <td>${a.discipline}</td>
-      <td>${a.pb}</td>
+      <td>#${escA(a.rank)}</td>
+      <td class="td-name">${escA(a.name)}</td>
+      <td>${escA(a.state)}</td>
+      <td>${escA(a.discipline)}</td>
+      <td>${escA(a.pb)}</td>
       <td><span class="td-badge ${a.active?'badge-active':'badge-inactive'}">${a.active?'Active':'Inactive'}</span></td>
       <td class="td-actions">
         <button class="btn-edit" onclick="openEdit('athletes',${a.id})">Edit</button><button class="btn-toggle ${a.active?'':'off'}" onclick="toggleItem('athletes',${a.id},${a.active})">${a.active?'Deactivate':'Activate'}</button>
@@ -1363,11 +1354,11 @@ async function loadJobs(){
   if(!data) return;
   document.getElementById('jobs-tbody').innerHTML = data.map(j=>`
     <tr>
-      <td class="td-name">${j.title}</td>
-      <td>${j.org}</td>
-      <td>${j.location}</td>
-      <td>${j.type}</td>
-      <td>${j.salary}</td>
+      <td class="td-name">${escA(j.title)}</td>
+      <td>${escA(j.org)}</td>
+      <td>${escA(j.location)}</td>
+      <td>${escA(j.type)}</td>
+      <td>${escA(j.salary)}</td>
       <td><span class="td-badge ${j.active?'badge-active':'badge-inactive'}">${j.active?'Active':'Closed'}</span></td>
       <td class="td-actions">
         <button class="btn-edit" onclick="openEdit('jobs',${j.id})">Edit</button><button class="btn-toggle ${j.active?'':'off'}" onclick="toggleItem('jobs',${j.id},${j.active})">${j.active?'Close':'Reopen'}</button>
@@ -1512,12 +1503,14 @@ document.getElementById('ann-text').addEventListener('input',function(){
 });
 
 // ── ANALYTICS CHART ──
+// Was: a hardcoded 14-day revenue series (fake dates, fake CHF figures) shown
+// whenever the real series was empty — which is the expected state for a new
+// or low-traffic site. That rendered invented numbers as this site's actual
+// history (CLAUDE.md §1.1). An empty chart with an honest label is correct;
+// a chart with fabricated bars is not.
 function loadAnalyticsChart(){
-  const vals=[180,220,195,240,210,280,260,310,290,340,320,380,360,420];
-  const days=['Jun 7','8','9','10','11','12','13','14','15','16','17','18','19','20'];
-  const max=Math.max(...vals);
-  document.getElementById('analytics-chart').innerHTML=vals.map(v=>`<div class="chart-bar" style="height:${(v/max*100).toFixed(0)}%;"></div>`).join('');
-  document.getElementById('analytics-labels').innerHTML=days.map(d=>`<div class="chart-label">${d}</div>`).join('');
+  document.getElementById('analytics-chart').innerHTML='';
+  document.getElementById('analytics-labels').innerHTML='<div class="chart-label" style="width:100%;text-align:center;color:var(--text-2);">No revenue data yet</div>';
 }
 
 // ── PANEL LOADER ──
@@ -1575,7 +1568,7 @@ async function loadOrders(){
 async function setOrder(id,status){ const r=await put('orders',id,{status}); if(!r||r.error){ toast((r&&r.error)||'Could not update the order.'); return; } loadOrders(); toast('Order '+status); }
 async function delOrder(id){ if(!confirm('Delete this order?'))return; const r=await del('orders',id); if(!r||r.error){ toast((r&&r.error)||'Could not delete the order.'); return; } loadOrders(); toast('Deleted'); }
 
-// ── ANALYTICS (real revenue series; demo fallback) ──
+// ── ANALYTICS (real revenue series; honest empty state when there isn't one) ──
 async function loadAnalytics(){
   const a=await get('analytics');
   if(a && !a.error){ const c=a.counts||{}; const inr=n=>Number(n||0).toLocaleString('de-CH');
@@ -1625,14 +1618,22 @@ async function loadReports(){
     return `<tr><td class="td-name">${escA(r.type||'—')}</td><td>${urgent?'<span class="td-badge badge-live">'+escA(r.urgency||'')+'</span>':escA((r.urgency||'').split('—')[0])}</td><td style="max-width:320px;white-space:normal;">${escA(r.description||'')}</td><td>${reporter}</td><td style="font-size:12px;">${when}</td><td class="td-actions">${act}</td></tr>`;
   }).join(''):'<tr><td colspan="6" style="padding:22px;color:var(--text-2);">No welfare reports.</td></tr>';
 }
+let APPLICATIONS_CACHE=[];
 async function loadApplications(){
   const data=await get('applications'); if(!Array.isArray(data))return;
+  APPLICATIONS_CACHE=data;
   const pending=data.filter(a=>a.status==='pending').length;
   setBadge('app-badge',pending); const c=document.getElementById('app-count'); if(c)c.textContent=pending+' Pending';
   const tb=document.getElementById('applications-tbody'); if(!tb)return;
   tb.innerHTML=data.length?data.map(a=>{
     const badge=a.status==='approved'?'badge-active':a.status==='rejected'?'badge-inactive':'badge-soon';
-    const officers=`<button class="btn-edit" onclick='openOfficers(${a.id},${JSON.stringify(a.orgName||"")})'>Officers</button>`;
+    // appId is always numeric — safe to interpolate directly. orgName is
+    // free text an applicant controls; it is never embedded in an onclick
+    // attribute (HTML-attribute-escaping a value doesn't make it safe inside
+    // a single-quoted JS string literal, since the browser HTML-decodes the
+    // attribute BEFORE handing it to the JS parser — escA alone can't fix
+    // that). openOfficers() looks orgName up from APPLICATIONS_CACHE instead.
+    const officers=`<button class="btn-edit" onclick='openOfficers(${a.id})'>Officers</button>`;
     const act=a.status==='pending'
       ?`<button class="btn-toggle" onclick="setInbox('applications',${a.id},'approved')">Approve</button>${officers}<button class="btn-delete" onclick="setInbox('applications',${a.id},'rejected')">Reject</button>`
       :`<span class="td-badge ${badge}">${a.status}</span> ${officers}<button class="btn-delete" onclick="delInbox('applications',${a.id})">Delete</button>`;
@@ -1657,10 +1658,14 @@ async function loadSellers(){
 async function setSeller(id,status){ const r=await put('sellers',id,{status}); if(!r||r.error){ toast((r&&r.error)||'Could not update the seller.'); return; } loadSellers(); toast(status==='approved'?'Seller approved':'Updated'); }
 
 // ── FEDERATION OFFICERS ──
-async function openOfficers(appId,orgName){
+async function openOfficers(appId){
+  const app=APPLICATIONS_CACHE.find(a=>String(a.id)===String(appId));
+  const orgName=app?app.orgName||'':'';
   const list=await get('federation-members?applicationId='+appId);
   const IN='width:100%;background:#101116;border:1px solid rgba(255,255,255,.14);border-radius:8px;padding:10px 12px;color:#F5F6F8;font-size:13px;box-sizing:border-box;font-family:inherit;';
-  const rows=Array.isArray(list)&&list.length?list.map(m=>`<div class="ac-orow" style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.06);"><div><b style="color:#fff;">${escA(m.name)}</b> <span style="color:var(--text-2);font-size:12px;">${escA(m.email)}</span></div><div style="display:flex;align-items:center;gap:8px;"><span class="td-badge badge-soon">${escA((m.office||'').replace('_',' '))}</span><button class="btn-delete" onclick="delOfficer(${m.id},${appId},'${escA(orgName)}')">×</button></div></div>`).join(''):'<div style="color:var(--text-2);font-size:13px;padding:8px 0;">No officers assigned yet.</div>';
+  // Only numeric ids are ever interpolated into onclick= here — m.id/appId are
+  // always integers from the API, never free text.
+  const rows=Array.isArray(list)&&list.length?list.map(m=>`<div class="ac-orow" style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.06);"><div><b style="color:#fff;">${escA(m.name)}</b> <span style="color:var(--text-2);font-size:12px;">${escA(m.email)}</span></div><div style="display:flex;align-items:center;gap:8px;"><span class="td-badge badge-soon">${escA((m.office||'').replace('_',' '))}</span><button class="btn-delete" onclick="delOfficer(${m.id},${appId})">×</button></div></div>`).join(''):'<div style="color:var(--text-2);font-size:13px;padding:8px 0;">No officers assigned yet.</div>';
   const ov=document.createElement('div'); ov.id='off-ov';
   ov.style.cssText='position:fixed;inset:0;z-index:9998;background:rgba(7,15,34,.75);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:18px;';
   ov.innerHTML='<div style="background:#17181D;border:1px solid rgba(255,255,255,.1);border-radius:14px;width:100%;max-width:480px;padding:24px;">'+
@@ -1669,19 +1674,19 @@ async function openOfficers(appId,orgName){
     '<div id="off-list" style="margin-bottom:16px;">'+rows+'</div>'+
     '<div style="border-top:1px solid rgba(255,255,255,.08);padding-top:14px;"><label class="form-label">User email</label><input id="off-email" style="'+IN+'" placeholder="member@example.com">'+
     '<label class="form-label" style="margin-top:10px;display:block;">Office</label><select id="off-office" style="'+IN+'"><option value="president">President</option><option value="secretary">Secretary</option><option value="treasurer">Treasurer</option><option value="executive_member">Executive Member</option></select>'+
-    '<button class="btn-save" style="margin-top:14px;" onclick="addOfficer('+appId+',\''+escA(orgName)+'\')">Assign officer</button></div>'+
+    '<button class="btn-save" style="margin-top:14px;" onclick="addOfficer('+appId+')">Assign officer</button></div>'+
     '</div>';
   document.body.appendChild(ov);
   ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
 }
-async function addOfficer(appId,orgName){
+async function addOfficer(appId){
   const email=document.getElementById('off-email').value.trim(); const office=document.getElementById('off-office').value;
   if(!email){toast('Enter the user email');return;}
   const r=await post('federation-members',{applicationId:appId,email,office});
-  if(r&&r.ok){ document.getElementById('off-ov').remove(); openOfficers(appId,orgName); toast('Assigned '+(r.name||'officer')); }
+  if(r&&r.ok){ document.getElementById('off-ov').remove(); openOfficers(appId); toast('Assigned '+(r.name||'officer')); }
   else toast((r&&r.error)||'Could not assign');
 }
-async function delOfficer(id,appId,orgName){ const r=await del('federation-members',id); if(!r||r.error){ toast((r&&r.error)||'Could not remove the officer.'); return; } document.getElementById('off-ov').remove(); openOfficers(appId,orgName); toast('Removed'); }
+async function delOfficer(id,appId){ const r=await del('federation-members',id); if(!r||r.error){ toast((r&&r.error)||'Could not remove the officer.'); return; } document.getElementById('off-ov').remove(); openOfficers(appId); toast('Removed'); }
 async function setInbox(resource,id,status){const r=await put(resource,id,{status});if(!r||r.error){toast((r&&r.error)||'Could not update.');return;}({registrations:loadRegistrations,reports:loadReports,applications:loadApplications}[resource])();toast('Updated');}
 async function delInbox(resource,id){if(!confirm('Delete this item?'))return;const r=await del(resource,id);if(!r||r.error){toast((r&&r.error)||'Could not delete.');return;}({registrations:loadRegistrations,reports:loadReports,applications:loadApplications}[resource])();toast('Deleted');}
 
@@ -1765,10 +1770,12 @@ async function saveClub(){
   document.getElementById('cl-region').value=''; document.getElementById('cl-discipline').value='';
   toggleInlineForm('club-form'); loadClubs(); toast('Club saved');
 }
+let CLUBS_CACHE=[];
 async function loadClubs(){
   const data=await get('clubs');
   const tb=document.getElementById('clubs-tbody'); if(!tb) return;
   if(!Array.isArray(data)){ tb.innerHTML='<tr><td colspan="4" style="padding:22px;color:var(--text-2);">Could not load clubs — the catalogue may be temporarily unavailable.</td></tr>'; return; }
+  CLUBS_CACHE=data;
   const c=document.getElementById('clubs-count'); if(c) c.textContent=data.length+(data.length===1?' club':' clubs');
   tb.innerHTML=data.length?data.map(cl=>`<tr>
       <td class="td-name">${escA(cl.name)}</td>
@@ -1776,7 +1783,7 @@ async function loadClubs(){
       <td>${escA(cl.discipline||'—')}</td>
       <td class="td-actions">
         <span class="td-badge ${cl.active!==false?'badge-active':'badge-inactive'}">${cl.active!==false?'listed':'hidden'}</span>
-        <button class="btn-edit" onclick="openMembers(${cl.id},'${escA(cl.name)}')">Members</button>
+        <button class="btn-edit" onclick="openMembers(${cl.id})">Members</button>
         <button class="btn-edit" onclick="openEdit('clubs',${cl.id})">Edit</button>
         <button class="btn-edit" onclick="setContent('clubs',${cl.id},{active:${!(cl.active!==false)}})">${cl.active!==false?'Hide':'Show'}</button>
         <button class="btn-delete" onclick="delContent('clubs',${cl.id})">Delete</button>
@@ -1785,10 +1792,17 @@ async function loadClubs(){
 }
 // Members overlay — modelled on the federation Officers overlay. Roster: a member
 // does NOT need a platform account. Never public (§1.8). No DOB/age is collected.
-async function openMembers(clubId,clubName){
+// clubId is always numeric and safe to interpolate into onclick=; clubName is
+// free text an admin entered, so it is only ever looked up from CLUBS_CACHE
+// and placed via innerHTML text content, never threaded through an inline
+// event-handler string (HTML-escaping a value doesn't make it safe inside a
+// single-quoted JS string literal in an onclick attribute).
+async function openMembers(clubId){
+  const club=CLUBS_CACHE.find(c=>String(c.id)===String(clubId));
+  const clubName=club?club.name||'':'';
   const list=await get('club-members?clubId='+clubId);
   const IN='width:100%;background:#101116;border:1px solid rgba(255,255,255,.14);border-radius:8px;padding:10px 12px;color:#F5F6F8;font-size:13px;box-sizing:border-box;font-family:inherit;';
-  const rows=Array.isArray(list)&&list.length?list.map(m=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.06);"><div><b style="color:#fff;">${escA(m.name)}</b> ${m.email?`<span style="color:var(--text-2);font-size:12px;">${escA(m.email)}</span>`:''}${m.status==='inactive'?' <span class="td-badge badge-inactive">inactive</span>':''}</div><div style="display:flex;align-items:center;gap:8px;"><span class="td-badge badge-soon">${escA(m.memberRole||'archer')}</span>${m.discipline?`<span class="td-badge">${escA(m.discipline)}</span>`:''}<button class="btn-delete" onclick="delMember(${m.id},${clubId},'${escA(clubName)}')">×</button></div></div>`).join(''):'<div style="color:var(--text-2);font-size:13px;padding:8px 0;">No members yet.</div>';
+  const rows=Array.isArray(list)&&list.length?list.map(m=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.06);"><div><b style="color:#fff;">${escA(m.name)}</b> ${m.email?`<span style="color:var(--text-2);font-size:12px;">${escA(m.email)}</span>`:''}${m.status==='inactive'?' <span class="td-badge badge-inactive">inactive</span>':''}</div><div style="display:flex;align-items:center;gap:8px;"><span class="td-badge badge-soon">${escA(m.memberRole||'archer')}</span>${m.discipline?`<span class="td-badge">${escA(m.discipline)}</span>`:''}<button class="btn-delete" onclick="delMember(${m.id},${clubId})">×</button></div></div>`).join(''):'<div style="color:var(--text-2);font-size:13px;padding:8px 0;">No members yet.</div>';
   const ov=document.createElement('div'); ov.id='mem-ov';
   ov.style.cssText='position:fixed;inset:0;z-index:9998;background:rgba(7,15,34,.75);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:18px;';
   ov.innerHTML='<div style="background:#17181D;border:1px solid rgba(255,255,255,.1);border-radius:14px;width:100%;max-width:520px;padding:24px;max-height:88vh;overflow:auto;">'+
@@ -1802,19 +1816,19 @@ async function openMembers(clubId,clubName){
         '<div><label class="form-label">Role</label><select id="mem-role" style="'+IN+'"><option value="archer">Archer</option><option value="coach">Coach</option><option value="official">Official</option></select></div>'+
         '<div><label class="form-label">Discipline</label><select id="mem-disc" style="'+IN+'"><option value="">—</option><option value="recurve">Recurve</option><option value="compound">Compound</option><option value="barebow">Barebow</option></select></div>'+
       '</div>'+
-      '<button class="btn-save" style="margin-top:14px;" onclick="addMember('+clubId+',\''+escA(clubName)+'\')">Add member</button></div>'+
+      '<button class="btn-save" style="margin-top:14px;" onclick="addMember('+clubId+')">Add member</button></div>'+
     '</div>';
   document.body.appendChild(ov);
   ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
 }
-async function addMember(clubId,clubName){
+async function addMember(clubId){
   const name=document.getElementById('mem-name').value.trim();
   if(!name){toast('Enter the member name');return;}
   const r=await post('club-members',{clubId,name,email:document.getElementById('mem-email').value.trim(),memberRole:document.getElementById('mem-role').value,discipline:document.getElementById('mem-disc').value});
-  if(r&&r.ok){ document.getElementById('mem-ov').remove(); openMembers(clubId,clubName); toast('Member added'+(r.linked?' (linked to their account)':'')); }
+  if(r&&r.ok){ document.getElementById('mem-ov').remove(); openMembers(clubId); toast('Member added'+(r.linked?' (linked to their account)':'')); }
   else toast((r&&r.error)||'Could not add member');
 }
-async function delMember(id,clubId,clubName){ const r=await del('club-members',id); if(!r||r.error){ toast((r&&r.error)||'Could not remove the member.'); return; } document.getElementById('mem-ov').remove(); openMembers(clubId,clubName); toast('Removed'); }
+async function delMember(id,clubId){ const r=await del('club-members',id); if(!r||r.error){ toast((r&&r.error)||'Could not remove the member.'); return; } document.getElementById('mem-ov').remove(); openMembers(clubId); toast('Removed'); }
 
 // ── COMMUNITY FORUM ──
 async function loadForum(){
@@ -2046,10 +2060,12 @@ async function disable2fa(){
   load2fa();
 }
 
+let STAFF_CACHE=[];
 async function loadStaff(){
   load2fa();
   const data=await get('staff'); const tb=document.getElementById('staff-tbody'); if(!tb)return;
   if(!Array.isArray(data)){ tb.innerHTML='<tr><td colspan="8" style="padding:22px;color:var(--text-2);">'+((data&&data.error)||'Only the owner or a manager can view the team.')+'</td></tr>'; return; }
+  STAFF_CACHE=data;
   tb.innerHTML=data.length?data.map(s=>`
     <tr>
       <td style="font-family:ui-monospace,Menlo,monospace;color:var(--text-2);">#${s.id}</td>
@@ -2060,14 +2076,21 @@ async function loadStaff(){
       <td style="font-size:12px;">${s.lastLogin?new Date(s.lastLogin).toLocaleString('de-CH'):'never'}</td>
       <td><span class="td-badge ${s.active!==false?'badge-active':'badge-inactive'}">${s.active!==false?'Active':'Disabled'}</span></td>
       <td class="td-actions">
-        <button class="btn-edit" onclick='openStaffForm(${JSON.stringify(s)})'>Edit</button>
+        <button class="btn-edit" onclick='openStaffForm(${s.id})'>Edit</button>
         <button class="btn-toggle ${s.active!==false?'':'off'}" onclick="toggleStaff(${s.id},${s.active!==false})">${s.active!==false?'Disable':'Enable'}</button>
-        <button class="btn-delete" onclick="delStaff(${s.id},'${escA(s.name)}')">Remove</button>
+        <button class="btn-delete" onclick="delStaff(${s.id})">Remove</button>
       </td>
     </tr>`).join(''):'<tr><td colspan="8" style="padding:22px;color:var(--text-2);">No team members yet — add your first employee.</td></tr>';
 }
-function openStaffForm(s){
-  s=s||{};
+// id is always numeric and safe to interpolate into onclick=; the full staff
+// record (name/username/email/role — all admin-entered free text) is looked
+// up from STAFF_CACHE instead of being JSON.stringify'd into the attribute,
+// which broke on an apostrophe in a name and, more importantly, HTML-escaping
+// a value doesn't make it safe inside a single-quoted JS string literal in an
+// onclick attribute (the browser HTML-decodes the attribute before handing it
+// to the JS parser).
+function openStaffForm(id){
+  const s=id?(STAFF_CACHE.find(x=>String(x.id)===String(id))||{}):{};
   const editing=!!s.id;
   const IN='width:100%;background:#101116;border:1px solid rgba(255,255,255,.14);border-radius:8px;padding:10px 12px;color:#F5F6F8;font-size:13px;box-sizing:border-box;font-family:inherit;';
   const ov=document.createElement('div'); ov.id='staff-ov';
@@ -2180,7 +2203,7 @@ async function testMail(){
   else{ box.innerHTML='<b style="color:#E04653;">✕ '+((r&&r.error)||'Failed')+'</b>'+(r&&r.hint?'<br><span style="color:var(--text-2);">'+r.hint+'</span>':''); }
 }
 async function toggleStaff(id,active){ const r=await put('staff',id,{active:!active}); if(!r||r.error){ toast((r&&r.error)||'Could not update.'); return; } loadStaff(); toast('Updated'); }
-async function delStaff(id,name){ if(!confirm('Remove '+name+'? They will lose access immediately.'))return; const r=await del('staff',id); if(!r||r.error){ toast((r&&r.error)||'Could not remove them.'); return; } loadStaff(); toast('Removed'); }
+async function delStaff(id){ const s=STAFF_CACHE.find(x=>String(x.id)===String(id)); if(!confirm('Remove '+(s?s.name:'this team member')+'? They will lose access immediately.'))return; const r=await del('staff',id); if(!r||r.error){ toast((r&&r.error)||'Could not remove them.'); return; } loadStaff(); toast('Removed'); }
 
 function boot(){ applyRole(); loadStats(); loadDashboard(); loadOrders(); loadRegistrations(); loadReports(); loadApplications(); loadChat(); }
 if(AUTH_TOKEN){ hideLogin(); boot(); } else { showLogin(); }
