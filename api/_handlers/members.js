@@ -7,11 +7,14 @@
 // staff approval (claims, certifications) does.
 'use strict';
 const { cors, json, readBody } = require('../_lib/respond');
-const { q } = require('../_lib/db');
+const { q, withTransaction } = require('../_lib/db');
 const { checkAdmin } = require('../_lib/auth');
 const { authedUserChecked } = require('../_lib/userauth');
 const { writeAudit } = require('../_lib/audit');
 const { isMinor } = require('../_lib/age');
+const { canActForAthlete } = require('../_lib/member-capability');
+
+const SPORT_CLASSES = ['PI1', 'PI2', 'VI1', 'VI2'];
 
 async function requireMember(req) {
   const claims = await authedUserChecked(req);
@@ -70,7 +73,14 @@ module.exports = async (req, res) => {
            join events ev on ev.id = eo.event_id where eo.user_id=$1 order by eo.created_at desc`, [member.id])).rows;
       const dobRow = (await q('select date_of_birth, parent_consent_status from users where id=$1', [member.id])).rows[0];
       const minor = isMinor(dobRow && dobRow.date_of_birth);
+      const classification = athlete ? (await q(
+        `select sport_class, status, review_due_date, classified_by from classifications where athlete_id=$1 and superseded_by is null`,
+        [athlete.id])).rows[0] || null : null;
+      const pendingClassificationRequest = athlete ? (await q(
+        `select sport_class_requested from classification_requests where athlete_id=$1 and status='pending'`,
+        [athlete.id])).rows[0] || null : null;
       return json(res, { ok: true, memberRole: member.member_role, athlete, coaching, myCoaches, certification, assignments,
+        classification, pendingClassificationRequest,
         isMinor: minor === true, parentConsentStatus: dobRow ? dobRow.parent_consent_status : 'not_required',
         consentBlocked: minor === true && dobRow && dobRow.parent_consent_status !== 'granted' });
     }
@@ -260,6 +270,48 @@ module.exports = async (req, res) => {
       return json(res, { ok: true, certificationId: existing.id, status: existing.status, unchanged: true });
     }
 
+    // ── REQUEST-CLASSIFICATION: self (or an active coach, on behalf of
+    // their athlete) applies for a real Para classification panel to
+    // review. The platform performs no medical/functional assessment here —
+    // a real classification panel does that in person (World Archery Para
+    // Archery Classification Rules, Art. 7); this just opens the request
+    // for staff to record that panel's outcome against (see
+    // approve-classification). Sport classes are PI1/PI2 (physical) and
+    // VI1/VI2 (vision) — the actual codes the current (2026-01-27) rulebook
+    // uses; see migration 030's header for why this differs from the
+    // "W1/Open/VI1/VI2/VI3" wording still elsewhere in CLAUDE.md/DOMAIN.md. ──
+    if (action === 'request-classification' && req.method === 'POST') {
+      const member = await requireConsentedMember(req);
+      if (!member) return json(res, { error: 'Unauthorised' }, 401);
+      if (member.blocked) return json(res, { error: CONSENT_REQUIRED_MSG }, 403);
+      const b = readBody(req);
+      const athleteId = parseInt(b.athleteId, 10) || await ownAthleteId(member.id);
+      if (!athleteId) return json(res, { error: 'No athlete profile to request classification for.' }, 400);
+      if (!(await canActForAthlete(member.id, athleteId))) return json(res, { error: 'You can only request classification for your own athlete profile or one you actively coach.' }, 403);
+      if (!SPORT_CLASSES.includes(b.sportClass)) return json(res, { error: `sportClass must be one of ${SPORT_CLASSES.join(', ')}` }, 400);
+      const pending = (await q(`select id from classification_requests where athlete_id=$1 and status='pending'`, [athleteId])).rows[0];
+      if (pending) return json(res, { ok: true, requestId: pending.id, status: 'pending', unchanged: true });
+      const r = await q(
+        `insert into classification_requests (athlete_id, requested_by, sport_class_requested, note) values ($1,$2,$3,$4) returning id`,
+        [athleteId, member.id, b.sportClass, String(b.note || '').slice(0, 500) || null]);
+      await writeAudit({ req, actor: memberActor(member, 'athlete'), action: 'create', resourceType: 'classification_requests', resourceId: r.rows[0].id, after: { athleteId, sportClass: b.sportClass } });
+      return json(res, { ok: true, requestId: r.rows[0].id, status: 'pending' });
+    }
+
+    // ── MY-CLASSIFICATION: an athlete's own current classification (or
+    // their coach's view of it), for the dashboard. ──
+    if (action === 'my-classification' && req.method === 'GET') {
+      const member = await requireMember(req);
+      if (!member) return json(res, { error: 'Unauthorised' }, 401);
+      const athleteId = parseInt(req.query.athleteId, 10) || await ownAthleteId(member.id);
+      if (!athleteId || !(await canActForAthlete(member.id, athleteId))) return json(res, { ok: true, classification: null });
+      const row = (await q(
+        `select sport_class, status, review_due_date, classified_by, created_at from classifications where athlete_id=$1 and superseded_by is null`,
+        [athleteId])).rows[0] || null;
+      const pendingReq = (await q(`select sport_class_requested, created_at from classification_requests where athlete_id=$1 and status='pending'`, [athleteId])).rows[0] || null;
+      return json(res, { ok: true, classification: row, pendingRequest: pendingReq });
+    }
+
     // ── EVENT-OFFICIALS: public read (who's judging this event). ──
     if (action === 'event-officials' && req.method === 'GET') {
       const eventId = parseInt(req.query.eventId, 10);
@@ -347,6 +399,72 @@ module.exports = async (req, res) => {
       if (!r.rows[0]) return json(res, { error: 'Unknown certification' }, 404);
       await writeAudit({ req, actor: staff, action: 'update', resourceType: 'official_certifications', resourceId: certId, after: { status: newStatus } });
       return json(res, { ok: true, status: newStatus });
+    }
+
+    // ── STAFF: review pending classification requests, record the real
+    // panel's outcome. Staff never invents the sport class or status — this
+    // is transcription of a real, external, already-completed evaluation
+    // (Art. 33's "Notification of Classification Outcome"), same posture as
+    // shootoff-judge and correct-arrow elsewhere in this codebase: the
+    // platform records an adjudicated fact, it doesn't produce one. ──
+    if (action === 'pending-classifications' && req.method === 'GET') {
+      const staff = await requireStaff(req);
+      if (!staff) return json(res, { error: 'Unauthorised' }, 401);
+      const rows = (await q(
+        `select cr.id, cr.athlete_id, cr.sport_class_requested, cr.note, cr.created_at, a.name as athlete_name
+           from classification_requests cr join athletes a on a.id = cr.athlete_id
+          where cr.status='pending' order by cr.created_at`)).rows;
+      return json(res, rows);
+    }
+
+    // ── APPROVED-CLASSIFICATIONS: staff-only list of current classifications
+    // (superseded_by is null), for the "who's classified as what" view. ──
+    if (action === 'approved-classifications' && req.method === 'GET') {
+      const staff = await requireStaff(req);
+      if (!staff) return json(res, { error: 'Unauthorised' }, 401);
+      const rows = (await q(
+        `select c.id, c.athlete_id, c.sport_class, c.status, c.review_due_date, c.classified_by, c.created_at, a.name as athlete_name
+           from classifications c join athletes a on a.id = c.athlete_id
+          where c.superseded_by is null order by c.created_at desc`)).rows;
+      return json(res, rows);
+    }
+
+    if (action === 'approve-classification' && req.method === 'POST') {
+      const staff = await requireStaff(req);
+      if (!staff) return json(res, { error: 'Unauthorised' }, 401);
+      const b = readBody(req);
+      const requestId = parseInt(b.requestId, 10);
+      if (!requestId) return json(res, { error: 'requestId is required' }, 400);
+      const reqRow = (await q(`select * from classification_requests where id=$1 and status='pending'`, [requestId])).rows[0];
+      if (!reqRow) return json(res, { error: 'No pending request with that id' }, 404);
+      if (!b.approve) {
+        await q(`update classification_requests set status='rejected', reviewed_by=$1, reviewed_at=now() where id=$2`, [staff.name, requestId]);
+        await writeAudit({ req, actor: staff, action: 'update', resourceType: 'classification_requests', resourceId: requestId, after: { approved: false } });
+        return json(res, { ok: true });
+      }
+      const sportClass = SPORT_CLASSES.includes(b.sportClass) ? b.sportClass : reqRow.sport_class_requested;
+      // Art. 18/19: the real Sport Class Statuses. 'pending'/'not_eligible'
+      // don't belong here — approving IS the panel having reached an
+      // outcome; a not-eligible outcome is recorded via that status below,
+      // still as an approval (the request was properly reviewed), not a
+      // rejection (which means "we're not recording this request at all").
+      const status = ['confirmed', 'review_nao', 'review_frd', 'not_eligible'].includes(b.status) ? b.status : null;
+      if (!status) return json(res, { error: 'status must be one of confirmed, review_nao, review_frd, not_eligible' }, 400);
+      if (status === 'review_frd' && !b.reviewDueDate) return json(res, { error: 'reviewDueDate is required for review_frd (Art. 19.1.3 — typically no more than 4 years out)' }, 400);
+      const classifiedBy = String(b.classifiedBy || '').trim();
+      if (!classifiedBy) return json(res, { error: 'classifiedBy (the real classification panel/classifier of record, Art. 7) is required' }, 400);
+      const newRowId = await withTransaction(async (client) => {
+        const old = await client.query(`select id from classifications where athlete_id=$1 and superseded_by is null`, [reqRow.athlete_id]);
+        const inserted = await client.query(
+          `insert into classifications (athlete_id, sport_class, status, review_due_date, classified_by, request_id, note, actor)
+           values ($1,$2,$3,$4,$5,$6,$7,$8) returning id`,
+          [reqRow.athlete_id, sportClass, status, b.reviewDueDate || null, classifiedBy, requestId, String(b.note || '').slice(0, 500) || null, staff.name]);
+        if (old.rows[0]) await client.query('update classifications set superseded_by=$1 where id=$2', [inserted.rows[0].id, old.rows[0].id]);
+        return inserted.rows[0].id;
+      });
+      await q(`update classification_requests set status='approved', reviewed_by=$1, reviewed_at=now() where id=$2`, [staff.name, requestId]);
+      await writeAudit({ req, actor: staff, action: 'create', resourceType: 'classifications', resourceId: newRowId, after: { athleteId: reqRow.athlete_id, sportClass, status } });
+      return json(res, { ok: true, classificationId: newRowId, status });
     }
 
     if (action === 'assign-official' && req.method === 'POST') {

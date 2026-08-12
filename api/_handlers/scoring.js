@@ -120,6 +120,22 @@ module.exports = async (req, res) => {
       if (await isAthleteConsentBlocked(parseInt(b.athleteId, 10))) {
         return json(res, { error: "This athlete's account needs parental consent before they can be registered for an event." }, 403);
       }
+      // Para is classification-first, not a badge (DOMAIN.md §5): entering a
+      // para category requires a REAL, current classification for that
+      // sport class on record (World Archery Classification Rules Art. 20 —
+      // Confirmed/Review-NAO/Review-FRD may compete, Expired/Not-Eligible/
+      // pending may not), never just a claim. Checked here, not only at
+      // entry-form render time, so staff can't bypass it either — same
+      // posture as the age-consent check just above.
+      const catRow = (await q(
+        `select c.para_class from event_categories ec join categories c on c.id=ec.category_id where ec.id=$1`,
+        [b.eventCategoryId])).rows[0];
+      if (catRow && catRow.para_class) {
+        const cls = (await q(
+          `select 1 from classifications where athlete_id=$1 and sport_class=$2 and status in ('confirmed','review_nao','review_frd') and superseded_by is null`,
+          [b.athleteId, catRow.para_class])).rows[0];
+        if (!cls) return json(res, { error: `This category requires an active ${catRow.para_class} classification on record — this athlete does not have one.` }, 403);
+      }
       const r = await q(
         `insert into entries (event_category_id,athlete_id,target_assignment) values ($1,$2,$3) returning id`,
         [b.eventCategoryId, b.athleteId, b.targetAssignment || null]);

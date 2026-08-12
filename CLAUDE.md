@@ -109,8 +109,15 @@ Full model + rulebook citations: **`docs/DOMAIN.md`**. Never infer a rule; cite 
   in one list.**
 - **Category** — division × gender × age_class × para_class. **This is the real unit.**
 - **Age class** — U15 | U18 cadet | U21 junior | senior | 50+ master.
-- **Para class** — W1 | Open | VI1 | VI2 | VI3. **Para is classification-first**, not a badge.
-- **Classification** — the para competitive structure. Not a profile tag.
+- **Para class** — PI1 | PI2 (physical) | VI1 | VI2 (vision). **Para is classification-first**,
+  not a badge — a real classification panel decides, the platform only records the outcome.
+  Corrected 2026-08-12: this used to say "W1 | Open | VI1 | VI2 | VI3", which does not match the
+  current World Archery Para Archery Classification Rules (Version 2026-01-27) — fetched and
+  read directly. There is no VI3 (only VI1/VI2 exist), and "W1"/"Open" appear nowhere in that
+  rulebook; PI1/PI2 are the real codes it defines. See migration `030_para_classification.sql`.
+- **Classification** — the para competitive structure, adjudicated by a real panel (World
+  Archery Classification Rules Art. 7), never computed or inferred by this platform. Not a
+  profile tag.
 - **Qualification** — the ranking round. **Seeds elimination** (1v64, 2v63). The draw is a
   *consequence* of qualification, not a standalone toy.
 - **Ranking** — `base_points × position_% × period_multiplier`, best-7 (4 outdoor + 2 indoor +

@@ -16,9 +16,14 @@ before signing off (Phase 2 gate).
 > here, **fetch the rulebook** — do not infer it, and do not trust this document over the
 > primary source. If they disagree, the rulebook wins and you fix this file.
 >
-> **Book 4 (Field & 3D)** and the **Para** rulebook/classification manual are **not yet
-> incorporated**. Field divisions and para classes below are named but their rules are
-> UNVERIFIED here and must be sourced before Phase 2 implementation.
+> **Book 4 (Field & 3D)** is **not yet incorporated** — field divisions below are named but their
+> rules are UNVERIFIED here and must be sourced before implementation.
+>
+> **The Para classification manual (Book 5.1, Version 2026-01-27) was fetched and read
+> 2026-08-12** — see §5 for the sourced class/status model. This corrected two errors this
+> document previously asserted unverified ("W1/Open/VI1/VI2/VI3" — wrong; real codes are
+> PI1/PI2/VI1/VI2). The detailed medical/functional assessment methodology (who qualifies for
+> which class) remains unimplemented by design — a real panel does that, not this platform.
 
 ---
 
@@ -47,7 +52,7 @@ is the fix.
 | **Set** | An end in a set-play match, worth **set points**. |
 | **Division** | recurve · compound · barebow (+ field divisions). |
 | **Age class** | U15 · U18 (cadet) · U21 (junior) · senior · 50+ (master). |
-| **Para class** | W1 · Open · VI1 · VI2 · VI3. |
+| **Para class** | PI1 · PI2 (physical) · VI1 · VI2 (vision). Corrected 2026-08-12 — see §5. |
 | **Category** | division × gender × age_class × para_class — **the real competitive unit**. |
 | **Qualification** | The ranking round. Seeds the elimination bracket. |
 | **Elimination** | Bracket matches (1v64, 2v63 …), seeded **from qualification**. |
@@ -185,11 +190,32 @@ single arrow by each team member.
 
 - **Category = division × gender × age_class × para_class.** This is the unit for entries,
   results, brackets and rankings. Free-text `discipline` (current state) cannot express it.
-- **Para is classification-first.** W1 / Open / VI1 / VI2 / VI3 are the **competitive
-  structure**, not a badge on a profile. `guard-rail.html` currently contains **zero**
-  occurrences of "W1", "VI" or "classification" — para archery *is* classification, so the page
-  is a placeholder where a model belongs.
-- VI classes require sighted-guide and blindfold rules — **source from the Para rulebook**.
+- **Para is classification-first.** PI1 / PI2 (physical impairment) and VI1 / VI2 (vision
+  impairment) are the **competitive structure**, not a badge on a profile — a real classification
+  panel decides, the platform only records the outcome (migration
+  `030_para_classification.sql`, `api/_handlers/members.js` `request-classification` /
+  `approve-classification`). `guard-rail.html` still contains zero occurrences of these terms —
+  still a placeholder where a model belongs; the model itself now exists elsewhere (dashboard.html
+  / admin.html's Officiating panel), guard-rail.html hasn't been wired to it yet.
+- **Corrected 2026-08-12 — this used to say "W1 / Open / VI1 / VI2 / VI3."** Fetched and read the
+  actual current primary source (World Archery, *Para Archery Classification Rules and
+  Regulations*, Version 2026-01-27 — the same rulebook edition already cited above for Book 3)
+  before building anything, per §0's "cite the article, do not infer." Two corrections:
+  **there is no VI3** — Appendix 2 §4.1: *"There are two sport classes for Visually Impaired
+  athletes: VI1 [worse than LogMAR 2.6] / VI2 [LogMAR 1.0–2.6]"*; and **"W1"/"Open" appear
+  nowhere in the classification rules** — the physical-impairment Sport Classes it actually
+  defines are **PI1** and **PI2** (Appendix 1 §5.1.1/§5.1.2). "W1"/"Open" may be informal or
+  competition-format names from a separate, still-unsourced document — asserting that mapping
+  would be inferring, not citing, so this codebase uses the classification rules' own codes.
+- VI1 requires a blindfold worn for the full event **and** a mandatory Spotter (Appendix 2 §4.a);
+  VI2 has no such requirement (§5.a). Both: no distinction by gender/division within the class —
+  all VI athletes of a class shoot together within their division (Appendix 2 §4.2).
+- Real classification statuses (Art. 18-19, collapsed for gating purposes in
+  `classifications.status`): **Confirmed (C)** — stable, no further review (19.1.1); **Review —
+  Next Available Opportunity (R-NAO)** (19.1.2); **Review — Fixed Review Date (R-FRD)**,
+  typically ≤4 years out (19.1.3.3); **Expired (E)** — 8 years' non-participation, retirement, or
+  a missed fixed review date (19.1.4); Art. 20.3: an Expired athlete **cannot** compete until
+  re-evaluated. Only Confirmed/R-NAO/R-FRD gate entry into a matching para category.
 
 ---
 
@@ -199,7 +225,7 @@ single arrow by each team member.
 athletes          identity, WA/AAI licence, club, nationality
 divisions         recurve | compound | barebow (+ field)
 age_classes       U15 | U18 cadet | U21 junior | senior | 50+ master
-para_classes      W1 | Open | VI1 | VI2 | VI3
+para_classes      PI1 | PI2 (physical) | VI1 | VI2 (vision)
 categories        division × gender × age_class × para_class   ← the real unit
 
 events            name, sanctioning body, wa_ranking_group (1..5), venue, dates
@@ -246,6 +272,11 @@ ranking_entries   list, athlete, added_ranking_score (best-7), rank
 2. **Ianseo interop** — AAI already runs it. Import/export format? Do not reinvent what the
    federation uses. **Investigate before designing.**
 3. **Field & 3D (Book 4)** — not sourced yet.
-4. **Para classification** — full pathway, from the Para rulebook. Not sourced yet.
+4. **Para classification** — the class/status model and the request→adjudicate workflow are
+   built (2026-08-12, migration 030); the eligible-impairment/minimum-impairment-criteria
+   assessment methodology itself (Appendices 1-2's detailed medical/functional test protocols)
+   is intentionally NOT implemented — a real classification panel performs that in person; this
+   platform only records the outcome. Protests/appeals (Chapter 3) and the 8-year/fixed-date
+   auto-expiry (Art. 19.1.4) are not automated — no scheduler exists on this stack.
 5. **Which "8–8"** does the prime directive mean — arrow-score tie within a set, or a compound
    cumulative tie? (§3.4.)

@@ -92,6 +92,34 @@ function render(){
   }
   html += '</div>';
 
+  // ── PARA CLASSIFICATION (if I'm an athlete) — DOMAIN.md §5: "classification-
+  // first, not a badge." A confirmed status here is a real panel's outcome,
+  // never something this platform assigns itself. ──
+  if (STATUS.athlete) {
+    html += '<div class="card"><h2>Para Classification</h2>';
+    if (STATUS.classification) {
+      const c = STATUS.classification;
+      const statusLabel = { confirmed: 'Confirmed', review_nao: 'Review — next opportunity', review_frd: 'Review — fixed date', not_eligible: 'Not eligible' }[c.status] || c.status;
+      html += `<div class="row"><div>${esc(c.sportClass || c.sport_class)} — ${esc(statusLabel)}</div><span class="badge badge-active">on record</span></div>
+        <div class="match-sub" style="margin-top:4px;">Classified by: ${esc(c.classifiedBy || c.classified_by || '—')}${(c.reviewDueDate || c.review_due_date) ? ' · review due ' + esc(new Date(c.reviewDueDate || c.review_due_date).toLocaleDateString('de-CH')) : ''}</div>`;
+    } else if (STATUS.pendingClassificationRequest) {
+      html += `<div class="msg msg-info">Classification requested (${esc(STATUS.pendingClassificationRequest.sportClassRequested || STATUS.pendingClassificationRequest.sport_class_requested)}) — awaiting staff to record the panel's outcome.</div>`;
+    } else {
+      html += `<div class="msg msg-info">No classification on file. This does not classify you — it opens a request for staff to record a real classification panel's outcome (World Archery Para Archery Classification Rules, Art. 7).</div>
+        <div class="inline-form">
+          <select class="field-input" id="classification-sport-class">
+            <option value="PI1">PI1 (physical)</option>
+            <option value="PI2">PI2 (physical)</option>
+            <option value="VI1">VI1 (vision)</option>
+            <option value="VI2">VI2 (vision)</option>
+          </select>
+          <input class="field-input" id="classification-note" placeholder="Note — e.g. existing national classification (optional)">
+          <button class="btn btn-gold" onclick="requestClassification()">Request classification</button>
+        </div>`;
+    }
+    html += '</div>';
+  }
+
   // ── MY COACHES (if I'm an athlete) ──
   if (STATUS.athlete) {
     html += '<div class="card"><h2>My Coaches</h2>';
@@ -176,6 +204,12 @@ async function claimAthlete(){
   if (!athleteId) return;
   const r = await jpost('/members/claim-athlete', { athleteId });
   notify(r && r.ok ? 'Claim submitted — a staff member will review it.' : ((r && r.error) || 'Could not submit claim.'), !!(r && r.ok));
+}
+async function requestClassification(){
+  const sportClass = document.getElementById('classification-sport-class').value;
+  const note = document.getElementById('classification-note').value;
+  const r = await jpost('/members/request-classification', { sportClass, note });
+  if (r && r.ok) { await loadStatus(); } else { notify((r && r.error) || 'Could not submit request.', false); }
 }
 async function becomeCoach(){ const r = await jpost('/members/become-coach', {}); if (r && r.ok) { await loadStatus(); } else { notify((r && r.error) || 'Could not update your role.', false); } }
 async function requestCoachLink(){

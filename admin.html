@@ -878,6 +878,15 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
       </div>
 
       <div class="card">
+        <div class="card-title">Para Classification Requests <span class="td-badge badge-soon" style="font-size:11px;" id="classifications-count">0 Pending</span></div>
+        <p style="font-size:13px;color:var(--text-2);margin-bottom:14px;">The platform performs no medical or functional assessment — record the outcome of a REAL classification panel here (name the actual classifier(s) of record). Sport classes are PI1/PI2 (physical) and VI1/VI2 (vision) — the codes World Archery's current Para Archery Classification Rules (2026-01-27) actually use.</p>
+        <table class="data-table">
+          <thead><tr><th>Athlete</th><th>Requested</th><th>Note</th><th>Panel outcome</th><th>Actions</th></tr></thead>
+          <tbody id="classifications-tbody"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
         <div class="card-title">Assign an Approved Official to an Event</div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin-bottom:14px;">
           <div class="form-group" style="margin-bottom:0;min-width:220px;"><label class="form-label">Official</label>
@@ -1511,13 +1520,15 @@ async function loadAudit(reset){
 
 // ── OFFICIATING: claims, certifications, event assignments ──
 async function loadOfficiating(){
-  const [claims, certs, approved, events] = await Promise.all([
+  const [claims, certs, approved, events, classifications] = await Promise.all([
     get('members/pending-claims'), get('members/pending-certifications'),
     get('members/approved-officials'), get('scoring/events'),
+    get('members/pending-classifications'),
   ]);
 
   const claimsRows = Array.isArray(claims) ? claims : [];
-  setBadge('officiating-badge', claimsRows.length + (Array.isArray(certs) ? certs.length : 0));
+  const classRows = Array.isArray(classifications) ? classifications : [];
+  setBadge('officiating-badge', claimsRows.length + (Array.isArray(certs) ? certs.length : 0) + classRows.length);
   const cc = document.getElementById('claims-count'); if (cc) cc.textContent = claimsRows.length + ' Pending';
   document.getElementById('claims-tbody').innerHTML = claimsRows.length ? claimsRows.map(c => `<tr>
       <td class="td-name">${escA(c.userName||c.user_name||'—')}<br><span style="color:var(--text-2);font-size:11px;">${escA(c.email||'')}</span></td>
@@ -1551,6 +1562,36 @@ async function loadOfficiating(){
   eventSelect.innerHTML = eventRows.length
     ? eventRows.map(e => `<option value="${e.id}">${escA(e.name)}${e.startsOn ? ' — ' + new Date(e.startsOn).toLocaleDateString('de-CH') : ''}</option>`).join('')
     : '<option value="">No events yet</option>';
+
+  const clc = document.getElementById('classifications-count'); if (clc) clc.textContent = classRows.length + ' Pending';
+  document.getElementById('classifications-tbody').innerHTML = classRows.length ? classRows.map(c => `<tr>
+      <td class="td-name">${escA(c.athlete_name||c.athleteName||'—')}</td>
+      <td style="font-size:12px;">${escA(c.sport_class_requested||c.sportClassRequested||'')}${c.created_at||c.createdAt ? '<br><span style="color:var(--text-2);">'+new Date(c.created_at||c.createdAt).toLocaleDateString('de-CH')+'</span>' : ''}</td>
+      <td style="max-width:220px;font-size:12px;color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escA(c.note||'')}">${escA(c.note||'—')}</td>
+      <td>
+        <select class="form-input" id="cls-status-${c.id}" style="font-size:12px;padding:5px 6px;margin-bottom:4px;">
+          <option value="confirmed">Confirmed (C)</option>
+          <option value="review_nao">Review — Next Opportunity</option>
+          <option value="review_frd">Review — Fixed Date</option>
+          <option value="not_eligible">Not Eligible</option>
+        </select>
+        <input class="form-input" id="cls-classifier-${c.id}" placeholder="Real classifier(s) of record" style="font-size:12px;padding:5px 6px;margin-bottom:4px;">
+        <input class="form-input" id="cls-reviewdate-${c.id}" type="date" title="Only required for 'Review — Fixed Date'" style="font-size:12px;padding:5px 6px;">
+      </td>
+      <td class="td-actions"><button class="btn-toggle" onclick="respondClassification(${c.id},true)">Approve</button><button class="btn-delete" onclick="respondClassification(${c.id},false)">Reject</button></td>
+    </tr>`).join('') : '<tr><td colspan="5" style="padding:22px;color:var(--text-2);">No pending classification requests.</td></tr>';
+}
+async function respondClassification(requestId, approve){
+  const body = { requestId, approve };
+  if (approve) {
+    body.status = document.getElementById('cls-status-'+requestId).value;
+    body.classifiedBy = document.getElementById('cls-classifier-'+requestId).value;
+    body.reviewDueDate = document.getElementById('cls-reviewdate-'+requestId).value || undefined;
+  }
+  const r = await post('members/approve-classification', body);
+  if (!r || r.error || r.ok === false) { toast((r&&r.error) || 'Could not process this classification.'); return; }
+  toast(approve ? 'Classification recorded: ' + r.status : 'Request rejected.');
+  loadOfficiating();
 }
 async function respondClaim(claimId, approve){
   const r = await post('members/approve-claim', { claimId, approve });

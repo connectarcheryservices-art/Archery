@@ -38,8 +38,8 @@ UI failure paths. An earlier, narrower adversarial review of just the member-cap
 misattributed every certified official's scoring action to `'owner'` in the audit log.
 
 **Do NOT re-run Phase 2's "build the domain model" work** — read `docs/DOMAIN.md` and the
-migrations listed below first. What's actually still open in Phase 2 is narrow: Para
-classification (2.7) and a genuinely offline-capable client (the back half of 2.2 — see note).
+migrations listed below first. As of 2026-08-12, Phase 2 is complete — both items that used to
+be open here (Para classification 2.7, offline-capable scoring 2.2) are now built and tested.
 
 ### Where we stopped
 Committed so far:
@@ -292,9 +292,31 @@ blocks merges.
       ranking as WA-conformant would be wrong; it is honestly labeled as platform policy.
       `query.js:14`'s `rank:'pb desc'` was not specifically re-checked this session — grep for it
       before trusting it's gone.
-- [ ] **2.7** Para classifications — still not built. `categories.para_class` exists as a column
-      (the shape), no classification workflow. Explicitly flagged as out-of-scope in migration
-      021's own header, not a silent gap.
+- [x] **2.7** Para classification (2026-08-12). **Corrected a real error in this project's own
+      constitution first**: CLAUDE.md/DOMAIN.md said "W1 | Open | VI1 | VI2 | VI3" — fetched and
+      read the actual current primary source (World Archery Para Archery Classification Rules,
+      Version 2026-01-27) before building anything; there is no VI3, and "W1"/"Open" appear
+      nowhere in that document — the real Sport Class codes are PI1/PI2 (physical) and VI1/VI2
+      (vision). Both docs and the schema now use the verified codes (migration
+      `030_para_classification.sql`, which also fixes `categories.para_class`'s CHECK constraint
+      to match). Built as request → adjudicate, same pattern as `athlete_claim_requests`/
+      `official_certifications` (migration 024): the platform performs no medical/functional
+      assessment — a real classification panel does that (Art. 7); staff transcribe the panel's
+      outcome via `approve-classification`, which requires naming the real classifier(s) of
+      record and refuses to fabricate one. `classifications` is append-only (a reclassification
+      supersedes the prior row, never overwrites it — same posture as `arrows`). Entry into a
+      para category is gated on an athlete having a current Confirmed/Review-NAO/Review-FRD
+      classification for that exact sport class (Art. 20) — checked server-side in
+      `api/_handlers/scoring.js`'s `entries` action, so staff cannot bypass it either, same
+      pattern as the age-consent gate. UI: a member-facing request card on `dashboard.html`, a
+      staff review queue on `admin.html`'s Officiating panel. Tested: `classification-test.js`,
+      24 assertions (schema rejects the old wrong codes, request/approve/reject lifecycle,
+      the entry gate for matching/mismatched/missing classification, staff cannot bypass it for
+      an unlinked athlete, able-bodied categories stay ungated, audit trail) — all green.
+      **Not built, by design**: the actual assessment methodology (Appendices 1-2's medical/
+      functional test protocols), protests/appeals (Chapter 3), and auto-expiry after 8 years or
+      a missed fixed review date (Art. 19.1.4 — no scheduler exists on this stack). See
+      `docs/DOMAIN.md` §5 for full citations.
 - [x] **2.8** Live results from real arrows — `computeMatchState()` is a pure live computation
       from `arrows` rows on every read, never a cached/stored score; public `GET
       /api/scoring/match`/`bracket` endpoints; `draw.html` and the new `score.html` (the actual
@@ -373,7 +395,8 @@ a row**. Grievance Officer published; 48-hour clock instrumented.
 - [ ] **Safeguarding** — **take this more seriously than the shop.** Background checks, incident
       reporting, mandatory-reporting workflow, two-adult rules. `guard-rail.html` is a page where
       a policy engine belongs.
-- [ ] Para: full classification pathway.
+- [x] Para: classification workflow built (2.7, 2026-08-12) — the assessment methodology itself
+      stays a real panel's job, by design; see 2.7 above.
 - [ ] Jobs, knowledge, community **last** — content, not infrastructure.
 
 **Gate:** one state association runs its **entire season** on it — sanctioning, registration,
