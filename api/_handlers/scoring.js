@@ -1,10 +1,12 @@
 // /api/scoring/<action> — the arrow/end/match scoring domain (DOMAIN.md).
-// Setup resources (categories/events/event-categories/entries/matches) are
-// owner/manager-authored records (no dedicated "judge" staff role exists
-// yet — ROLES in staff.js is ['manager','editor','support'] — so scoring
-// write access is owner/manager only for now, matching "a scoring bug is a
-// stolen medal" severity; a judge role is real follow-on work, not a
-// silent guess). Reads are public — "live results are a view" (DOMAIN.md §1).
+// Setup resources (categories/events/event-categories/matches/generate-draw/
+// qualify/publish-ranking) stay owner/manager-only — restructuring a
+// competition is an internal-staff action. Recording arrows (end,
+// shootoff-judge) additionally accepts a real assigned+certified official
+// (migration 024, api/_lib/member-capability.js) — a competition can have
+// many volunteer judges who are not company staff. Registering an entry
+// additionally accepts the athlete themself or their active coach. Reads
+// are public — "live results are a view" (DOMAIN.md §1).
 'use strict';
 const { cors, json, readBody } = require('../_lib/respond');
 const { checkAdmin } = require('../_lib/auth');
@@ -13,6 +15,8 @@ const { writeAudit } = require('../_lib/audit');
 const { computeMatchState, maybeAdvanceWinner } = require('../_lib/scoring-db');
 const { rankingScoreForResult, selectBest7 } = require('../_lib/ranking');
 const { generateBracket, roundCount, advancesTo } = require('../_lib/seeding');
+const { requireScorerForMatchEntry, requireScorerForEnd, canActForAthlete } = require('../_lib/member-capability');
+const { authedUserChecked } = require('../_lib/userauth');
 
 const rowToObj = row => { const o = {}; for (const [k, v] of Object.entries(row)) o[k.replace(/_([a-z])/g, (_, c) => c.toUpperCase())] = v; return o; };
 async function requireScorer(req) {
@@ -97,10 +101,18 @@ module.exports = async (req, res) => {
         const r = await q('select * from entries where event_category_id=$1 order by id', [eventCategoryId]);
         return json(res, r.rows.map(rowToObj));
       }
-      const actor = await requireScorer(req);
-      if (!actor) return json(res, { error: 'Unauthorised' }, 401);
       const b = readBody(req);
       if (!b.eventCategoryId || !b.athleteId) return json(res, { error: 'eventCategoryId and athleteId are required' }, 400);
+      // Registration: owner/manager, OR the athlete themself, OR their
+      // active coach (migration 024) — self-service entry, not staff-only.
+      let actor = await requireScorer(req);
+      if (!actor) {
+        const member = await authedUserChecked(req);
+        if (member && await canActForAthlete(member.id, parseInt(b.athleteId, 10))) {
+          actor = { role: 'member', sid: member.id, name: member.name };
+        }
+      }
+      if (!actor) return json(res, { error: 'Unauthorised' }, 401);
       const r = await q(
         `insert into entries (event_category_id,athlete_id,target_assignment) values ($1,$2,$3) returning id`,
         [b.eventCategoryId, b.athleteId, b.targetAssignment || null]);
@@ -150,8 +162,6 @@ module.exports = async (req, res) => {
 
     // ── END: record one end + its arrows. Offline-first (client_id idempotency). ──
     if (action === 'end' && req.method === 'POST') {
-      const actor = await requireScorer(req);
-      if (!actor) return json(res, { error: 'Unauthorised' }, 401);
       const b = readBody(req);
       const matchEntryId = parseInt(b.matchEntryId, 10);
       const endNumber = parseInt(b.endNumber, 10);
@@ -159,6 +169,11 @@ module.exports = async (req, res) => {
       if (!matchEntryId || !Number.isFinite(endNumber) || !arrows.length) {
         return json(res, { error: 'matchEntryId, endNumber and a non-empty arrows array are required' }, 400);
       }
+      // Staff (owner/manager), OR a real assigned+certified official for the
+      // event this match belongs to (migration 024) — never a self-declared
+      // "I'm a judge" claim (member-capability.js).
+      const actor = await requireScorerForMatchEntry(req, matchEntryId);
+      if (!actor) return json(res, { error: 'Unauthorised' }, 401);
       for (const a of arrows) {
         const v = Number(a.value);
         if (!Number.isFinite(v) || v < 0 || v > 10) return json(res, { error: 'Every arrow value must be 0-10' }, 400);
@@ -192,11 +207,11 @@ module.exports = async (req, res) => {
 
     // ── SHOOTOFF JUDGE DECISION: record closest-to-centre (Art. 12.5.2.2) ──
     if (action === 'shootoff-judge' && req.method === 'POST') {
-      const actor = await requireScorer(req);
-      if (!actor) return json(res, { error: 'Unauthorised' }, 401);
       const b = readBody(req);
       const endId = parseInt(b.endId, 10);
       if (!endId) return json(res, { error: 'endId is required' }, 400);
+      const actor = await requireScorerForEnd(req, endId);
+      if (!actor) return json(res, { error: 'Unauthorised' }, 401);
       await q('update ends set judged_closest_to_centre=$1, judge=$2 where id=$3', [!!b.closest, b.judge || actor.name || null, endId]);
       await writeAudit({ req, actor, action: 'update', resourceType: 'ends', resourceId: endId, after: { judgedClosestToCentre: !!b.closest } });
       const endRow = (await q('select match_entry_id from ends where id=$1', [endId])).rows[0];

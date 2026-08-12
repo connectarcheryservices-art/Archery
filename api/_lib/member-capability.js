@@ -1,0 +1,107 @@
+// Capability checks for PLATFORM MEMBERS (athletes, coaches, officials) —
+// the counterpart to api/_lib/auth.js's can() (which governs STAFF, i.e.
+// your employees). CLAUDE.md §1.4: capability, not "is logged in." Every
+// function here answers one narrow, specific question and touches the
+// database itself — nothing is inferred from a JWT claim, because roles
+// must be read fresh on every request (§1.4) and because the elevated
+// capabilities modeled here (coach access to an athlete, an official's
+// right to score a match) are relationships that can be revoked at any
+// time and must reflect that instantly, not after a token expires.
+'use strict';
+const { q } = require('./db');
+const { checkAdmin } = require('./auth');
+const { authedUserChecked } = require('./userauth');
+
+// Is this user the athlete themself (athletes.user_id, migration 024)?
+async function isOwnAthlete(userId, athleteId) {
+  if (!userId || !athleteId) return false;
+  const row = (await q('select 1 from athletes where id=$1 and user_id=$2', [athleteId, userId])).rows[0];
+  return !!row;
+}
+
+// Is this user an ACTIVE (mutually-consented) coach of this athlete?
+async function isActiveCoach(coachUserId, athleteId) {
+  if (!coachUserId || !athleteId) return false;
+  const row = (await q(
+    `select 1 from coach_athletes where coach_user_id=$1 and athlete_id=$2 and status='active'`,
+    [coachUserId, athleteId])).rows[0];
+  return !!row;
+}
+
+// Can this member act on behalf of this athlete (register them for an
+// event, edit their public profile)? Self, or an active coach — never a
+// pending/revoked coach link.
+async function canActForAthlete(userId, athleteId) {
+  return (await isOwnAthlete(userId, athleteId)) || (await isActiveCoach(userId, athleteId));
+}
+
+// Is this user a staff-approved, currently-certified official, AND actually
+// assigned to the given event? Both conditions matter independently: a
+// revoked certification must lose scoring rights everywhere immediately,
+// and an approved official is still scoped to only the events they're
+// assigned to (real competitions assign judges per event, not globally).
+async function isAssignedCertifiedOfficial(userId, eventId) {
+  if (!userId || !eventId) return false;
+  const cert = (await q(`select 1 from official_certifications where user_id=$1 and status='approved'`, [userId])).rows[0];
+  if (!cert) return false;
+  const assignment = (await q('select 1 from event_officials where event_id=$1 and user_id=$2', [eventId, userId])).rows[0];
+  return !!assignment;
+}
+
+// event_id for a match_entries.id — walks match_entries -> matches ->
+// event_categories. Returns null if the chain doesn't resolve (bad id).
+async function eventIdForMatchEntry(matchEntryId) {
+  const row = (await q(
+    `select ec.event_id from match_entries me
+       join matches m on m.id = me.match_id
+       join event_categories ec on ec.id = m.event_category_id
+      where me.id=$1`, [matchEntryId])).rows[0];
+  return row ? row.event_id : null;
+}
+
+// event_id for an ends.id — one hop further via match_entry_id.
+async function eventIdForEnd(endId) {
+  const row = (await q(
+    `select ec.event_id from ends e
+       join match_entries me on me.id = e.match_entry_id
+       join matches m on m.id = me.match_id
+       join event_categories ec on ec.id = m.event_category_id
+      where e.id=$1`, [endId])).rows[0];
+  return row ? row.event_id : null;
+}
+
+// The combined scorer gate for actions tied to a specific match_entry
+// (currently: recording an end). Staff (owner/manager) pass unconditionally
+// — same as requireScorer() in scoring.js — with NO extra query, so the
+// common internal-staff path costs nothing extra. Otherwise, an authed
+// member is checked against isAssignedCertifiedOfficial() for the event
+// that owns this match_entry. Returns an actor-shaped object for the audit
+// log either way, or null (caller must respond 401).
+async function requireScorerForMatchEntry(req, matchEntryId) {
+  const staff = await checkAdmin(req);
+  if (staff && (staff.role === 'owner' || staff.role === 'manager')) return staff;
+  const member = await authedUserChecked(req);
+  if (!member) return null;
+  const eventId = await eventIdForMatchEntry(matchEntryId);
+  if (!eventId) return null;
+  if (!(await isAssignedCertifiedOfficial(member.id, eventId))) return null;
+  return { role: 'official', name: member.name || ('member#' + member.id), userId: member.id };
+}
+
+// Same gate, resolved from an ends.id instead (shootoff-judge action).
+async function requireScorerForEnd(req, endId) {
+  const staff = await checkAdmin(req);
+  if (staff && (staff.role === 'owner' || staff.role === 'manager')) return staff;
+  const member = await authedUserChecked(req);
+  if (!member) return null;
+  const eventId = await eventIdForEnd(endId);
+  if (!eventId) return null;
+  if (!(await isAssignedCertifiedOfficial(member.id, eventId))) return null;
+  return { role: 'official', name: member.name || ('member#' + member.id), userId: member.id };
+}
+
+module.exports = {
+  isOwnAthlete, isActiveCoach, canActForAthlete,
+  isAssignedCertifiedOfficial, eventIdForMatchEntry, eventIdForEnd,
+  requireScorerForMatchEntry, requireScorerForEnd,
+};

@@ -26,6 +26,8 @@ module.exports = (req, res) => {
     if (r0 === 'users' && n === 2) { q.action = seg[1]; return H('users-action')(req, res); }
     // Scoring domain: /api/scoring/<action> (categories/events/matches/end/etc.)
     if (r0 === 'scoring' && n === 2) { q.action = seg[1]; return H('scoring')(req, res); }
+    // Member capability: /api/members/<action> (become-athlete/coach-link/etc.)
+    if (r0 === 'members' && n === 2) { q.action = seg[1]; return H('members')(req, res); }
     // Logged-in user's own account: /api/me/profile, /api/me/dashboard, /api/me/products[/<id>]
     if (r0 === 'me' && n >= 2) { q.sub = seg[1]; if (n === 3) q.pid = seg[2]; return H('my-profile')(req, res); }
     // Staff (employees): /api/staff, /api/staff/<id>, /api/staff/me/<action>
