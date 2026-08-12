@@ -91,7 +91,7 @@ body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;margin
       <div class="chat-avatar">🏹</div>
       <div>
         <div class="chat-title">Archery AI Coach</div>
-        <div class="chat-status">● Online · Analysing your profile data</div>
+        <div class="chat-status">● Online</div>
       </div>
     </div>
     <div class="chat-messages" id="chat-messages">
@@ -142,24 +142,13 @@ const MESSAGES = [
   {role:'ai',content:'That confirms grip torque as the primary cause. Your bow hand was pushing left by approximately 5-6cm at 18m — at 70m this would produce 15-20cm left deviation.\n\nFix protocol:\n\n• Bow hand: press only with the base-of-thumb pad. Fingers should curl naturally away from the bow.\n• After the shot: let the bow fall forward freely. If your hand closes on it, you were gripping.\n• Drill: 20 arrows at 9m, target removed. Focus entirely on the hand position, not the result. The blank bale removes the visual distraction.\n• After 3 sessions: return to target at 18m and record your horizontal spread.\n\nTarget benchmark: your horizontal group diameter should reduce by at least 60% within 2 weeks of consistent application.',confidence:null},
 ];
 
-const TECHNIQUES = [
-  {name:'Anchor Point',score:72,color:'#C9A227'},
-  {name:'Draw Length',score:88,color:'#22C55E'},
-  {name:'Bow Arm Extension',score:65,color:'#D22730'},
-  {name:'Back Tension',score:79,color:'#0F5FA8'},
-  {name:'Follow Through',score:83,color:'#22C55E'},
-  {name:'Clicker Timing',score:70,color:'#C9A227'},
-];
-
-const PLAN = [
-  {day:'Mon',session:'Blank Bale',focus:'Grip isolation — 30 arrows',intensity:'low'},
-  {day:'Tue',session:'18m Scoring',focus:'Anchor consistency tracking',intensity:'med'},
-  {day:'Wed',session:'Rest',focus:'Mobility & stretch',intensity:'low'},
-  {day:'Thu',session:'Blank Bale',focus:'Back tension activation',intensity:'med'},
-  {day:'Fri',session:'50m Outdoor',focus:'Wind reading + grouping log',intensity:'high'},
-  {day:'Sat',session:'Full Training',focus:'Clicker timing isolation',intensity:'high'},
-  {day:'Sun',session:'Rest',focus:'Mental rehearsal 10 min',intensity:'low'},
-];
+// Was: hardcoded per-skill scores (e.g. "Anchor Point 72/100") and a
+// hardcoded 7-day personal training schedule, both presented in the sidebar
+// as if computed from this athlete's real data. No arrows/scoring table
+// exists yet (see docs/DOMAIN.md), so neither could have been real — this
+// was fabricated data rendered as fact (CLAUDE.md §1.1), same class of bug
+// already fixed in MESSAGES above. Removed rather than replaced with
+// different placeholder numbers; render an honest "not available yet" state.
 
 function renderMessages(){
   const container=document.getElementById('chat-messages');
@@ -175,29 +164,17 @@ function renderMessages(){
 }
 
 function renderTech(){
-  document.getElementById('tech-list').innerHTML=TECHNIQUES.map(t=>`
-    <div class="tech-row">
-      <div class="tech-icon">🎯</div>
-      <div class="tech-info">
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <span class="tech-name">${t.name}</span>
-          <span class="score-num">${t.score}/100</span>
-        </div>
-        <div class="score-bar"><div class="score-fill" style="width:${t.score}%;background:${t.color};"></div></div>
-      </div>
-    </div>`).join('');
+  document.getElementById('tech-list').innerHTML =
+    '<div style="padding:14px 4px;font-size:12.5px;color:var(--text-2,#8899AA);line-height:1.6;">'
+    +'Per-skill technique scoring needs shot-by-shot data we don\'t have yet — ask the coach '
+    +'about a specific technique instead and it\'ll walk through it with you.</div>';
 }
 
 function renderPlan(){
-  document.getElementById('plan-list').innerHTML=PLAN.map(p=>`
-    <div class="plan-row">
-      <div class="plan-day">${p.day}</div>
-      <div>
-        <div class="plan-session">${p.session}</div>
-        <div class="plan-focus">${p.focus}</div>
-      </div>
-      <span class="int-badge int-${p.intensity}">${p.intensity}</span>
-    </div>`).join('');
+  document.getElementById('plan-list').innerHTML =
+    '<div style="padding:14px 4px;font-size:12.5px;color:var(--text-2,#8899AA);line-height:1.6;">'
+    +'A personalised weekly plan needs training history we don\'t have yet — ask the coach for '
+    +'a training plan and it\'ll suggest one in the chat.</div>';
 }
 
 const AI_RESPONSES = {

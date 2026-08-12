@@ -84,12 +84,6 @@ body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;margin
   <p>WADA-compliant testing management, TUE applications, and mandatory education for all registered athletes.</p>
 </div>
 
-<div class="stat-bar">
-  <div class="stat-item"><div class="stat-num">1,248</div><div class="stat-label">Tests 2026</div></div>
-  <div class="stat-item"><div class="stat-num">98.7%</div><div class="stat-label">Negative Rate</div></div>
-  <div class="stat-item"><div class="stat-num">24</div><div class="stat-label">TUEs Approved</div></div>
-  <div class="stat-item"><div class="stat-num">94%</div><div class="stat-label">Education Complete</div></div>
-</div>
 
 <div class="wrap">
   <div class="tab-bar">
@@ -101,28 +95,11 @@ body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;margin
 
   <!-- TESTS -->
   <div class="tab-panel active" id="tab-tests">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
-      <div>
-        <div style="font-family:'Oswald',sans-serif;font-size:20px;font-weight:700;color:var(--ink);">Test Register 2026</div>
-        <div style="font-size:12px;color:var(--faint);">All tests conducted under WADA-accredited laboratory protocols</div>
-      </div>
-      <div style="display:flex;gap:8px;">
-        <select style="padding:8px 12px;border:1.5px solid var(--line);border-radius:6px;font-size:12px;background:var(--bg);color:var(--ink);" onchange="filterTests(this.value)">
-          <option value="all">All Results</option>
-          <option value="Negative">Negative</option>
-          <option value="Pending">Pending</option>
-          <option value="Positive">Positive</option>
-        </select>
-      </div>
+    <div style="margin-bottom:20px;">
+      <div style="font-family:'Oswald',sans-serif;font-size:20px;font-weight:700;color:var(--ink);">Test Register</div>
+      <div style="font-size:12px;color:var(--faint);">Individual test results are confidential and are not published by Archery.Services</div>
     </div>
-    <div style="overflow-x:auto;">
-      <table class="test-table">
-        <thead><tr>
-          <th>Date</th><th>Athlete</th><th>Country</th><th>Event</th><th>Type</th><th>Lab</th><th>Result</th>
-        </tr></thead>
-        <tbody id="test-tbody"></tbody>
-      </table>
-    </div>
+    <div id="test-tbody"></div>
   </div>
 
   <!-- TUE -->
@@ -157,32 +134,22 @@ body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;margin
 </div>
 
 <script>
-const TESTS = [
-  {id:'T001',date:'2026-06-18',athlete:'Deepika Kumari',country:'India',event:'India Open 2026',type:'In-Competition',result:'Negative',lab:'WADA-Accredited Lab Delhi'},
-  {id:'T002',date:'2026-06-15',athlete:'Brady Ellison',country:'USA',event:'Out-of-Competition',type:'Out-of-Competition',result:'Negative',lab:'UCLA Anti-Doping Lab'},
-  {id:'T003',date:'2026-06-10',athlete:'Nils Winther',country:'Denmark',event:'European Cup',type:'In-Competition',result:'Pending',lab:'Cologne WADA Lab'},
-  {id:'T004',date:'2026-06-08',athlete:'An San',country:'South Korea',event:'Asian Grand Prix',type:'In-Competition',result:'Negative',lab:'Seoul Anti-Doping Lab'},
-  {id:'T005',date:'2026-05-28',athlete:'Lisa Barbelin',country:'France',event:'World Cup Stage 1',type:'Targeted',result:'Negative',lab:'AFLD Paris'},
-  {id:'T006',date:'2026-05-20',athlete:'Unknown',country:'—',event:'Out-of-Competition',type:'Out-of-Competition',result:'Positive',lab:'Cologne WADA Lab'},
-  {id:'T007',date:'2026-05-14',athlete:'Mackenzie Brown',country:'USA',event:'World Cup Stage 1',type:'In-Competition',result:'Negative',lab:'UCLA Anti-Doping Lab'},
-  {id:'T008',date:'2026-05-10',athlete:'Aleksander Mišan',country:'Serbia',event:'Balkan Championship',type:'In-Competition',result:'Negative',lab:'Belgrade ADC'},
-];
-
-const TUES = [
-  {athlete:'Riau Ega Agatha',substance:'Salbutamol',condition:'Exercise-induced asthma',applied:'2026-03-15',status:'Approved',expiry:'2026-12-31',physician:'Dr. Yanti Rahayu'},
-  {athlete:'Marcus D\'Almeida',substance:'Prednisolone',condition:'Severe allergic rhinitis',applied:'2026-04-10',status:'Approved',expiry:'2026-09-30',physician:'Dr. Carlos Mendes'},
-  {athlete:'James Lutz',substance:'Methylphenidate',condition:'ADHD — diagnosed 2019',applied:'2026-05-01',status:'Pending',expiry:null,physician:'Dr. Sarah Kim'},
-  {athlete:'Cristina Iuga',substance:'Propranolol (beta-blocker)',condition:'Performance-unrelated tremor disorder',applied:'2026-04-25',status:'Rejected',expiry:null,physician:'Dr. Ion Popescu'},
-  {athlete:'Linda Ochoa-Anderson',substance:'Corticosteroid injection',condition:'Rotator cuff tendinitis',applied:'2026-05-20',status:'Under Review',expiry:null,physician:'Dr. Miguel Torres'},
-];
+// Archery.Services is not a testing authority — WADA/NADA conduct and hold
+// doping-control tests, and individual results (and TUE approvals, which are
+// confidential medical decisions) are theirs to disclose, not this platform's.
+// A prior version of this page invented specific test dates, labs, results —
+// including a fabricated "Positive" — and confidential medical conditions,
+// and attributed them to real, named elite archers. That was fabricated data
+// about real identifiable people on both counts (CLAUDE.md §1.1) and has been
+// removed rather than replaced with different placeholder content.
 
 const MODULES = [
-  {id:'m1',title:'What is Doping in Archery?',duration:'25 min',level:'beginner',mandatory:true,completedBy:94,desc:'WADA Code fundamentals, strict liability, and what doping means for your career and the sport.'},
-  {id:'m2',title:'Beta-Blockers: Why Archery is Different',duration:'20 min',level:'beginner',mandatory:true,completedBy:91,desc:'Why beta-blockers are specifically prohibited in archery, their performance effects, and common medical alternatives.'},
-  {id:'m3',title:'Therapeutic Use Exemptions (TUE)',duration:'30 min',level:'intermediate',mandatory:false,completedBy:62,desc:'How to apply for a TUE, the evidence required, timelines, and what happens if your medication is needed urgently.'},
-  {id:'m4',title:'Supplements and Contamination Risk',duration:'35 min',level:'intermediate',mandatory:true,completedBy:78,desc:'Unregulated supplements, cross-contamination risks, and how to check substances using GDRO before use.'},
-  {id:'m5',title:'Whereabouts Requirements',duration:'20 min',level:'intermediate',mandatory:false,completedBy:55,desc:'ADAMS whereabouts filing for registered testing pool athletes. Missed test rules, thresholds, and consequences.'},
-  {id:'m6',title:'Coach and Federation Responsibilities',duration:'40 min',level:'advanced',mandatory:true,completedBy:88,desc:'What coaches, club officials, and federation officers must know about anti-doping obligations and reporting duties.'},
+  {id:'m1',title:'What is Doping in Archery?',duration:'25 min',level:'beginner',mandatory:true,desc:'WADA Code fundamentals, strict liability, and what doping means for your career and the sport.'},
+  {id:'m2',title:'Beta-Blockers: Why Archery is Different',duration:'20 min',level:'beginner',mandatory:true,desc:'Why beta-blockers are specifically prohibited in archery, their performance effects, and common medical alternatives.'},
+  {id:'m3',title:'Therapeutic Use Exemptions (TUE)',duration:'30 min',level:'intermediate',mandatory:false,desc:'How to apply for a TUE, the evidence required, timelines, and what happens if your medication is needed urgently.'},
+  {id:'m4',title:'Supplements and Contamination Risk',duration:'35 min',level:'intermediate',mandatory:true,desc:'Unregulated supplements, cross-contamination risks, and how to check substances using GDRO before use.'},
+  {id:'m5',title:'Whereabouts Requirements',duration:'20 min',level:'intermediate',mandatory:false,desc:'ADAMS whereabouts filing for registered testing pool athletes. Missed test rules, thresholds, and consequences.'},
+  {id:'m6',title:'Coach and Federation Responsibilities',duration:'40 min',level:'advanced',mandatory:true,desc:'What coaches, club officials, and federation officers must know about anti-doping obligations and reporting duties.'},
 ];
 
 const SUBSTANCES_CATS = [
@@ -193,46 +160,31 @@ const SUBSTANCES_CATS = [
   {name:'Permitted Substances',status:'No restriction',color:'#22C55E',examples:'Standard analgesics (paracetamol, ibuprofen), Antihistamines, Antibiotics, Vitamins, Caffeine',note:'Caffeine is not prohibited — it was removed from the list in 2004. Always verify using GDRO.'},
 ];
 
-const RESULT_CLS={Negative:'r-negative',Positive:'r-positive',Pending:'r-pending',Inconclusive:'r-inconclusive'};
-const STATUS_CLS={Approved:'s-approved',Pending:'s-pending',Rejected:'s-rejected','Under Review':'s-review'};
 const LEVEL_CLS={beginner:'l-beg',intermediate:'l-int',advanced:'l-adv'};
 
-let testFilter='all';
-function filterTests(f){
-  testFilter=f;
-  renderTests();
+function honestPanel(icon,title,body){
+  return `<div style="text-align:center;padding:56px 24px;color:var(--faint);">
+    <div style="font-size:32px;margin-bottom:10px;">${icon}</div>
+    <div style="font-family:'Oswald',sans-serif;font-size:15px;color:var(--ink);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px;">${title}</div>
+    <div style="font-size:13px;max-width:480px;margin:0 auto;line-height:1.6;">${body}</div>
+  </div>`;
 }
 
 function renderTests(){
-  const data=testFilter==='all'?TESTS:TESTS.filter(t=>t.result===testFilter);
-  document.getElementById('test-tbody').innerHTML=data.map(t=>`
-    <tr>
-      <td>${t.date}</td>
-      <td style="font-weight:600;color:var(--ink);">${t.athlete}</td>
-      <td>${t.country}</td>
-      <td style="font-size:12px;">${t.event}</td>
-      <td><span class="type-badge">${t.type.split('-')[0]}</span></td>
-      <td style="font-size:12px;color:var(--faint);">${t.lab}</td>
-      <td><span class="result-badge ${RESULT_CLS[t.result]}">${t.result}</span></td>
-    </tr>`).join('');
+  document.getElementById('test-tbody').innerHTML = honestPanel('🔬','Not published here',
+    'Doping-control testing is conducted and held by WADA and national anti-doping organisations (NADOs), not by Archery.Services. '
+    +'Individual results are confidential unless a formal anti-doping rule violation is announced by the testing authority. '
+    +'See <a href="https://www.wada-ama.org" target="_blank" rel="noopener" style="color:#0F5FA8;font-weight:600;">wada-ama.org</a> for official sanctions.');
 }
 
 function renderTUE(){
-  document.getElementById('tue-grid').innerHTML=TUES.map(t=>`
-    <div class="tue-card">
-      <div class="tue-status ${STATUS_CLS[t.status]}">${t.status}</div>
-      <div class="tue-athlete">${t.athlete}</div>
-      <div class="tue-sub">${t.substance}</div>
-      <div class="tue-details">
-        <div>Condition: <strong>${t.condition}</strong></div>
-        <div>Physician: ${t.physician}</div>
-        <div>Applied: ${t.applied}</div>
-        ${t.expiry?`<div>Expires: <strong>${t.expiry}</strong></div>`:''}
-      </div>
-    </div>`).join('');
+  document.getElementById('tue-grid').innerHTML = honestPanel('📋','Not published here',
+    'TUE decisions are confidential medical/legal matters between an athlete and their national anti-doping organisation — Archery.Services does not review, approve, or list them. '
+    +'If you need a TUE, apply through NADA India (national-level) or World Archery (international/registered-testing-pool athletes) — see the Education tab for how the process works.');
 }
 
 function renderEducation(){
+  const done=doneModules();
   document.getElementById('edu-grid').innerHTML=MODULES.map(m=>`
     <div class="edu-card">
       <div class="edu-badge">
@@ -242,12 +194,11 @@ function renderEducation(){
       <div class="edu-title">${m.title}</div>
       <div class="edu-desc">${m.desc}</div>
       <div class="progress-row">
-        <div class="prog-bar"><div class="prog-fill" style="width:${m.completedBy}%"></div></div>
-        <div class="prog-label">${m.completedBy}% complete</div>
+        <div class="prog-label">${done.includes(m.id)?'✓ You completed this module':'Not yet completed'}</div>
       </div>
       <div class="edu-meta" style="margin-top:12px;">
         <div class="edu-dur">⏱ ${m.duration}</div>
-        <button class="edu-btn" onclick="startModule('${m.id}')">${doneModules().includes(m.id)?'✓ Review':'Start Module'}</button>
+        <button class="edu-btn" onclick="startModule('${m.id}')">${done.includes(m.id)?'✓ Review':'Start Module'}</button>
       </div>
     </div>`).join('');
 }

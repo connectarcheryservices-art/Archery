@@ -70,7 +70,7 @@ body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;margin
 </head>
 <body>
 
-<div class="urgent-bar">🚨 Immediate safeguarding concern? Call the 24-hour welfare line: <strong>+91 1800 200 6200</strong> — or <a href="#report">submit a confidential report below</a></div>
+<div class="urgent-bar">🚨 Immediate danger or a child at risk right now? Call <strong>112</strong> (India national emergency) or <strong>1098</strong> (Childline India, 24/7 child helpline) — Archery.Services does not operate its own emergency line. For a non-emergency concern, <a href="#report">submit a confidential report below</a>.</div>
 
 <nav style="position:sticky;top:0;z-index:300;background:#fff;border-bottom:1px solid rgba(15,95,168,.1);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;column-gap:12px;padding:6px clamp(14px,4vw,32px);min-height:60px;">
   <a href="/" style="font-family:'Oswald',sans-serif;font-size:20px;font-weight:700;color:#0F5FA8;text-decoration:none;">Archery<span style="color:#C9A227">.</span>Services</a>
@@ -146,7 +146,7 @@ body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;margin
           </select>
         </div>
         <button class="submit-btn" onclick="submitReport()">Submit Confidential Report</button>
-        <div class="anon-note">🔒 All reports are encrypted and reviewed only by the Welfare Officer team.</div>
+        <div class="anon-note">🔒 Reports are sent over an encrypted connection and reviewed by our team.</div>
       </div>
     </div>
   </div>
@@ -169,14 +169,12 @@ const PROTOCOLS = [
   {title:'Social Media and Communication',priority:'medium',scope:'All members and staff',reviewed:'2026-01-20',summary:'Official club channels only for member communication involving under-18 athletes. Private messaging between coaches and junior athletes requires parent/guardian to be copied. Inappropriate contact is a reportable safeguarding incident.'},
 ];
 
-const OFFICERS = [
-  {name:'Club Welfare Officer',role:'Club-Level Welfare',phone:'+91 98200 10021',email:'welfare@archery-club.example',qualified:'Child Protection Level 3',area:'Local club',icon:'🛡'},
-  {name:'Regional Welfare Lead',role:'Regional Welfare Lead',phone:'+91 98200 10022',email:'welfare.north@archery-fed.example',qualified:'Designated Safeguarding Lead',area:'Northern region',icon:'🌍'},
-  {name:'Federation Welfare Director',role:'National Federation',phone:'+91 11 4567 7800',email:'welfare@archery-fed.example',qualified:'National Safeguarding Coordinator',area:'National level',icon:'🏛'},
-  {name:'Independent Safeguarding Advisor',role:'Independent Review',phone:'+91 11 4567 7801',email:'independent@archery-fed.example',qualified:'Social Work & Child Protection PhD',area:'Independent',icon:'⚖️'},
-  {name:'Anti-Bullying Lead',role:'Welfare Specialist',phone:'+91 98200 10023',email:'antibullying@archery-fed.example',qualified:'Mentoring and Mediation Certified',area:'All clubs',icon:'🤝'},
-  {name:'24-Hour Welfare Helpline',role:'Emergency Welfare Line',phone:'+91 1800 200 6200',email:'urgent@archery-services.example',qualified:'Staffed 24/7',area:'Worldwide',icon:'📞'},
-];
+// Archery.Services has not yet appointed or published named regional/club
+// welfare officers. Inventing names, phone numbers and qualifications here
+// would be fabricated data on a child-safeguarding page (CLAUDE.md §1.1) —
+// worse than the usual case, since a distressed reporter could try to reach
+// a person or number that does not exist. Reports submitted on this page go
+// to a real, admin-reviewed inbox (POST /api/reports) instead.
 
 const RESOURCES = [
   {title:'Safeguarding in Sport — National Sport Office Guide',type:'PDF Guide',desc:'National sport office safeguarding framework for affiliated sporting organisations.',icon:'📋'},
@@ -209,17 +207,17 @@ function renderProtocols(){
 function toggleProto(i){document.getElementById('proto-'+i).classList.toggle('open');}
 
 function renderOfficers(){
-  document.getElementById('officers-grid').innerHTML=OFFICERS.map(o=>`
-    <div class="officer-card">
-      <div class="officer-icon">${o.icon}</div>
-      <div class="officer-name">${o.name}</div>
-      <div class="officer-role">${o.role} · ${o.area}</div>
-      <div class="officer-contact">
-        <div class="oc-row"><span class="oc-icon">📞</span>${o.phone}</div>
-        <div class="oc-row"><span class="oc-icon">✉️</span>${o.email}</div>
+  document.getElementById('officers-grid').innerHTML = `
+    <div style="grid-column:1/-1;text-align:center;padding:50px 24px;color:var(--faint);">
+      <div style="font-size:32px;margin-bottom:10px;">🛡</div>
+      <div style="font-family:'Oswald',sans-serif;font-size:15px;color:var(--ink);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px;">Named welfare officers not yet published</div>
+      <div style="font-size:13px;max-width:440px;margin:0 auto;line-height:1.6;">
+        Archery.Services has not yet appointed or listed named regional or club welfare officers.
+        Use the <a href="#report" onclick="setTab('report',document.querySelectorAll('.tab-btn')[2]);return false;" style="color:#0F5FA8;font-weight:600;">Report a Concern</a> form —
+        it goes to a real, reviewed inbox — or email <a href="mailto:support@archery.services" style="color:#0F5FA8;font-weight:600;">support@archery.services</a>.
+        For danger right now, call <strong>112</strong> or <strong>1098</strong> (Childline India), not this platform.
       </div>
-      <div class="officer-qual">${o.qualified}</div>
-    </div>`).join('');
+    </div>`;
 }
 
 function renderResources(){
@@ -245,12 +243,12 @@ async function submitReport(){
   const res=await fetch('/api/reports',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).then(r=>r.json()).catch(()=>null);
   if(btn){btn.textContent=orig;btn.disabled=false;}
   if(res&&res.ok){
-    alert('Your report has been submitted securely and will be reviewed by the Welfare Officer team within 24 hours. If this is an emergency, please call +91 1800 200 6200 immediately.');
+    alert('Your report has been submitted securely and will be reviewed by our team. If someone is in danger right now, do not wait for a review — call 112 (India national emergency) or 1098 (Childline India) immediately.');
     document.getElementById('r-desc').value='';
     document.getElementById('r-name').value='';
     document.getElementById('r-email').value='';
   } else {
-    alert((res&&res.error)||'Sorry, your report could not be submitted. If this is urgent, please call +91 1800 200 6200 immediately.');
+    alert((res&&res.error)||'Sorry, your report could not be submitted. If this is urgent, please call 112 or 1098 (Childline India) immediately — do not wait and retry this form.');
   }
 }
 
