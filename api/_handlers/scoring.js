@@ -12,6 +12,7 @@ const { q } = require('../_lib/db');
 const { writeAudit } = require('../_lib/audit');
 const { computeMatchState } = require('../_lib/scoring-db');
 const { rankingScoreForResult, selectBest7 } = require('../_lib/ranking');
+const { generateBracket } = require('../_lib/seeding');
 
 const rowToObj = row => { const o = {}; for (const [k, v] of Object.entries(row)) o[k.replace(/_([a-z])/g, (_, c) => c.toUpperCase())] = v; return o; };
 async function requireScorer(req) {
@@ -278,6 +279,78 @@ module.exports = async (req, res) => {
            from ranking_entries re join athletes a on a.id = re.athlete_id
           where re.ranking_list_id = $1 order by re.rank`, [list.id])).rows;
       return json(res, { ok: true, list: rowToObj(list), entries: entries.map(rowToObj) });
+    }
+
+    // ── QUALIFY: compute qual_rank for every entry from its qualification-
+    // round matches (Art. 12.5.1 ranking-tie resolution — DOMAIN.md §3.4).
+    // Each archer's qualification round is its own kind='qualification'
+    // match with exactly one match_entry (side 1) — not a 2-sided match. ──
+    if (action === 'qualify' && req.method === 'POST') {
+      const actor = await requireScorer(req);
+      if (!actor) return json(res, { error: 'Unauthorised' }, 401);
+      const b = readBody(req);
+      const eventCategoryId = parseInt(b.eventCategoryId, 10);
+      if (!eventCategoryId) return json(res, { error: 'eventCategoryId is required' }, 400);
+      const ec = (await q('select distance_band from event_categories where id=$1', [eventCategoryId])).rows[0];
+      if (!ec) return json(res, { error: 'Unknown event category' }, 404);
+      const qualMatches = (await q(
+        `select m.id as match_id, me.id as match_entry_id, me.entry_id
+           from matches m join match_entries me on me.match_id = m.id
+          where m.event_category_id = $1 and m.kind = 'qualification'`, [eventCategoryId])).rows;
+      const candidates = [];
+      for (const row of qualMatches) {
+        const ends = (await q('select id from ends where match_entry_id=$1 and is_shootoff is not true', [row.match_entry_id])).rows;
+        let arrows = [];
+        for (const e of ends) {
+          const a = (await q('select value, is_x from arrows where end_id=$1 and superseded_by is null', [e.id])).rows;
+          arrows = arrows.concat(a);
+        }
+        candidates.push({ id: row.entry_id, arrows });
+      }
+      if (!candidates.length) return json(res, { ok: false, error: 'No qualification results recorded for this event category yet' }, 400);
+      const { resolveRankingTies } = require('../_lib/scoring');
+      const ranked = resolveRankingTies(candidates, ec.distance_band || 'short');
+      for (let i = 0; i < ranked.length; i++) {
+        await q('update entries set qual_rank=$1 where id=$2', [i + 1, ranked[i].id]);
+      }
+      await writeAudit({ req, actor, action: 'update', resourceType: 'entries', resourceId: eventCategoryId, after: { qualified: ranked.length } });
+      return json(res, { ok: true, ranked: ranked.map((r, i) => ({ entryId: r.id, qualRank: i + 1, total: r.total, tiedGroup: r.tiedGroup })) });
+    }
+
+    // ── GENERATE-DRAW: build the elimination bracket from qual_rank
+    // (DOMAIN.md: "seeds elimination (1v64, 2v63)"). Creates a real match
+    // row for every pairing that has TWO real entries; a bye is reported
+    // but never given a fabricated match. ──
+    if (action === 'generate-draw' && req.method === 'POST') {
+      const actor = await requireScorer(req);
+      if (!actor) return json(res, { error: 'Unauthorised' }, 401);
+      const b = readBody(req);
+      const eventCategoryId = parseInt(b.eventCategoryId, 10);
+      if (!eventCategoryId) return json(res, { error: 'eventCategoryId is required' }, 400);
+      const ecRow = (await q(
+        `select ec.*, c.division from event_categories ec join categories c on c.id = ec.category_id where ec.id=$1`, [eventCategoryId])).rows[0];
+      if (!ecRow) return json(res, { error: 'Unknown event category' }, 404);
+      const entries = (await q('select id, qual_rank from entries where event_category_id=$1 and qual_rank is not null order by qual_rank', [eventCategoryId])).rows;
+      if (!entries.length) return json(res, { ok: false, error: 'No qualified entries — run "qualify" first' }, 400);
+      const bracket = generateBracket(entries.map(e => ({ id: e.id, qualRank: e.qual_rank })));
+      const format = ecRow.division === 'compound' ? 'cumulative' : 'set'; // Art. 12.1.4
+      const targetPointsToWin = format === 'set' ? 6 : null;
+      const endsToPlay = format === 'cumulative' ? 5 : null;
+      const createdMatches = [];
+      for (const m of bracket.matches) {
+        if (m.bye || !m.entryA || !m.entryB) { createdMatches.push({ ...m, matchId: null }); continue; }
+        const matchRow = await q(
+          `insert into matches (event_category_id,kind,format,team_type,bracket_position,target_points_to_win,ends_to_play)
+           values ($1,'elimination',$2,'individual',$3,$4,$5) returning id`,
+          [eventCategoryId, format, m.bracketPosition, targetPointsToWin, endsToPlay]);
+        const matchId = matchRow.rows[0].id;
+        await q('insert into match_entries (match_id,side,entry_id) values ($1,1,$2)', [matchId, m.entryA.id]);
+        await q('insert into match_entries (match_id,side,entry_id) values ($1,2,$2)', [matchId, m.entryB.id]);
+        createdMatches.push({ ...m, matchId });
+      }
+      await writeAudit({ req, actor, action: 'create', resourceType: 'matches', resourceId: eventCategoryId,
+        after: { bracketSize: bracket.bracketSize, matchesCreated: createdMatches.filter(m => m.matchId).length, byes: createdMatches.filter(m => m.bye).length } });
+      return json(res, { ok: true, bracketSize: bracket.bracketSize, matches: createdMatches });
     }
 
     return json(res, { error: 'Not found' }, 404);
