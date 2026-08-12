@@ -4,18 +4,26 @@
   const TOKEN_KEY = 'archery_user_token';
   const USER_KEY  = 'archery_user';
 
-  function save(token, user){
-    if (token) localStorage.setItem(TOKEN_KEY, token);
-    if (user)  localStorage.setItem(USER_KEY, JSON.stringify(user));
+  // "Remember me" unchecked -> sessionStorage (cleared when the tab closes),
+  // checked (or unspecified, e.g. register) -> localStorage. Previously the
+  // signin.html checkbox had no effect at all: every login persisted to
+  // localStorage regardless, which misrepresented what unchecking it did on
+  // a shared/public device.
+  function save(token, user, remember){
+    const store = remember === false ? sessionStorage : localStorage;
+    const other = remember === false ? localStorage : sessionStorage;
+    other.removeItem(TOKEN_KEY); other.removeItem(USER_KEY);
+    if (token) store.setItem(TOKEN_KEY, token);
+    if (user)  store.setItem(USER_KEY, JSON.stringify(user));
   }
   function clear(){
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
+    localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(USER_KEY);
+    sessionStorage.removeItem(TOKEN_KEY); sessionStorage.removeItem(USER_KEY);
   }
 
   window.ArcheryAuth = {
-    token(){ return localStorage.getItem(TOKEN_KEY) || ''; },
-    user(){ try { return JSON.parse(localStorage.getItem(USER_KEY) || 'null'); } catch(e){ return null; } },
+    token(){ return sessionStorage.getItem(TOKEN_KEY) || localStorage.getItem(TOKEN_KEY) || ''; },
+    user(){ try { return JSON.parse(sessionStorage.getItem(USER_KEY) || localStorage.getItem(USER_KEY) || 'null'); } catch(e){ return null; } },
     isLoggedIn(){ return !!this.token() && !!this.user(); },
     authHeaders(){ const t = this.token(); return t ? { 'Authorization': 'Bearer ' + t } : {}; },
 
@@ -28,12 +36,12 @@
       return r;
     },
 
-    async login(email, password, totp){
+    async login(email, password, totp, remember){
       const r = await fetch('/api/users/login', {
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ email, password, totp: totp || undefined })
       }).then(x=>x.json()).catch(()=>null);
-      if (r && r.ok && r.token) save(r.token, r.user);
+      if (r && r.ok && r.token) save(r.token, r.user, remember);
       return r;
     },
 
