@@ -57,6 +57,16 @@ function getPool() {
     idleTimeoutMillis: 10000,
     connectionTimeoutMillis: 8000,
   });
+  // node-postgres's own docs: an idle pooled client can be dropped by the
+  // server (network blip, pooler restart, idle timeout) at any time, and
+  // that surfaces as an 'error' event on the Pool. With no listener, Node's
+  // default behaviour for an unhandled EventEmitter 'error' is to throw —
+  // which on a Pool means CRASHING THE WHOLE PROCESS over one idle
+  // connection being closed, not just failing whatever request happens to
+  // reuse it next. Observed directly during local testing (an idle-client
+  // ECONNRESET took down the entire dev server). A no-op handler here is
+  // the documented fix: the next q() call gets a fresh connection instead.
+  pool.on('error', (err) => { console.error('db: idle pool connection error (recovering):', err?.message); });
   return pool;
 }
 
