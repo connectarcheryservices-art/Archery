@@ -32,6 +32,8 @@ module.exports = (req, res) => {
     if (r0 === 'search' && n === 1) return H('search')(req, res);
     // Selection: /api/selection/<action> (generate/list/get/override/finalize)
     if (r0 === 'selection' && n === 2) { q.action = seg[1]; return H('selection')(req, res); }
+    // Federation hierarchy: /api/federation/<action> (create/tree/assign-officer/officers)
+    if (r0 === 'federation' && n === 2) { q.action = seg[1]; return H('federation')(req, res); }
     // Logged-in user's own account: /api/me/profile, /api/me/dashboard, /api/me/products[/<id>]
     if (r0 === 'me' && n >= 2) { q.sub = seg[1]; if (n === 3) q.pid = seg[2]; return H('my-profile')(req, res); }
     // Staff (employees): /api/staff, /api/staff/<id>, /api/staff/me/<action>
