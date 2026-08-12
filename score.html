@@ -333,7 +333,12 @@ async function submitEnd(key, matchEntryId, isShootoff, shootoffSequence){
   const selects=[...document.querySelectorAll(`[id^="arrow-${key}-"]`)];
   const arrows=selects.map(arrowSelectValue);
   if(!arrows.length){ if(msgEl) msgEl.innerHTML='<div class="msg msg-err">No arrows to record.</div>'; return; }
-  const body={ matchEntryId, endNumber, arrows, isShootoff: !!isShootoff, clientId: (crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random()) };
+  // clientId is an offline-first idempotency key (ADR-0006) — a collision
+  // would silently drop a real end as "already recorded", so even the
+  // fallback (for a browser without crypto.randomUUID) uses real entropy,
+  // not Math.random().
+  const fallbackId=()=>{ const b=new Uint8Array(16); crypto.getRandomValues(b); return String(Date.now())+'-'+[...b].map(x=>x.toString(16).padStart(2,'0')).join(''); };
+  const body={ matchEntryId, endNumber, arrows, isShootoff: !!isShootoff, clientId: (crypto.randomUUID?crypto.randomUUID():fallbackId()) };
   if(isShootoff) body.shootoffSequence=shootoffSequence;
   const res=await fetch('/api/scoring/end',{method:'POST',headers:authHeaders(),body:JSON.stringify(body)}).catch(()=>null);
   if(!res){ if(msgEl) msgEl.innerHTML='<div class="msg msg-err">Network error.</div>'; return; }
