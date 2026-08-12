@@ -113,8 +113,13 @@ create table if not exists match_entries (
   unique (match_id, side, entry_id)
 );
 
-alter table matches add constraint matches_winner_fk
-  foreign key (winner_match_entry_id) references match_entries(id) on delete set null;
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'matches_winner_fk') then
+    alter table matches add constraint matches_winner_fk
+      foreign key (winner_match_entry_id) references match_entries(id) on delete set null;
+  end if;
+end $$;
 
 -- ends: a group of arrows scored together (Art. 12.1.2 — scoring happens
 -- after each end/set). Belongs to one match_entry (one participant's end).

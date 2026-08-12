@@ -11,6 +11,7 @@ const { checkAdmin } = require('../_lib/auth');
 const { q } = require('../_lib/db');
 const { writeAudit } = require('../_lib/audit');
 const { computeMatchState } = require('../_lib/scoring-db');
+const { rankingScoreForResult, selectBest7 } = require('../_lib/ranking');
 
 const rowToObj = row => { const o = {}; for (const [k, v] of Object.entries(row)) o[k.replace(/_([a-z])/g, (_, c) => c.toUpperCase())] = v; return o; };
 async function requireScorer(req) {
@@ -196,6 +197,87 @@ module.exports = async (req, res) => {
       await q('update ends set judged_closest_to_centre=$1, judge=$2 where id=$3', [!!b.closest, b.judge || actor.name || null, endId]);
       await writeAudit({ req, actor, action: 'update', resourceType: 'ends', resourceId: endId, after: { judgedClosestToCentre: !!b.closest } });
       return json(res, { ok: true });
+    }
+
+    // ── RANKING RESULT: record a final position for an entry, compute its
+    // ranking_score from the (partially verified) percentage table — see
+    // migration 022 for why an unconfigured position is refused, not guessed. ──
+    if (action === 'ranking-result' && req.method === 'POST') {
+      const actor = await requireScorer(req);
+      if (!actor) return json(res, { error: 'Unauthorised' }, 401);
+      const b = readBody(req);
+      const athleteId = parseInt(b.athleteId, 10);
+      const eventCategoryId = parseInt(b.eventCategoryId, 10);
+      const finalPosition = parseInt(b.finalPosition, 10);
+      const eventGroup = parseInt(b.eventGroup, 10);
+      if (!athleteId || !eventCategoryId || !Number.isFinite(finalPosition) || !Number.isFinite(eventGroup)) {
+        return json(res, { error: 'athleteId, eventCategoryId, finalPosition and eventGroup are required' }, 400);
+      }
+      const pctRows = (await q('select position, percent from ranking_position_percentages')).rows;
+      const positionPercentages = Object.fromEntries(pctRows.map(r => [r.position, Number(r.percent)]));
+      const monthsOld = Number(b.monthsOld) || 0;
+      const computed = rankingScoreForResult({ eventGroup, finalPosition, monthsOld }, positionPercentages);
+      if (computed.score == null) {
+        return json(res, { ok: false, error: `Cannot compute a ranking score: ${computed.reason}. ${computed.reason === 'position_percentage_not_configured' ? 'Position ' + finalPosition + ' has no verified percentage yet — add it to ranking_position_percentages once sourced from the primary document.' : ''}` }, 422);
+      }
+      const r = await q(
+        `insert into ranking_results (athlete_id,event_category_id,final_position,base_points,position_pct,period_multiplier,ranking_score)
+         values ($1,$2,$3,$4,$5,$6,$7) returning id`,
+        [athleteId, eventCategoryId, finalPosition, computed.basePoints, computed.positionPct, computed.periodMultiplier, computed.score]);
+      await writeAudit({ req, actor, action: 'create', resourceType: 'ranking_results', resourceId: r.rows[0].id, after: { athleteId, eventCategoryId, finalPosition, rankingScore: computed.score } });
+      return json(res, { ok: true, id: r.rows[0].id, rankingScore: computed.score });
+    }
+
+    // ── PUBLISH RANKING: compute best-7 (4 outdoor + 2 indoor + 1 field) per
+    // athlete in a category and publish a new ranking_list (DOMAIN.md §4:
+    // "a ranking is computed and published, never typed"). ──
+    if (action === 'publish-ranking' && req.method === 'POST') {
+      const actor = await requireScorer(req);
+      if (!actor) return json(res, { error: 'Unauthorised' }, 401);
+      const b = readBody(req);
+      const categoryId = parseInt(b.categoryId, 10);
+      if (!categoryId) return json(res, { error: 'categoryId is required' }, 400);
+      // Never rank two divisions in one list (DOMAIN.md §4) — the query is
+      // scoped to exactly one categories row (one division×gender×age_class×para_class).
+      const rows = (await q(
+        `select rr.athlete_id, rr.ranking_score, ec.round_type
+           from ranking_results rr
+           join event_categories ec on ec.id = rr.event_category_id
+          where ec.category_id = $1`, [categoryId])).rows;
+      const byAthlete = new Map();
+      for (const row of rows) {
+        if (!row.round_type) continue; // round_type not classified -> cannot count toward best-7 composition
+        const list = byAthlete.get(row.athlete_id) || [];
+        list.push({ roundType: row.round_type, score: Number(row.ranking_score) });
+        byAthlete.set(row.athlete_id, list);
+      }
+      const entries = [];
+      for (const [athleteId, results] of byAthlete) {
+        const best7 = selectBest7(results);
+        if (best7.chosen.length) entries.push({ athleteId, total: best7.total, complete: best7.complete });
+      }
+      entries.sort((a, b2) => b2.total - a.total);
+      const list = await q('insert into ranking_lists (category_id) values ($1) returning id', [categoryId]);
+      const listId = list.rows[0].id;
+      for (let i = 0; i < entries.length; i++) {
+        await q('insert into ranking_entries (ranking_list_id,athlete_id,added_ranking_score,rank) values ($1,$2,$3,$4)',
+          [listId, entries[i].athleteId, entries[i].total, i + 1]);
+      }
+      await writeAudit({ req, actor, action: 'create', resourceType: 'ranking_lists', resourceId: listId, after: { categoryId, entryCount: entries.length } });
+      return json(res, { ok: true, listId, entries });
+    }
+
+    // ── RANKING: public read of the latest published list for a category ──
+    if (action === 'ranking') {
+      const categoryId = parseInt(req.query.categoryId, 10);
+      if (!categoryId) return json(res, { error: 'categoryId is required' }, 400);
+      const list = (await q('select id, published_at from ranking_lists where category_id=$1 order by published_at desc limit 1', [categoryId])).rows[0];
+      if (!list) return json(res, { ok: true, list: null, entries: [] });
+      const entries = (await q(
+        `select re.rank, re.athlete_id, re.added_ranking_score, a.name as athlete_name
+           from ranking_entries re join athletes a on a.id = re.athlete_id
+          where re.ranking_list_id = $1 order by re.rank`, [list.id])).rows;
+      return json(res, { ok: true, list: rowToObj(list), entries: entries.map(rowToObj) });
     }
 
     return json(res, { error: 'Not found' }, 404);
