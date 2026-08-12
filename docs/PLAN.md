@@ -10,10 +10,36 @@
 
 | | |
 |---|---|
-| **Current phase** | **Phase 0 — Stop the bleeding** |
+| **Current phase** | **Phase 2 — The sport, substantially built** (see below) |
 | **Phase 0 progress** | **9 / 9 code complete** — gate needs the deploy + an external pentest |
-| **Last updated** | 2026-07-15 |
-| **Live** | https://archery.services — **Phase 0 IS DEPLOYED** (2026-07-15) and verified live: real `/api/stats` counts, CSP header present, pinned CA serving the DB, webhook rejects forged signatures (400), coach requires sign-in (401). |
+| **Last updated** | 2026-08-12 |
+| **Live** | https://archery.services — **Phase 0 IS DEPLOYED** (2026-07-15) and verified live: real `/api/stats` counts, CSP header present, pinned CA serving the DB, webhook rejects forged signatures (400), coach requires sign-in (401). **Phases 1-2 and the new member-capability/selection/federation work below are NOT deployed** — built and tested entirely against a local dev stack (PGlite + a thin router-preserving dev server) per explicit instruction: the user will hand over `DATABASE_URL` and say when to deploy, only after the local build is fully tested. Migrations 016-026 are applied locally only, not to production Supabase. |
+
+### 2026-08-12 session — what actually got built (read this before assuming Phase 2 is still todo)
+
+Between commit `2100cb2` and `5da9c5c`, the ENTIRE Phase 2 domain model got built, tested, and
+committed — see the updated Phase 2 checklist below for specifics. Also built, beyond Phase 2's
+original scope: a real member capability model (athlete/coach/official — migration 024), a
+squad-selection engine (migration 025), and a federation hierarchy tree (migration 026) —
+Phase 4 items, started early because the ranking/selection work needed somewhere real to select
+*from*, and the "who can score a match" question needed somewhere real to draw officials *from*.
+
+A full 5-lens adversarial multi-agent audit ran across all of it (IDOR/privesc, injection/
+fabrication, audit-log completeness, domain/money correctness, frontend correctness) — 7
+findings, all confirmed real, all fixed (commit `18a2c8a`): a team/mixed-team shoot-off only
+ever captured 1 arrow instead of the rulebook's 3/2 (Art. 12.5.2.3); a shoot-off judge decision
+failed completely silently on error; any federation officer (including the lowest rank) could
+self-promote to president with zero review; `selection/generate` had no transaction, so a
+mid-write failure could leave a real, permanently unaudited partial squad selection in the
+database (fixed by adding `api/_lib/db.js`'s first transaction helper — none existed before);
+plus two audit-log integrity gaps (duplicate/fabricated entries on repeat calls) and three silent
+UI failure paths. An earlier, narrower adversarial review of just the member-capability surface
+(commit `45cc553`) found and fixed 5 more, including an actor-identity field-name bug that
+misattributed every certified official's scoring action to `'owner'` in the audit log.
+
+**Do NOT re-run Phase 2's "build the domain model" work** — read `docs/DOMAIN.md` and the
+migrations listed below first. What's actually still open in Phase 2 is narrow: Para
+classification (2.7) and a genuinely offline-capable client (the back half of 2.2 — see note).
 
 ### Where we stopped
 Committed so far:
@@ -141,23 +167,42 @@ longer lost a race against `nav.js` (a signed-in user was shown "Sign In / Join 
 
 ## Phase 1 — Make it revocable and knowable
 
-- [ ] **1.1** Split secrets (session ≠ user ≠ admin ≠ webhook). Rotate. **Never sign with a
-      password.** *(T4)*
-- [ ] **1.2** `exp` + `jti` on every token; session/revocation table; **role read from DB**. *(T3, T5)*
-- [ ] **1.3** Capability layer into **every** write endpoint — `can(actor, action, resource)`,
-      **default deny**, with **scope**. Soft-delete replaces hard delete. *(T2, T12, ADR-0003)*
-- [ ] **1.4** **Audit log** on every mutation; first-class admin view. *(T11)*
-- [ ] **1.5** ~~Delete `local-server.js`~~ **done in Phase 0** — it was a live second admin
-      login, not a cleanup task. Still to do: delete `supabase/schema.sql`, baseline
-      migrations, add indexes + FKs *(ADR-0002)*. **Urgent sub-item:** `schema.sql`'s
-      products seed uses `on conflict do nothing` with no conflict target and no unique
-      constraint to catch it, so `supabase/apply.js` inserts 5 invented demo products into
-      the live shop **on every run** (§1.1). `apply.js` is currently a footgun pointed at
-      production — see the warning in DEPLOY.md.
-- [ ] **1.6** Fix `analytics_events.value` polymorphism. *(T14, ADR-0004)*
-- [ ] **1.7** Schema validation at the boundary *(ADR-0004)*; middleware chain *(ADR-0003)*.
-- [ ] **1.8** Tests + CI on **money, auth, RBAC**. Coverage gate. No merge without green.
-- [ ] **1.9** Age assurance + parental consent; **profiling off for under-18s**. *(T9)* ⚠️ legal
+**Not independently re-verified end-to-end this session** — but commits `6e00f17` through
+`ce7354c` (before this session's Phase 2 work began) show real, targeted work against most of
+these items, each commit message citing the exact CLAUDE.md section it closes. Checked below
+based on that evidence; anyone continuing should spot-check rather than trust blindly (per
+CLAUDE.md §6, "verify, don't assume" — this is a paraphrase of commit messages, not a fresh audit).
+
+- [x] **1.1** Split secrets — `e36fe73` (customer token secret separated from admin password,
+      expiry + revocation) + `ce7354c` (owner/staff token secret separated from `ADMIN_PASSWORD`,
+      expiry + DB-fresh roles). *(T4)*
+- [x] **1.2** `exp` on every token + DB-fresh role reads — same two commits above; `checkAdmin()`
+      re-reads role/active from the `staff` table on every request per `api/_lib/auth.js`'s own
+      header comment. *(T3, T5)*
+- [~] **1.3** Capability layer — `25be91e` "enforce content/orders capability checks, close
+      published-toggle bypass" is real evidence of targeted work, and this session's own additions
+      (`api/_lib/member-capability.js`, every scoring/members/selection/federation write action)
+      are default-deny and capability-gated throughout. **Not verified as covering literally every
+      write endpoint site-wide** — that would need a dedicated pass. *(T2, T12, ADR-0003)*
+- [x] **1.4** Audit log on every mutation + admin view — `9ca1965` adds the audit trail;
+      `admin.html`'s Audit Log panel already existed before this session (used as the template
+      for this session's new Officiating panel). This session's own new write paths
+      (scoring/members/selection/federation) all call `writeAudit`, adversarially verified twice
+      (see the 2026-08-12 session note above) with real bugs found and fixed both times. *(T11)*
+- [ ] **1.5** `supabase/schema.sql` still present alongside migrations (ADR-0002 says the root
+      `schema.sql` should be gone; `supabase/schema.sql` + migrations coexisting was the working
+      pattern this whole session's local dev stack relied on via `apply-all.js`). Re-check the
+      products-seed footgun described below before ever running `supabase/apply.js` against
+      production.
+- [ ] **1.6** `analytics_events.value` polymorphism — not touched this session.
+- [ ] **1.7** Schema validation at the boundary / middleware chain (ADR-0003/0004) — not built as
+      a formal layer; every new handler this session hand-validates its own inputs inline
+      (`parseInt`, allow-listed enums, required-field checks) rather than through a shared
+      validation middleware.
+- [~] **1.8** Tests — no CI coverage gate exists, but every mutation this session shipped with a
+      real test against the local dev stack first (unit, API, and headless-Chrome UI tests where
+      relevant) — see the file list under Phase 2 below.
+- [ ] **1.9** Age assurance + parental consent — not touched this session. ⚠️ still legally open.
 
 **Gate:** you can **fire a staff member and prove their access died within 60 seconds**. You can
 answer *"who changed this price, when, from what"* for any row. `npm test` is meaningful and CI
@@ -167,23 +212,73 @@ blocks merges.
 
 ## Phase 2 — The sport  ← *the moat*
 
-- [ ] **2.1** Full domain model (DOMAIN §6), migrated + indexed. **The arrow table.**
-- [ ] **2.2** Offline-first scoring client *(ADR-0006)*: ends, arrows, X-count. Gloves, sun,
-      cheap Android, no network.
-- [ ] **2.3** Correct match formats **per division** (Art. 12.1.4 — recurve/barebow set,
-      compound cumulative).
-- [ ] **2.4** Tiebreaks per Art. 12.5.1/12.5.2 — **branching on distance × context** — incl.
-      shoot-off + closest-to-centre. *(Resolve DOMAIN §8.1 first: coordinates or judged
-      measurement.)*
-- [ ] **2.5** Qualification → **real seeded elimination**; `draw.html` becomes real.
-- [ ] **2.6** WA-conformant ranking: per category, weekly, decay, best-7. **Delete
-      `query.js:14` `rank:'pb desc'`** and never speak of it again.
-- [ ] **2.7** Para classifications as first-class structure *(source the Para rulebook)*.
-- [ ] **2.8** Live results from real arrows.
+- [x] **2.1** Full domain model (DOMAIN §6), migrated. **The arrow table exists.**
+      `supabase/migrations/021_scoring_domain.sql`: categories, events, event_categories,
+      entries, matches, match_entries, `ends` (append-only), `arrows` (append-only, `is_x`,
+      `is_miss`, `superseded_by`+`correction_reason` for corrections — never an overwrite).
+      Engine in `api/_lib/scoring.js` (pure functions, no DB), DB bridge in
+      `api/_lib/scoring-db.js`, API in `api/_handlers/scoring.js`.
+- [~] **2.2** Offline-*friendly*, not yet offline-*capable*. What's real: `ends`/`arrows` have
+      client-generated `client_id` idempotency keys (ADR-0006) — a dropped connection mid-submit
+      is safe to retry, never double-scores (tested: `scoring-api-test.js`). What's **not**
+      built: an actual client that works with **zero network** (a service-worker cache, a local
+      write queue, background sync when connectivity returns). `score.html` still requires a
+      live `fetch()` per end — "gloves, sun, cheap Android, no network" is not yet true. This is
+      the one substantial piece of Phase 2's original scope still genuinely open.
+- [x] **2.3** Match formats per division — `setPlayState`/`cumulativeState` in `scoring.js`,
+      Art. 12.1.4.1/.2 (set-play, recurve/barebow) vs Art. 12.1.4.3/.4 (cumulative, compound),
+      format auto-derived from division in `generate-draw`. Team/individual/mixed-team target
+      points and end counts all correct per article (fixed a team/mixed-team shoot-off arrow-count
+      bug found by adversarial audit — see session note above).
+- [x] **2.4** Tiebreaks — `resolveShootoff()` (Art. 12.5.2.2/.3: single-arrow individual /
+      three-arrow team / two-arrow mixed-team, closest-to-centre **only from a recorded judge
+      decision, never computed** — DOMAIN §8.1 resolved as "judged fact," not coordinates) and
+      `resolveRankingTies()` (Art. 12.5.1: long distance → X-count then 10-count; short distance
+      → 10-count then 9-count, X unused; a genuine remaining tie is flagged, not resolved by a
+      fabricated disk-toss). Both property- and scenario-tested in `scoring-engine-test.js`.
+- [x] **2.5** Qualification → real seeded elimination. `api/_lib/seeding.js`'s
+      `bracketSlotOrder()` (standard recursive bracket combinatorics, verified by property
+      testing across sizes 4–64 that top seeds never meet before the final — a real algorithm
+      bug was caught and fixed here before shipping). `draw.html` now fetches real draws from
+      `/api/scoring/active-draws`/`bracket` instead of the old honest-empty-state; a bracket-view
+      bug (a later round awaiting a result was rendered as a fabricated "bye") was caught and
+      fixed by `draw-html-test.js`.
+- [~] **2.6** Ranking: best-7 composition (4 outdoor + 2 indoor + 1 field, never just top-7-
+      overall) and 24-month decay (75/50/25% at 12/16/20 months) **are** the DOMAIN.md-cited WA
+      structure. The **position-percentage curve itself is explicitly NOT a claimed WA replica**
+      — per direct user instruction mid-session, it's Archery.Services' own platform-
+      participation ranking policy (`api/_lib/ranking.js`, documented as such in the migration
+      and code comments), because DOMAIN.md never sourced WA's actual curve. Anyone citing this
+      ranking as WA-conformant would be wrong; it is honestly labeled as platform policy.
+      `query.js:14`'s `rank:'pb desc'` was not specifically re-checked this session — grep for it
+      before trusting it's gone.
+- [ ] **2.7** Para classifications — still not built. `categories.para_class` exists as a column
+      (the shape), no classification workflow. Explicitly flagged as out-of-scope in migration
+      021's own header, not a silent gap.
+- [x] **2.8** Live results from real arrows — `computeMatchState()` is a pure live computation
+      from `arrows` rows on every read, never a cached/stored score; public `GET
+      /api/scoring/match`/`bracket` endpoints; `draw.html` and the new `score.html` (the actual
+      judge-facing scoring UI, previously nonexistent — the domain model had no front end a real
+      person could use before this session) both render from it live.
+
+**Beyond Phase 2's original scope, built this session** (properly belongs under Phase 4, started
+early — see the session note above for why): a real athlete/coach/official member capability
+model (migration 024 — consent-based coach-athlete links, staff-approved judge certification,
+per-event official assignment, replacing the old "owner/manager only" scoring bottleneck), a
+squad-selection engine generating from real published rankings (migration 025), and a federation
+hierarchy tree with jurisdiction-scoped officer capability (migration 026 — explicitly NOT
+connected to `checkout-fee.js`'s disabled paid federation tiers). Site-wide capability-aware
+search (`api/_handlers/search.js`) and staff/member-facing UIs for all of the above
+(`admin.html`'s Officiating panel, `dashboard.html`) also shipped.
 
 **Gate:** run a **real club tournament end-to-end, offline, on phones**, and produce a result
 that survives a protest. A tie resolves correctly per rulebook and the audit trail shows why. A
 **federation technical delegate reviews `docs/DOMAIN.md` and signs off.**
+**Not yet met** — the "offline, on phones" half of the gate needs 2.2's remaining work (a real
+offline-capable client), and no federation technical delegate has reviewed/signed off on
+`docs/DOMAIN.md`. Everything else the gate implies (correct formats, correct tiebreaks, a real
+audit trail, results that survive a protest) has real, tested code behind it now — it just hasn't
+been run as a live tournament by a real federation yet, and isn't deployed to production.
 
 ---
 
@@ -213,10 +308,26 @@ a row**. Grievance Officer published; 48-hour clock instrumented.
 > ₹7,999–₹8,99,999 — now make them exist.
 
 - [ ] Clubs & ranges: membership, attendance, scheduling, coach assignment, finance, listing.
-- [ ] Coaching: licensing, certification, rosters, session plans, progression **on real arrows**.
-- [ ] Officials & judges: certification, assignment, decisions log.
-- [ ] Federation tier (district → state → national → international): licensing, sanctioning,
-      member sync, rankings roll-up, compliance dashboard, API. **Scoped** *(T12)*.
+- [~] Coaching: **consent-based coach-athlete linking is real** (migration 024 — either side can
+      initiate, the other must accept, either can revoke). Licensing/certification for
+      coaches specifically (as opposed to judges — see below), rosters, session plans, and
+      progression-on-real-arrows are **not** built.
+- [x] Officials & judges: certification (staff-approved, never self-granted — migration 024's
+      `official_certifications`) + per-event assignment (`event_officials`, so a certified
+      official is scoped to the events they're actually assigned to, not omnipotent platform-
+      wide) + decisions log (every `end`/`shootoff-judge` action by an official writes a real
+      audited row, actor traced to their real account — a field-name bug that broke this
+      attribution was caught by adversarial review and fixed, see session note above).
+- [~] Federation tier (district → state → national): **the structural hierarchy tree is real**
+      (migration 026 — parent/child tier ordering enforced, officer jurisdiction cascades down
+      the tree, a self-promotion-to-president bug was caught by adversarial audit and fixed).
+      Licensing, sanctioning, member sync, rankings roll-up, compliance dashboard, and an API for
+      federations to consume are **not** built. **Explicitly and deliberately NOT connected** to
+      `checkout-fee.js`'s district/state/national paid tiers, which remain switched off there
+      (`FOR_SALE` is an intentionally empty set) after a 2026-07-22 audit found the platform
+      charging real money for federation-portal features that didn't exist. Building the
+      hierarchy tree does not change that decision or imply those tiers are ready to sell — see
+      that file's own comment before ever re-enabling billing for any tier. *(T12, scoped)*
 - [ ] **Anti-doping** (NADA/WADA): testing pool, whereabouts, TUE workflow, education. *Currently
       a static page; it is a legal obligation for a federation.*
 - [ ] **Safeguarding** — **take this more seriously than the shop.** Background checks, incident
