@@ -424,8 +424,30 @@ a row**. Grievance Officer published; 48-hour clock instrumented.
       charging real money for federation-portal features that didn't exist. Building the
       hierarchy tree does not change that decision or imply those tiers are ready to sell — see
       that file's own comment before ever re-enabling billing for any tier. *(T12, scoped)*
-- [ ] **Anti-doping** (NADA/WADA): testing pool, whereabouts, TUE workflow, education. *Currently
-      a static page; it is a legal obligation for a federation.*
+- [~] **Anti-doping** (2026-08-12) — **two of four pieces are now real; the other two are a
+      deliberate NO, not a gap.** `anti-doping.html` was already honest (a prior version invented
+      fabricated test results/TUE data about real named archers and was removed, not replaced
+      with different placeholders — see the page's own header comment) but had zero backend.
+      **Built:** education-completion tracking, moved server-side from localStorage-only
+      (migration 033's `doping_education_progress` — survives a new device, staff get a real
+      compliance view of who's completed what, `doping-education-compliance`); a federation can
+      designate a real anti-doping contact officer by reusing the already-built, already-secured
+      federation officer system (added `anti_doping_officer` to `federation.js`'s office
+      allow-list — no new appointment mechanism needed). **Deliberately NOT built, explained in
+      migration 033's header, not silently skipped:** a TUE approval/rejection workflow (a
+      Therapeutic Use Exemption is decided by a qualified TUE Committee under WADA Code Art. 4.4
+      — platform owner/manager staff have no medical authority to adjudicate one, and a fake
+      "approved" TUE in this UI could mislead an athlete into believing a real exemption exists
+      when it doesn't) and real-time whereabouts/testing-pool tracking (live location data on
+      athletes, some of them minors — CLAUDE.md §1.8 — that this platform has no data-processing
+      agreement or security posture to hold responsibly; building an "unofficial" version creates
+      the exact risk the real system exists to prevent). Both remain exactly what
+      `anti-doping.html` already told users: apply through NADA India / World Archery directly.
+      Tested: `doping-education-test.js` (15 assertions — real completion tracking, idempotent
+      re-completion, staff-only compliance view, the new office type, and an explicit check that
+      no TUE-approval or whereabouts endpoint exists to call) + `doping-education-ui-test.js` (9
+      assertions — real signup → module completion → survives reload → federation officer lookup,
+      headless Chrome, honest empty states confirmed untouched). 24 total, all green.
 - [ ] **Safeguarding** — **take this more seriously than the shop.** Background checks, incident
       reporting, mandatory-reporting workflow, two-adult rules. `guard-rail.html` is a page where
       a policy engine belongs.

@@ -385,6 +385,47 @@ module.exports = async (req, res) => {
       return json(res, { ok: true, classification: row, pendingRequest: pendingReq });
     }
 
+    // ── DOPING EDUCATION: completion tracking only — no doping-related
+    // determination is made here (see migration 033's header for why a TUE
+    // workflow and whereabouts tracking are deliberately NOT built). This
+    // is the same shape as any e-learning completion record, moved from
+    // localStorage-only to a real account so it survives a new device. ──
+    if (action === 'complete-doping-module' && req.method === 'POST') {
+      const member = await requireMember(req);
+      if (!member) return json(res, { error: 'Unauthorised' }, 401);
+      const b = readBody(req);
+      const moduleId = String(b.moduleId || '').trim().slice(0, 80);
+      if (!moduleId) return json(res, { error: 'moduleId is required' }, 400);
+      const r = await q(
+        `insert into doping_education_progress (user_id, module_id) values ($1,$2)
+         on conflict (user_id, module_id) do nothing returning id`,
+        [member.id, moduleId]);
+      if (r.rows[0]) await writeAudit({ req, actor: memberActor(member, 'member'), action: 'create', resourceType: 'doping_education_progress', resourceId: r.rows[0].id, after: { moduleId } });
+      return json(res, { ok: true });
+    }
+
+    if (action === 'my-doping-education' && req.method === 'GET') {
+      const member = await requireMember(req);
+      if (!member) return json(res, { error: 'Unauthorised' }, 401);
+      const rows = (await q('select module_id, completed_at from doping_education_progress where user_id=$1', [member.id])).rows;
+      return json(res, { ok: true, completed: rows.map(r => r.module_id), rows });
+    }
+
+    // ── STAFF: who's completed anti-doping education — a federation
+    // compliance question ("who needs a reminder"), not a doping
+    // determination. ──
+    if (action === 'doping-education-compliance' && req.method === 'GET') {
+      const staff = await requireStaff(req);
+      if (!staff) return json(res, { error: 'Unauthorised' }, 401);
+      const rows = (await q(
+        `select u.id as user_id, u.name, u.email, u.member_role, count(dep.id)::int as modules_completed, max(dep.completed_at) as last_completed
+           from users u left join doping_education_progress dep on dep.user_id = u.id
+          where u.member_role in ('athlete','coach','official')
+          group by u.id, u.name, u.email, u.member_role
+          order by modules_completed asc, u.name`)).rows;
+      return json(res, rows);
+    }
+
     // ── REQUEST-JOIN-CLUB: self-service. Approved by that club's admin
     // (migration 031) or staff — never automatic. ──
     if (action === 'request-join-club' && req.method === 'POST') {

@@ -129,7 +129,12 @@ module.exports = async (req, res) => {
       }
       const office = b.office;
       if (!federationId || !userId) return json(res, { error: 'federationId and userId (or email) are required' }, 400);
-      if (!['president', 'secretary', 'treasurer', 'executive_member'].includes(office)) return json(res, { error: 'Invalid office' }, 400);
+      // anti_doping_officer added for docs/PLAN.md's anti-doping item — a
+      // federation designating a REAL contact, reusing this already-built,
+      // already-secured appointment system rather than a new one. Governed
+      // by the same isPresidentOrAncestor rule as every other office below
+      // — appointing an officer is a governance decision.
+      if (!['president', 'secretary', 'treasurer', 'executive_member', 'anti_doping_officer'].includes(office)) return json(res, { error: 'Invalid office' }, 400);
       const fed = (await q('select id from federations where id=$1', [federationId])).rows[0];
       if (!fed) return json(res, { error: 'Unknown federation' }, 404);
 

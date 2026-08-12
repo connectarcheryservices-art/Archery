@@ -109,6 +109,12 @@ body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;margin
       <div style="font-size:12px;color:var(--faint);margin-top:3px;">Athletes with legitimate medical needs may apply for a TUE to use a prohibited substance under strict medical supervision.</div>
     </div>
     <div class="tue-grid" id="tue-grid"></div>
+    <div style="margin-top:24px;background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:20px 24px;">
+      <div style="font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;color:var(--ink);margin-bottom:10px;">Find your federation's anti-doping contact</div>
+      <div style="font-size:12.5px;color:var(--faint);margin-bottom:12px;">A real person your federation has designated — for guidance on the process, not a decision-maker. TUE and testing decisions are still made by NADA India / World Archery, never by this contact.</div>
+      <select class="field-input" id="ad-federation-select" style="max-width:340px;padding:9px 12px;border:1.5px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font-size:13px;" onchange="loadAntiDopingOfficer(this.value)"></select>
+      <div id="ad-officer-result" style="margin-top:10px;font-size:13px;color:var(--dim);"></div>
+    </div>
   </div>
 
   <!-- EDUCATION -->
@@ -132,6 +138,9 @@ body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;margin
     <div id="substances-list"></div>
   </div>
 </div>
+
+<script src="esc.js"></script>
+<script src="auth.js"></script>
 
 <script>
 // Archery.Services is not a testing authority — WADA/NADA conduct and hold
@@ -212,7 +221,50 @@ const MODULE_CONTENT={
  m5:`WHO FILES WHEREABOUTS\nOnly athletes placed in a Registered Testing Pool (RTP) by NADA or World Archery. If you are notified, filing is mandatory — it enables no-notice out-of-competition testing, the backbone of clean sport.\n\nWHAT YOU FILE (quarterly, in ADAMS)\n• Overnight address for every day.\n• Training venues and times.\n• Competition schedule.\n• One specific 60-minute slot per day, at a fixed location, where you guarantee availability for testing.\n\nDEADLINES\nQuarterly filings are due before each quarter starts. Update immediately when plans change — updates are allowed any time, even by the app on the way to a new hotel.\n\nSTRIKES\nA missed test (not present during your 60-minute slot) or a filing failure = one strike. THREE strikes in 12 months = an anti-doping rule violation, sanction up to 2 years. Strikes expire 12 months after they occur.\n\nPRACTICAL HABITS: set a phone reminder for your daily slot; put your slot at home early morning; make one teammate/coach aware of your filing so travel changes trigger an update.`,
  m6:`SUPPORT PERSONNEL ARE BOUND BY THE CODE\nCoaches, physios, managers and federation officials can commit violations: administering a prohibited substance, trafficking, complicity, and discouraging reporting all carry sanctions — often longer than athletes' bans.\n\nCOACH DUTIES\n• Know the Prohibited List basics and where to check (Global DRO, WADA site).\n• Never hand an athlete ANY pill, powder or drop without documented checking.\n• Build TUE and whereabouts awareness into athlete induction.\n• Create a culture where athletes can question anything they are given.\n\nFEDERATION / CLUB DUTIES\n• Ensure every national-squad athlete completes anti-doping education yearly (these modules count).\n• Cooperate fully with NADA/WA testing at events — private space, chaperones, no interference.\n• Have a safeguarding-compatible route for reporting doping concerns (see the Guard Rail page).\n\nREPORTING\nSuspicions of doping can be reported confidentially to NADA India or World Archery integrity units. Retaliation against a reporter is itself a Code violation.`,
 };
-function doneModules(){try{return JSON.parse(localStorage.getItem('ad_done')||'[]');}catch(e){return[];}}
+// Signed-in members' completion is server-backed (migration 033) so it
+// survives a new device — a real record, not lost the moment localStorage
+// is cleared. Signed-out visitors still get the same page (education
+// content needs no login to read); their progress just stays local.
+let SERVER_DONE = null;
+async function loadServerDoneModules(){
+  if (!window.ArcheryAuth || !ArcheryAuth.isLoggedIn()) return;
+  const r = await fetch('/api/members/my-doping-education', { headers: ArcheryAuth.authHeaders() }).then(x=>x.json()).catch(()=>null);
+  if (r && r.ok) { SERVER_DONE = r.completed || []; renderEducation(); }
+}
+function doneModules(){
+  if (SERVER_DONE) return SERVER_DONE;
+  try{return JSON.parse(localStorage.getItem('ad_done')||'[]');}catch(e){return[];}
+}
+async function markModuleDone(id){
+  const d=doneModules();
+  if(!d.includes(id)){
+    if (window.ArcheryAuth && ArcheryAuth.isLoggedIn()) {
+      await fetch('/api/members/complete-doping-module', { method:'POST', headers:{...ArcheryAuth.authHeaders(),'Content-Type':'application/json'}, body:JSON.stringify({moduleId:id}) }).catch(()=>{});
+      SERVER_DONE = [...d, id];
+    } else {
+      localStorage.setItem('ad_done',JSON.stringify([...d, id]));
+    }
+  }
+}
+async function loadAntiDopingOfficer(federationId){
+  const el = document.getElementById('ad-officer-result');
+  if (!federationId) { el.innerHTML=''; return; }
+  el.textContent = 'Loading…';
+  const r = await fetch('/api/federation/officers?federationId='+federationId).then(x=>x.json()).catch(()=>null);
+  const officer = Array.isArray(r) ? r.find(o=>o.office==='anti_doping_officer') : null;
+  el.innerHTML = officer
+    ? `<b>${esc(officer.name)}</b> — designated anti-doping officer`
+    : 'No anti-doping officer has been designated for this federation yet.';
+}
+(async function loadFederationsForAntiDopingContact(){
+  const r = await fetch('/api/federation/tree').then(x=>x.json()).catch(()=>null);
+  const flat = [];
+  (function walk(nodes, depth){ (nodes||[]).forEach(n=>{ flat.push({...n, depth}); walk(n.children, depth+1); }); })(r && r.tree, 0);
+  const sel = document.getElementById('ad-federation-select');
+  sel.innerHTML = flat.length
+    ? '<option value="">Select your federation…</option>' + flat.map(f=>`<option value="${f.id}">${'— '.repeat(f.depth)}${esc(f.name)} (${esc(f.tier)})</option>`).join('')
+    : '<option value="">No federations registered yet</option>';
+})();
 function startModule(id){
   const m=MODULES.find(x=>x.id===id);if(!m)return;
   let ov=document.getElementById('mod-ov');
@@ -232,8 +284,8 @@ function startModule(id){
   document.getElementById('mod-title').textContent=m.title;
   document.getElementById('mod-dur').textContent='⏱ '+m.duration+(doneModules().includes(id)?' · ✓ You completed this module':'');
   document.getElementById('mod-body').textContent=MODULE_CONTENT[id]||m.desc;
-  document.getElementById('mod-done').onclick=()=>{
-    const d=doneModules();if(!d.includes(id)){d.push(id);localStorage.setItem('ad_done',JSON.stringify(d));}
+  document.getElementById('mod-done').onclick=async()=>{
+    await markModuleDone(id);
     ov.style.display='none';renderEducation();
   };
   ov.style.display='flex';
@@ -258,7 +310,7 @@ function setTab(id,btn){
   btn.classList.add('active');
 }
 
-renderTests();renderTUE();renderEducation();renderSubstances();
+renderTests();renderTUE();renderEducation();renderSubstances();loadServerDoneModules();
 </script>
 <script src="shared.js"></script>
 </body>

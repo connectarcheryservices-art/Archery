@@ -896,6 +896,15 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
       </div>
 
       <div class="card">
+        <div class="card-title">Anti-Doping Education Compliance</div>
+        <p style="font-size:13px;color:var(--text-2);margin-bottom:14px;">Completion tracking only — not a doping determination. TUE decisions and testing stay with NADA India / World Archery; see migration 033's header for why that's deliberate, not a gap.</p>
+        <table class="data-table">
+          <thead><tr><th>Name</th><th>Role</th><th>Email</th><th>Modules completed</th><th>Last activity</th></tr></thead>
+          <tbody id="doping-compliance-tbody"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
         <div class="card-title">Assign an Approved Official to an Event</div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin-bottom:14px;">
           <div class="form-group" style="margin-bottom:0;min-width:220px;"><label class="form-label">Official</label>
@@ -1126,6 +1135,7 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
             <select class="form-input" id="fed-officer-office">
               <option value="president">President</option><option value="secretary">Secretary</option>
               <option value="treasurer">Treasurer</option><option value="executive_member">Executive Member</option>
+              <option value="anti_doping_officer">Anti-Doping Officer</option>
             </select>
           </div>
           <button class="btn-save" style="margin-bottom:0;" onclick="assignFederationOfficer()">Assign officer</button>
@@ -1567,11 +1577,20 @@ async function loadAudit(reset){
 
 // ── OFFICIATING: claims, certifications, event assignments ──
 async function loadOfficiating(){
-  const [claims, certs, approved, events, classifications, coachLicenses] = await Promise.all([
+  const [claims, certs, approved, events, classifications, coachLicenses, dopingCompliance] = await Promise.all([
     get('members/pending-claims'), get('members/pending-certifications'),
     get('members/approved-officials'), get('scoring/events'),
     get('members/pending-classifications'), get('members/pending-coach-licenses'),
+    get('members/doping-education-compliance'),
   ]);
+  const complianceRows = Array.isArray(dopingCompliance) ? dopingCompliance : [];
+  document.getElementById('doping-compliance-tbody').innerHTML = complianceRows.length ? complianceRows.map(r => `<tr>
+      <td class="td-name">${escA(r.name||'—')}</td>
+      <td>${escA(r.memberRole||r.member_role||'')}</td>
+      <td>${escA(r.email||'')}</td>
+      <td>${r.modulesCompleted ?? r.modules_completed ?? 0} / 6</td>
+      <td style="font-size:12px;">${(r.lastCompleted||r.last_completed) ? new Date(r.lastCompleted||r.last_completed).toLocaleDateString('de-CH') : 'Never'}</td>
+    </tr>`).join('') : '<tr><td colspan="5" style="padding:22px;color:var(--text-2);">No athletes, coaches, or officials registered yet.</td></tr>';
 
   const claimsRows = Array.isArray(claims) ? claims : [];
   const classRows = Array.isArray(classifications) ? classifications : [];
