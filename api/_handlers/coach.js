@@ -15,7 +15,7 @@
 //   6. streaming                        — long answers must not hit the timeout
 'use strict';
 const { cors, json, readBody } = require('../_lib/respond');
-const { authedUser } = require('../_lib/userauth');
+const { authedUserChecked } = require('../_lib/userauth');
 const { guard, record } = require('../_lib/ratelimit');
 const { checkBudget, recordUsage, config } = require('../_lib/ai');
 const { q } = require('../_lib/db');
@@ -48,7 +48,7 @@ module.exports = async (req, res) => {
   //    Deliberately NOT `fallback:true`: the old handler answered every failure
   //    with fallback so the page quietly used its local knowledge base. Doing
   //    that for a 401 would hide from the user that they need to sign in.
-  const user = authedUser(req);
+  const user = await authedUserChecked(req);
   if (!user) return json(res, { ok: false, error: 'Please sign in to use the AI coach.', signIn: true }, 401);
 
   // 2. RATE LIMIT — per user and per IP.

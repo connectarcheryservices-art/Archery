@@ -6,7 +6,8 @@ const crypto = require('crypto');
 const { cors, json, readBody } = require('../_lib/respond');
 const { q } = require('../_lib/db');
 
-const { authedUser } = require('../_lib/userauth');
+const { authedUserChecked } = require('../_lib/userauth');
+const { writeAudit } = require('../_lib/audit');
 const rowToObj = row => { const o = {}; for (const [k, v] of Object.entries(row)) o[k.replace(/_([a-z])/g, (_, c) => c.toUpperCase())] = v; return o; };
 async function uniqueHandle(name) {
   const base = String(name || 'archer').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'archer';
@@ -19,7 +20,7 @@ const EDITABLE = ['name', 'headline', 'location', 'discipline', 'bio', 'pb', 'ra
 module.exports = async (req, res) => {
   cors(res);
   if (req.method === 'OPTIONS') return res.status(204).end();
-  const u = authedUser(req);
+  const u = await authedUserChecked(req);
   if (!u) return json(res, { ok: false, error: 'Please sign in.' }, 401);
   const sub = req.query.sub; // 'profile' | 'dashboard'
   try {
@@ -67,21 +68,29 @@ module.exports = async (req, res) => {
         }
         const ph = cols.map((_, i) => `$${i + 1}`).join(',');
         const r = await q(`insert into products (${cols.join(',')}) values (${ph}) returning id`, vals);
+        await writeAudit({ req, actor: { role: 'seller', sid: u.id, name: u.name }, action: 'create', resourceType: 'products', resourceId: r.rows[0].id, after: { name: b.name, price: b.price } });
         return json(res, { ok: true, id: r.rows[0].id });
       }
       if (pid && (req.method === 'PUT' || req.method === 'DELETE')) {
         // Ownership check — a seller can only touch their own rows.
         const own = (await q('select 1 from products where id=$1 and seller_id=$2', [parseInt(pid), u.id])).rows[0];
         if (!own) return json(res, { ok: false, error: 'Not your product.' }, 403);
-        if (req.method === 'DELETE') { await q('delete from products where id=$1', [parseInt(pid)]); return json(res, { ok: true }); }
+        if (req.method === 'DELETE') {
+          const before = (await q('select name, price, active from products where id=$1', [parseInt(pid)])).rows[0] || null;
+          await q('delete from products where id=$1', [parseInt(pid)]);
+          await writeAudit({ req, actor: { role: 'seller', sid: u.id, name: u.name }, action: 'delete', resourceType: 'products', resourceId: parseInt(pid), before });
+          return json(res, { ok: true });
+        }
         const b = readBody(req); const sets = [], vals = [];
         for (const camel of ['name', 'brand', 'description', 'price', 'was', 'category', 'stock', 'imgUrl', 'active']) {
           if (b[camel] === undefined) continue; const c = toSnake(camel); if (!COLS.includes(c)) continue;
           sets.push(`${c}=$${vals.push(b[camel])}`);
         }
         if (!sets.length) return json(res, { ok: false, error: 'Nothing to update.' }, 400);
+        const before = (await q('select name, price, active from products where id=$1', [parseInt(pid)])).rows[0] || null;
         vals.push(parseInt(pid));
         await q(`update products set ${sets.join(',')} where id=$${vals.length}`, vals);
+        await writeAudit({ req, actor: { role: 'seller', sid: u.id, name: u.name }, action: 'update', resourceType: 'products', resourceId: parseInt(pid), before, after: b });
         return json(res, { ok: true });
       }
       return json(res, { ok: false, error: 'Method not allowed' }, 405);

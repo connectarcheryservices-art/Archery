@@ -4,37 +4,47 @@
 // defined an identical copy. The coach needs it too, and a secret with three
 // copies gets rotated in two of them.
 //
-// ⚠ THREAT_MODEL T4 / CLAUDE.md §1.2 — "No secret signs two things. Session
-// secret ≠ user token secret ≠ admin password ≠ webhook secret. Nothing is ever
-// signed with a human-chosen password."
+// Fixed 2026-08-12 (CLAUDE.md §1.2/§1.3, THREAT_MODEL T4): this used to sign
+// customer tokens with ADMIN_PASSWORD — the same secret used for the owner's
+// own login. Rotating the admin password silently signed out every customer,
+// and anyone who learned the admin password could mint a token for ANY user
+// id. Tokens also never expired and had no server-side revocation.
 //
-// This code VIOLATES that rule today: user session tokens are signed with
-// ADMIN_PASSWORD. Consequences, spelled out so nobody has to rediscover them:
-//   * rotating the admin password silently signs out every customer;
-//   * anyone who learns the admin password can mint a token for ANY user id;
-//   * it is a human-chosen password being used as a signing key.
-// The fix is Phase 1.1 (split secrets: USER_TOKEN_SECRET, rotate, add exp+jti).
-// It is deliberately NOT bundled into the Phase 0 AI change — it logs out every
-// user on deploy and needs its own migration and comms. Consolidating it here
-// makes that fix a one-line change instead of a hunt.
+// Now: a dedicated USER_TOKEN_SECRET (falls back to a fixed non-secret marker
+// when unconfigured, never to ADMIN_PASSWORD or any human-chosen password —
+// an unconfigured deployment fails safe, not shared), a 30-day expiry claim,
+// and a DB-backed revocation check (`users.token_valid_after`, migration 019)
+// so a password reset or explicit logout invalidates existing tokens even
+// though the stateless signature would otherwise still verify.
 'use strict';
 const crypto = require('crypto');
 
-const secret = () => 'archery-users-v1:' + (process.env.ADMIN_PASSWORD || 'set-admin-password');
+const secret = () => process.env.USER_TOKEN_SECRET || 'user-token-secret-not-configured';
+
+const TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
 function sign(user) {
-  const payload = Buffer.from(JSON.stringify({ id: user.id, name: user.name, email: user.email })).toString('base64url');
+  const payload = Buffer.from(JSON.stringify({
+    id: user.id, name: user.name, email: user.email,
+    iat: Date.now(), exp: Date.now() + TOKEN_TTL_MS,
+  })).toString('base64url');
   const sig = crypto.createHmac('sha256', secret()).update(payload).digest('base64url');
   return payload + '.' + sig;
 }
 
+// Signature + expiry only. Does NOT check server-side revocation (that needs
+// a DB read) — use authedUserChecked() for anything beyond a cheap sync gate.
 function verifyToken(token) {
   const [payload, sig] = String(token || '').split('.');
   if (!payload || !sig) return null;
   const want = crypto.createHmac('sha256', secret()).update(payload).digest('base64url');
   const a = Buffer.from(sig), b = Buffer.from(want);
   if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
-  try { return JSON.parse(Buffer.from(payload, 'base64url').toString()); } catch { return null; }
+  let claims;
+  try { claims = JSON.parse(Buffer.from(payload, 'base64url').toString()); }
+  catch { return null; }
+  if (!claims.exp || Date.now() > claims.exp) return null;
+  return claims;
 }
 
 function authedUser(req) {
@@ -42,4 +52,25 @@ function authedUser(req) {
   return verifyToken(h.startsWith('Bearer ') ? h.slice(7) : '');
 }
 
-module.exports = { sign, verifyToken, authedUser, secret };
+// Full check: signature + expiry + not-revoked. Every session must be
+// revocable (CLAUDE.md §1.3) — a stateless token alone can't do that, so this
+// cross-checks the token's issued-at time against the user's revocation
+// watermark on every call.
+async function authedUserChecked(req) {
+  const claims = authedUser(req);
+  if (!claims) return null;
+  const { q } = require('./db');
+  const row = (await q('select token_valid_after from users where id=$1', [claims.id])).rows[0];
+  if (!row) return null;
+  if (row.token_valid_after && claims.iat < Number(row.token_valid_after)) return null;
+  return claims;
+}
+
+// Bump a user's revocation watermark so every token issued before this
+// instant stops working — used on password reset and explicit logout.
+async function revokeSessions(userId) {
+  const { q } = require('./db');
+  await q('update users set token_valid_after=$1 where id=$2', [Date.now(), userId]);
+}
+
+module.exports = { sign, verifyToken, authedUser, authedUserChecked, revokeSessions, secret };
