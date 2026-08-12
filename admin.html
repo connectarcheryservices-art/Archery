@@ -905,6 +905,15 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
       </div>
 
       <div class="card">
+        <div class="card-title">Safeguarding Clearances <span class="td-badge badge-soon" style="font-size:11px;" id="clearances-count">0 Pending</span></div>
+        <p style="font-size:13px;color:var(--text-2);margin-bottom:14px;">Only approve if you have actually seen and verified the real document — this records a real external check, it does not perform one. Reference numbers are self-reported; verify before approving.</p>
+        <table class="data-table">
+          <thead><tr><th>Name</th><th>Type</th><th>Issuing body</th><th>Reference</th><th>Requested</th><th>Actions</th></tr></thead>
+          <tbody id="clearances-tbody"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
         <div class="card-title">Assign an Approved Official to an Event</div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin-bottom:14px;">
           <div class="form-group" style="margin-bottom:0;min-width:220px;"><label class="form-label">Official</label>
@@ -1085,7 +1094,7 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
         <div class="card-title">Confidential Welfare &amp; Safeguarding Reports <span class="td-badge badge-soon" style="font-size:11px;" id="rep-count">0 Open</span></div>
         <p style="font-size:13px;color:var(--text-2);margin-bottom:14px;">Submitted via the Guard Rail safeguarding page. Treat every report as confidential. Reporters may be anonymous.</p>
         <table class="data-table">
-          <thead><tr><th>Type</th><th>Urgency</th><th>Description</th><th>Reporter</th><th>Received</th><th>Status / Actions</th></tr></thead>
+          <thead><tr><th>Type</th><th>Urgency</th><th>Description</th><th>Reporter</th><th>Received</th><th>Case</th><th>Status / Actions</th></tr></thead>
           <tbody id="reports-tbody"></tbody>
         </table>
       </div>
@@ -1136,6 +1145,7 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
               <option value="president">President</option><option value="secretary">Secretary</option>
               <option value="treasurer">Treasurer</option><option value="executive_member">Executive Member</option>
               <option value="anti_doping_officer">Anti-Doping Officer</option>
+              <option value="safeguarding_officer">Safeguarding Officer</option>
             </select>
           </div>
           <button class="btn-save" style="margin-bottom:0;" onclick="assignFederationOfficer()">Assign officer</button>
@@ -1577,12 +1587,23 @@ async function loadAudit(reset){
 
 // ── OFFICIATING: claims, certifications, event assignments ──
 async function loadOfficiating(){
-  const [claims, certs, approved, events, classifications, coachLicenses, dopingCompliance] = await Promise.all([
+  const [claims, certs, approved, events, classifications, coachLicenses, dopingCompliance, clearances] = await Promise.all([
     get('members/pending-claims'), get('members/pending-certifications'),
     get('members/approved-officials'), get('scoring/events'),
     get('members/pending-classifications'), get('members/pending-coach-licenses'),
-    get('members/doping-education-compliance'),
+    get('members/doping-education-compliance'), get('members/pending-safeguarding-clearances'),
   ]);
+  const clearanceRows = Array.isArray(clearances) ? clearances : [];
+  const CLEARANCE_LABEL = { background_check: 'Background check', police_verification: 'Police verification', child_safety_training: 'Child-safety training' };
+  const clc2 = document.getElementById('clearances-count'); if (clc2) clc2.textContent = clearanceRows.length + ' Pending';
+  document.getElementById('clearances-tbody').innerHTML = clearanceRows.length ? clearanceRows.map(c => `<tr>
+      <td class="td-name">${escA(c.name||'—')}<br><span style="color:var(--text-2);font-size:11px;">${escA(c.email||'')}</span></td>
+      <td>${escA(CLEARANCE_LABEL[c.clearanceType||c.clearance_type]||(c.clearanceType||c.clearance_type))}</td>
+      <td>${escA(c.issuingBody||c.issuing_body||'—')}</td>
+      <td>${escA(c.referenceNumber||c.reference_number||'—')}</td>
+      <td style="font-size:12px;">${c.createdAt||c.created_at ? new Date(c.createdAt||c.created_at).toLocaleString('de-CH') : ''}</td>
+      <td class="td-actions"><button class="btn-toggle" onclick="respondClearance(${c.id},true)">Approve</button><button class="btn-delete" onclick="respondClearance(${c.id},false)">Reject</button></td>
+    </tr>`).join('') : '<tr><td colspan="6" style="padding:22px;color:var(--text-2);">No pending safeguarding clearance requests.</td></tr>';
   const complianceRows = Array.isArray(dopingCompliance) ? dopingCompliance : [];
   document.getElementById('doping-compliance-tbody').innerHTML = complianceRows.length ? complianceRows.map(r => `<tr>
       <td class="td-name">${escA(r.name||'—')}</td>
@@ -1686,6 +1707,12 @@ async function respondCoachLicense(licenseId, approve){
   const r = await post('members/approve-coach-license', { licenseId, approve });
   if (!r || r.error || r.ok === false) { toast((r&&r.error) || 'Could not process this coach license.'); return; }
   toast(approve ? 'Coach license approved.' : 'Coach license revoked.');
+  loadOfficiating();
+}
+async function respondClearance(clearanceId, approve){
+  const r = await post('members/approve-safeguarding-clearance', { clearanceId, approve });
+  if (!r || r.error || r.ok === false) { toast((r&&r.error) || 'Could not process this clearance.'); return; }
+  toast(approve ? 'Clearance approved.' : 'Clearance revoked.');
   loadOfficiating();
 }
 async function assignOfficialToEvent(){
@@ -1849,17 +1876,25 @@ async function loadRegistrations(){
 }
 async function loadReports(){
   const data=await get('reports'); if(!Array.isArray(data))return;
-  const open=data.filter(r=>r.status!=='reviewed').length;
+  const open=data.filter(r=>r.status!=='resolved').length;
   setBadge('rep-badge',open); const c=document.getElementById('rep-count'); if(c)c.textContent=open+' Open';
   const tb=document.getElementById('reports-tbody'); if(!tb)return;
+  const STATUS_BADGE={open:'badge-soon',investigating:'badge-pending',resolved:'badge-active'};
   tb.innerHTML=data.length?data.map(r=>{
     const when=r.createdAt?new Date(r.createdAt).toLocaleString('de-CH'):'';
     const reporter=r.name?escA(r.name)+(r.email?`<br><span style="color:var(--text-2);font-size:11px;">${escA(r.email)}</span>`:''):'<em style="color:var(--text-2);">Anonymous</em>';
-    const urgent=/urgent|emergency/i.test(r.urgency||''); const reviewed=r.status==='reviewed';
-    const act=reviewed?`<span class="td-badge badge-active">reviewed</span> <button class="btn-delete" onclick="delInbox('reports',${r.id})">Delete</button>`
-      :`<button class="btn-toggle" onclick="setInbox('reports',${r.id},'reviewed')">Mark reviewed</button><button class="btn-delete" onclick="delInbox('reports',${r.id})">Delete</button>`;
-    return `<tr><td class="td-name">${escA(r.type||'—')}</td><td>${urgent?'<span class="td-badge badge-live">'+escA(r.urgency||'')+'</span>':escA((r.urgency||'').split('—')[0])}</td><td style="max-width:320px;white-space:normal;">${escA(r.description||'')}</td><td>${reporter}</td><td style="font-size:12px;">${when}</td><td class="td-actions">${act}</td></tr>`;
-  }).join(''):'<tr><td colspan="6" style="padding:22px;color:var(--text-2);">No welfare reports.</td></tr>';
+    const urgent=/urgent|emergency/i.test(r.urgency||'');
+    const caseCell=`<input class="form-input" id="rep-assign-${r.id}" value="${escA(r.assignedTo||r.assigned_to||'')}" placeholder="Assigned to" style="font-size:11px;padding:5px 6px;margin-bottom:4px;width:120px;">
+      <textarea class="form-input" id="rep-note-${r.id}" placeholder="Resolution note (confidential)" style="font-size:11px;padding:5px 6px;width:120px;height:44px;">${escA(r.resolutionNote||r.resolution_note||'')}</textarea>
+      <button class="btn-edit" style="margin-top:4px;font-size:10px;" onclick="saveReportCase(${r.id})">Save</button>`;
+    const statusSelect=`<select class="form-input" id="rep-status-${r.id}" style="font-size:11px;padding:5px 6px;margin-bottom:4px;">
+      <option value="open" ${r.status==='open'?'selected':''}>Open</option>
+      <option value="investigating" ${r.status==='investigating'?'selected':''}>Investigating</option>
+      <option value="resolved" ${r.status==='resolved'?'selected':''}>Resolved</option>
+    </select><span class="td-badge ${STATUS_BADGE[r.status]||''}" style="margin-left:4px;">${escA(r.status)}</span>`;
+    const act=`${statusSelect}<br><button class="btn-toggle" style="margin-top:4px;" onclick="setInbox('reports',${r.id},document.getElementById('rep-status-${r.id}').value)">Update status</button><button class="btn-delete" onclick="delInbox('reports',${r.id})">Delete</button>`;
+    return `<tr><td class="td-name">${escA(r.type||'—')}</td><td>${urgent?'<span class="td-badge badge-live">'+escA(r.urgency||'')+'</span>':escA((r.urgency||'').split('—')[0])}</td><td style="max-width:280px;white-space:normal;">${escA(r.description||'')}</td><td>${reporter}</td><td style="font-size:12px;">${when}</td><td>${caseCell}</td><td class="td-actions">${act}</td></tr>`;
+  }).join(''):'<tr><td colspan="7" style="padding:22px;color:var(--text-2);">No welfare reports.</td></tr>';
 }
 let APPLICATIONS_CACHE=[];
 async function loadApplications(){
@@ -1982,6 +2017,14 @@ async function addOfficer(appId){
 }
 async function delOfficer(id,appId){ const r=await del('federation-members',id); if(!r||r.error){ toast((r&&r.error)||'Could not remove the officer.'); return; } document.getElementById('off-ov').remove(); openOfficers(appId); toast('Removed'); }
 async function setInbox(resource,id,status){const r=await put(resource,id,{status});if(!r||r.error){toast((r&&r.error)||'Could not update.');return;}({registrations:loadRegistrations,reports:loadReports,applications:loadApplications}[resource])();toast('Updated');}
+async function saveReportCase(id){
+  const assignedTo=document.getElementById('rep-assign-'+id).value;
+  const resolutionNote=document.getElementById('rep-note-'+id).value;
+  const r=await put('reports',id,{assignedTo,resolutionNote});
+  if(!r||r.error){toast((r&&r.error)||'Could not save.');return;}
+  toast('Case notes saved.');
+  loadReports();
+}
 async function delInbox(resource,id){if(!confirm('Delete this item?'))return;const r=await del(resource,id);if(!r||r.error){toast((r&&r.error)||'Could not delete.');return;}({registrations:loadRegistrations,reports:loadReports,applications:loadApplications}[resource])();toast('Deleted');}
 
 // ── PROFILES / NEWS ──

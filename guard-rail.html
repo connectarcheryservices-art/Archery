@@ -101,6 +101,11 @@ body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;margin
 
   <!-- OFFICERS -->
   <div class="tab-panel" id="tab-officers">
+    <div style="background:#fff;border:1px solid rgba(15,95,168,.1);border-radius:10px;padding:20px 24px;margin-bottom:20px;">
+      <div style="font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;color:#0D1B2E;margin-bottom:10px;">Find your federation's safeguarding officer</div>
+      <select id="sg-federation-select" style="max-width:340px;padding:9px 12px;border:1.5px solid rgba(15,95,168,.1);border-radius:6px;background:#F5F7FA;color:#0D1B2E;font-size:13px;" onchange="loadSafeguardingOfficer(this.value)"></select>
+      <div id="sg-officer-result" style="margin-top:10px;font-size:13px;color:#334155;"></div>
+    </div>
     <div class="officer-grid" id="officers-grid"></div>
   </div>
 
@@ -157,6 +162,7 @@ body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;margin
   </div>
 </div>
 
+<script src="esc.js"></script>
 <script>
 const PROTOCOLS = [
   {title:'Child Protection Policy',priority:'critical',scope:'All juniors under 18',reviewed:'2026-01-15',summary:'All adults working with juniors must hold valid background-check clearance. No one-to-one coaching sessions without a second adult present. Minimum two-adult rule applies for all junior travel.'},
@@ -219,6 +225,27 @@ function renderOfficers(){
       </div>
     </div>`;
 }
+
+async function loadSafeguardingOfficer(federationId){
+  const el = document.getElementById('sg-officer-result');
+  if (!federationId) { el.innerHTML=''; return; }
+  el.textContent = 'Loading…';
+  const r = await fetch('/api/federation/officers?federationId='+federationId).then(x=>x.json()).catch(()=>null);
+  const officer = Array.isArray(r) ? r.find(o=>o.office==='safeguarding_officer') : null;
+  el.innerHTML = officer
+    ? `<b>${esc(officer.name)}</b> — designated safeguarding officer for this federation.`
+    : 'No safeguarding officer has been designated for this federation yet. Use the Report a Concern form below — it goes to a real, reviewed inbox regardless.';
+}
+(async function loadFederationsForSafeguarding(){
+  const sel = document.getElementById('sg-federation-select');
+  if (!sel) return;
+  const r = await fetch('/api/federation/tree').then(x=>x.json()).catch(()=>null);
+  const flat = [];
+  (function walk(nodes, depth){ (nodes||[]).forEach(n=>{ flat.push({...n, depth}); walk(n.children, depth+1); }); })(r && r.tree, 0);
+  sel.innerHTML = flat.length
+    ? '<option value="">Select your federation…</option>' + flat.map(f=>`<option value="${f.id}">${'— '.repeat(f.depth)}${esc(f.name)} (${esc(f.tier)})</option>`).join('')
+    : '<option value="">No federations registered yet</option>';
+})();
 
 function renderResources(){
   document.getElementById('resources-list').innerHTML=RESOURCES.map(r=>`

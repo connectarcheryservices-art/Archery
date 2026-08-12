@@ -134,7 +134,13 @@ module.exports = async (req, res) => {
       // already-secured appointment system rather than a new one. Governed
       // by the same isPresidentOrAncestor rule as every other office below
       // — appointing an officer is a governance decision.
-      if (!['president', 'secretary', 'treasurer', 'executive_member', 'anti_doping_officer'].includes(office)) return json(res, { error: 'Invalid office' }, 400);
+      // safeguarding_officer added for docs/PLAN.md's safeguarding item —
+      // same reasoning as anti_doping_officer: a federation designating a
+      // REAL contact, reusing this appointment system rather than a new
+      // one. guard-rail.html's officers tab has deliberately never listed
+      // a name (fabricating one would be worse than the empty state) —
+      // this is what lets a real one actually appear there.
+      if (!['president', 'secretary', 'treasurer', 'executive_member', 'anti_doping_officer', 'safeguarding_officer'].includes(office)) return json(res, { error: 'Invalid office' }, 400);
       const fed = (await q('select id from federations where id=$1', [federationId])).rows[0];
       if (!fed) return json(res, { error: 'Unknown federation' }, 404);
 

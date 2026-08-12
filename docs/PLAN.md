@@ -448,9 +448,33 @@ a row**. Grievance Officer published; 48-hour clock instrumented.
       no TUE-approval or whereabouts endpoint exists to call) + `doping-education-ui-test.js` (9
       assertions — real signup → module completion → survives reload → federation officer lookup,
       headless Chrome, honest empty states confirmed untouched). 24 total, all green.
-- [ ] **Safeguarding** — **take this more seriously than the shop.** Background checks, incident
-      reporting, mandatory-reporting workflow, two-adult rules. `guard-rail.html` is a page where
-      a policy engine belongs.
+- [~] **Safeguarding** (2026-08-12) — the report intake (`POST /api/reports`) was already real end
+      to end, admin-reviewed; what wasn't real was anything downstream of "a report arrived," and
+      `guard-rail.html`'s Officers tab was correctly empty (a prior comment explains why: inventing
+      named welfare officers "would be fabricated data on a child-safeguarding page... worse than
+      the usual case, since a distressed reporter could try to reach a person or number that does
+      not exist" — CLAUDE.md §1.1). **Built:** case management for reports — the binary
+      open/reviewed status became `open → investigating → resolved`, plus staff-only case
+      assignment and a private resolution note (migration 034, scoped narrowly to the shared
+      `inbox.js` so registrations/applications are unaffected); real background-check / police-
+      verification / child-safety-training clearance RECORDING (`safeguarding_clearances`, same
+      request→adjudicate shape as coach licensing — a person can hold multiple types at once,
+      same reasoning as that table's own header); a federation can now designate a real
+      safeguarding officer (added `safeguarding_officer` to the already-built, already-secured
+      federation officer system) — `guard-rail.html`'s Officers tab now has somewhere real to
+      point to instead of the honest-empty-state alone. **Deliberately NOT built, same judgment
+      as anti-doping's TUE/whereabouts decision:** the platform does not perform, judge, or verify
+      a background check itself — staff approving a clearance means "we saw and verified the real
+      document," never "we ran a check"; and there is no automated mandatory-reporting pipeline
+      that files anything with police/child-protection authorities — reviewing a report and
+      deciding whether/how to escalate stays a human decision, exactly as the page already
+      correctly points anything urgent to 112 / Childline 1098 directly, not through this
+      platform. The "two-adult rule" and the rest of `PROTOCOLS` remain hardcoded policy text —
+      out of scope for this pass, noted not hidden. Tested: `safeguarding-test.js` (24 API
+      assertions, including an explicit check that no action claims to perform a background check
+      or auto-file a legal report) + `safeguarding-ui-test.js` (8 assertions, real signup →
+      clearance request → admin approval → report case management, headless Chrome). 32 total,
+      all green.
 - [x] Para: classification workflow built (2.7, 2026-08-12) — the assessment methodology itself
       stays a real panel's job, by design; see 2.7 above.
 - [ ] Jobs, knowledge, community **last** — content, not infrastructure.

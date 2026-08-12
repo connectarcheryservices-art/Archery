@@ -204,6 +204,29 @@ function render(){
   }
   html += '</div>';
 
+  // ── SAFEGUARDING CLEARANCE — recording that a REAL, externally-verified
+  // background check/police verification/child-safety training exists
+  // (migration 034). This platform does not perform or judge one; staff
+  // verify the real document and record the outcome. ──
+  html += '<div class="card"><h2>Safeguarding Clearance</h2>';
+  const clearances = STATUS.safeguardingClearances || [];
+  const CLEARANCE_LABEL = { background_check: 'Background check', police_verification: 'Police verification', child_safety_training: 'Child-safety training' };
+  if (clearances.length) {
+    clearances.forEach(cl => {
+      const badgeClass = cl.status === 'approved' ? 'badge-active' : cl.status === 'pending' ? 'badge-pending' : 'badge-revoked';
+      const issuingBody = cl.issuingBody || cl.issuing_body;
+      html += `<div class="row"><div>${esc(CLEARANCE_LABEL[cl.clearanceType || cl.clearance_type] || (cl.clearanceType || cl.clearance_type))}${issuingBody ? ' · ' + esc(issuingBody) : ''}</div><span class="badge ${badgeClass}">${esc(cl.status)}</span></div>`;
+    });
+  } else {
+    html += '<div class="msg msg-info">No safeguarding clearance on file yet.</div>';
+  }
+  html += `<div class="inline-form">
+    <select class="field-input" id="clearance-type"><option value="background_check">Background check</option><option value="police_verification">Police verification</option><option value="child_safety_training">Child-safety training</option></select>
+    <input class="field-input" id="clearance-body" placeholder="Issuing body">
+    <input class="field-input" id="clearance-ref" placeholder="Reference number (optional)">
+    <button class="btn btn-gold" onclick="requestSafeguardingClearance()">Request verification</button>
+  </div></div>`;
+
   // ── OFFICIATING ──
   html += '<div class="card"><h2>Officiating</h2>';
   if (STATUS.certification) {
@@ -265,6 +288,13 @@ async function inviteCoach(){
   if (!coachEmail) return;
   const r = await jpost('/members/coach-link', { coachEmail });
   if (r && r.ok) { await loadStatus(); } else { notify((r && r.error) || 'Could not send invite.', false); }
+}
+async function requestSafeguardingClearance(){
+  const clearanceType = document.getElementById('clearance-type').value;
+  const issuingBody = document.getElementById('clearance-body').value;
+  const referenceNumber = document.getElementById('clearance-ref').value;
+  const r = await jpost('/members/request-safeguarding-clearance', { clearanceType, issuingBody, referenceNumber });
+  if (r && r.ok) { await loadStatus(); } else { notify((r && r.error) || 'Could not submit request.', false); }
 }
 async function requestCoachLicense(){
   const level = document.getElementById('coach-license-level').value;

@@ -20,7 +20,13 @@ const INBOX = {
     fields: ['type','name','email','description','urgency'],
     required: r => String(r.description||'').trim() ? null : 'A description of the concern is required.',
     defaultStatus: 'open',
-    statuses: ['open', 'reviewed'],
+    // 'reviewed' (binary: looked at it or not) wasn't a real case-management
+    // state for something at safeguarding's stakes — 'investigating' /
+    // 'resolved' at least distinguish "someone owns this" from "this is
+    // actually closed." This is still an internal record, not a legal or
+    // investigative determination — it does not replace or automate the
+    // real mandatory-reporting obligations a reviewing human has.
+    statuses: ['open', 'investigating', 'resolved'],
   },
   applications: {
     table: 'applications',
@@ -84,6 +90,20 @@ async function inboxItem(resource, id, req, res) {
   }
   if (req.method === 'PUT') {
     const data = readBody(req);
+    // reports gets two extra, staff-only fields beyond status — who owns
+    // this report and a private resolution note. Scoped to this one
+    // resource deliberately; registrations/applications keep the plain
+    // status-only PUT unchanged.
+    if (resource === 'reports' && (data.assignedTo !== undefined || data.resolutionNote !== undefined)) {
+      const before = (await q(`select assigned_to, resolution_note from reports where id=$1`, [id])).rows[0];
+      if (!before) return json(res, { error: 'Not found' }, 404);
+      const assignedTo = data.assignedTo !== undefined ? String(data.assignedTo).slice(0, 200) : before.assigned_to;
+      const resolutionNote = data.resolutionNote !== undefined ? String(data.resolutionNote).slice(0, 4000) : before.resolution_note;
+      await q(`update reports set assigned_to=$1, resolution_note=$2 where id=$3`, [assignedTo || null, resolutionNote || null, id]);
+      await writeAudit({ req, actor, action: 'update', resourceType: resource, resourceId: id,
+        before: { assignedTo: before.assigned_to, resolutionNote: before.resolution_note }, after: { assignedTo, resolutionNote } });
+      if (!data.status) return json(res, { ok: true });
+    }
     const status = String(data.status||'').slice(0, 40);
     if (!status) return json(res, { error: 'Nothing to update' }, 400);
     if (!cfg.statuses.includes(status)) return json(res, { error: `Invalid status. Must be one of: ${cfg.statuses.join(', ')}` }, 400);

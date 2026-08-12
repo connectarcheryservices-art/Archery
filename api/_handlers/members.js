@@ -75,6 +75,7 @@ module.exports = async (req, res) => {
           where ca.athlete_id=$1 order by ca.created_at desc`, [athlete.id])).rows : [];
       const certification = (await q('select level, issuing_body, status, approved_at from official_certifications where user_id=$1', [member.id])).rows[0] || null;
       const coachLicense = (await q('select level, discipline, issuing_body, status, approved_at from coach_certifications where user_id=$1', [member.id])).rows[0] || null;
+      const safeguardingClearances = (await q('select clearance_type, issuing_body, reference_number, status, approved_at from safeguarding_clearances where user_id=$1', [member.id])).rows;
       const assignments = (await q(
         `select eo.event_id, eo.role, ev.name as event_name from event_officials eo
            join events ev on ev.id = eo.event_id where eo.user_id=$1 order by eo.created_at desc`, [member.id])).rows;
@@ -86,7 +87,7 @@ module.exports = async (req, res) => {
       const pendingClassificationRequest = athlete ? (await q(
         `select sport_class_requested from classification_requests where athlete_id=$1 and status='pending'`,
         [athlete.id])).rows[0] || null : null;
-      return json(res, { ok: true, memberRole: member.member_role, athlete, coaching, myCoaches, certification, coachLicense, assignments,
+      return json(res, { ok: true, memberRole: member.member_role, athlete, coaching, myCoaches, certification, coachLicense, safeguardingClearances, assignments,
         classification, pendingClassificationRequest,
         isMinor: minor === true, parentConsentStatus: dobRow ? dobRow.parent_consent_status : 'not_required',
         consentBlocked: minor === true && dobRow && dobRow.parent_consent_status !== 'granted' });
@@ -204,6 +205,58 @@ module.exports = async (req, res) => {
         [newStatus, staff.name, licenseId]);
       if (!r.rows[0]) return json(res, { error: 'Unknown coach license' }, 404);
       await writeAudit({ req, actor: staff, action: 'update', resourceType: 'coach_certifications', resourceId: licenseId, after: { status: newStatus } });
+      return json(res, { ok: true, status: newStatus });
+    }
+
+    // ── REQUEST-SAFEGUARDING-CLEARANCE: self-declare that a REAL background
+    // check / police verification / child-safety training exists, staff
+    // verifies. This does not perform, judge, or automate a background
+    // check — it transcribes a real external outcome, same posture as
+    // official/coach certification (migration 034's header). ──
+    if (action === 'request-safeguarding-clearance' && req.method === 'POST') {
+      const member = await requireConsentedMember(req);
+      if (!member) return json(res, { error: 'Unauthorised' }, 401);
+      if (member.blocked) return json(res, { error: CONSENT_REQUIRED_MSG }, 403);
+      const b = readBody(req);
+      const clearanceType = ['background_check', 'police_verification', 'child_safety_training'].includes(b.clearanceType) ? b.clearanceType : 'background_check';
+      const r = await q(
+        `insert into safeguarding_clearances (user_id, clearance_type, issuing_body, reference_number, status)
+         values ($1,$2,$3,$4,'pending')
+         on conflict (user_id, clearance_type) do update
+           set issuing_body=excluded.issuing_body, reference_number=excluded.reference_number, status='pending', approved_by=null, approved_at=null
+           where safeguarding_clearances.status='revoked'
+         returning id, status`,
+        [member.id, clearanceType, String(b.issuingBody || '').slice(0, 200) || null, String(b.referenceNumber || '').slice(0, 100) || null]);
+      if (r.rows[0]) {
+        await writeAudit({ req, actor: memberActor(member, 'member'), action: 'create', resourceType: 'safeguarding_clearances', resourceId: r.rows[0].id, after: { clearanceType, status: r.rows[0].status } });
+        return json(res, { ok: true, clearanceId: r.rows[0].id, status: r.rows[0].status });
+      }
+      const existing = (await q('select id, status from safeguarding_clearances where user_id=$1 and clearance_type=$2', [member.id, clearanceType])).rows[0];
+      return json(res, { ok: true, clearanceId: existing.id, status: existing.status, unchanged: true });
+    }
+
+    if (action === 'pending-safeguarding-clearances' && req.method === 'GET') {
+      const staff = await requireStaff(req);
+      if (!staff) return json(res, { error: 'Unauthorised' }, 401);
+      const rows = (await q(
+        `select sc.id, sc.user_id, sc.clearance_type, sc.issuing_body, sc.reference_number, sc.created_at, u.name, u.email
+           from safeguarding_clearances sc join users u on u.id = sc.user_id
+          where sc.status='pending' order by sc.created_at`)).rows;
+      return json(res, rows);
+    }
+
+    if (action === 'approve-safeguarding-clearance' && req.method === 'POST') {
+      const staff = await requireStaff(req);
+      if (!staff) return json(res, { error: 'Unauthorised' }, 401);
+      const b = readBody(req);
+      const clearanceId = parseInt(b.clearanceId, 10);
+      if (!clearanceId) return json(res, { error: 'clearanceId is required' }, 400);
+      const newStatus = b.approve ? 'approved' : 'revoked';
+      const r = await q(
+        `update safeguarding_clearances set status=$1, approved_by=$2, approved_at=now() where id=$3 returning id`,
+        [newStatus, staff.name, clearanceId]);
+      if (!r.rows[0]) return json(res, { error: 'Unknown clearance' }, 404);
+      await writeAudit({ req, actor: staff, action: 'update', resourceType: 'safeguarding_clearances', resourceId: clearanceId, after: { status: newStatus } });
       return json(res, { ok: true, status: newStatus });
     }
 
