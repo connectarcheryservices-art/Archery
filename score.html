@@ -282,8 +282,17 @@ function renderShootoff(match, a, b, shootoffRounds, shootoff){
   const nextSeq=shootoffRounds.length+1;
   const maxEnds=match.team_type==='individual'?5:4;
   const shootoffEndNumber=maxEnds+1;
+  // Art. 12.5.2.3 (quoted in api/_lib/scoring.js): "three-arrow (two for
+  // Mixed Team) shoot-off for score, a single arrow by each team member."
+  // Individual is the one-arrow-each case (Art. 12.5.2.2). Previously this
+  // was hardcoded to 1 for every team_type, so a team shoot-off only ever
+  // captured one of the team's three archers' arrows (caught by
+  // adversarial audit review, 2026-08-12 — "a scoring bug is a stolen
+  // medal", CLAUDE.md §1.10).
+  const shootoffArrows=match.team_type==='team'?3:match.team_type==='mixed_team'?2:1;
+  const arrowWord=shootoffArrows===1?'one arrow':shootoffArrows+' arrows';
   let html=`<div class="card"><h2>Shoot-off (Art. 12.5.2)</h2>
-    <div class="msg msg-info">Set points are tied — one arrow each, closest to centre wins if the score also ties.</div>`;
+    <div class="msg msg-info">Set points are tied — ${arrowWord} each, closest to centre wins if the score also ties.</div>`;
 
   if(shootoffRounds.length){
     html+=`<table class="end-table"><thead><tr><th>Round</th><th>${athleteLabel(a)}</th><th>${athleteLabel(b)}</th></tr></thead><tbody>`;
@@ -302,10 +311,11 @@ function renderShootoff(match, a, b, shootoffRounds, shootoff){
       <div style="display:flex;gap:10px;margin-top:8px;">
         <button class="btn btn-primary" onclick="submitShootoffJudge(${lastRound.endIdA})">${athleteLabel(a)} was closer</button>
         <button class="btn btn-primary" onclick="submitShootoffJudge(${lastRound.endIdB})">${athleteLabel(b)} was closer</button>
-      </div>`;
+      </div>
+      <div id="msg-shootoff-judge"></div>`;
   }else{
-    html+=buildEndForm('so1', 'shoot-off — '+athleteLabel(a), a.id, shootoffEndNumber, 1, true, nextSeq);
-    html+=buildEndForm('so2', 'shoot-off — '+athleteLabel(b), b.id, shootoffEndNumber, 1, true, nextSeq);
+    html+=buildEndForm('so1', 'shoot-off — '+athleteLabel(a), a.id, shootoffEndNumber, shootoffArrows, true, nextSeq);
+    html+=buildEndForm('so2', 'shoot-off — '+athleteLabel(b), b.id, shootoffEndNumber, shootoffArrows, true, nextSeq);
   }
   html+='</div>';
   panel.insertAdjacentHTML('beforeend', html);
@@ -340,11 +350,21 @@ async function submitEnd(key, matchEntryId, isShootoff, shootoffSequence){
 }
 
 async function submitShootoffJudge(endId){
+  // A judge with no feedback on whether their closest-to-centre call was
+  // recorded is exactly the "two archers tie 8-8" scenario CLAUDE.md's
+  // mission statement is built around — every failure path here used to
+  // return silently with zero DOM change (caught by adversarial audit
+  // review, 2026-08-12).
+  const msgEl=document.getElementById('msg-shootoff-judge');
   const res=await fetch('/api/scoring/shootoff-judge',{method:'POST',headers:authHeaders(),body:JSON.stringify({endId,closest:true})}).catch(()=>null);
-  if(!res) return;
+  if(!res){ if(msgEl) msgEl.innerHTML='<div class="msg msg-err">Network error — the judge decision was NOT recorded. Try again.</div>'; return; }
   if(res.status===401){ showLogin(); return; }
   const r=await res.json().catch(()=>({error:'Could not record this decision.'}));
-  if(!r||r.error) return;
+  if(!r||r.error){
+    if(msgEl) msgEl.innerHTML=`<div class="msg msg-err">${esc((r&&r.error)||'Could not record this decision.')}</div>`;
+    return;
+  }
+  if(msgEl) msgEl.innerHTML='<div class="msg msg-ok">Judge decision recorded.</div>';
   await loadMatch(currentMatchId);
 }
 

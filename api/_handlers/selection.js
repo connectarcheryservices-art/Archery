@@ -6,7 +6,7 @@
 'use strict';
 const { cors, json, readBody } = require('../_lib/respond');
 const { checkAdmin } = require('../_lib/auth');
-const { q } = require('../_lib/db');
+const { q, withTransaction } = require('../_lib/db');
 const { writeAudit } = require('../_lib/audit');
 
 const rowToObj = row => { const o = {}; for (const [k, v] of Object.entries(row)) o[k.replace(/_([a-z])/g, (_, c) => c.toUpperCase())] = v; return o; };
@@ -46,15 +46,22 @@ module.exports = async (req, res) => {
         [list.id, size])).rows;
       if (!entries.length) return json(res, { ok: false, error: 'The latest published ranking for this category is empty.' }, 400);
 
-      const sel = await q(
-        `insert into selections (category_id, ranking_list_id, name, size, created_by) values ($1,$2,$3,$4,$5) returning id`,
-        [categoryId, list.id, name, size, actor.name]);
-      const selectionId = sel.rows[0].id;
-      for (const e of entries) {
-        await q(
-          `insert into selection_entries (selection_id, athlete_id, rank_at_selection, score_at_selection) values ($1,$2,$3,$4)`,
-          [selectionId, e.athlete_id, e.rank, e.added_ranking_score]);
-      }
+      // Single transaction: a failure partway through (a dropped connection,
+      // a constraint violation) must leave NOTHING committed — never a
+      // partial, unaudited selection sitting in the database (caught by
+      // adversarial audit review, 2026-08-12).
+      const selectionId = await withTransaction(async (client) => {
+        const sel = await client.query(
+          `insert into selections (category_id, ranking_list_id, name, size, created_by) values ($1,$2,$3,$4,$5) returning id`,
+          [categoryId, list.id, name, size, actor.name]);
+        const id = sel.rows[0].id;
+        for (const e of entries) {
+          await client.query(
+            `insert into selection_entries (selection_id, athlete_id, rank_at_selection, score_at_selection) values ($1,$2,$3,$4)`,
+            [id, e.athlete_id, e.rank, e.added_ranking_score]);
+        }
+        return id;
+      });
       await writeAudit({ req, actor, action: 'create', resourceType: 'selections', resourceId: selectionId,
         after: { categoryId, rankingListId: list.id, name, size, athleteCount: entries.length } });
       return json(res, { ok: true, selectionId, rankingListId: list.id, athleteCount: entries.length });
@@ -117,8 +124,17 @@ module.exports = async (req, res) => {
       const b = readBody(req);
       const selectionId = parseInt(b.selectionId, 10);
       if (!selectionId) return json(res, { error: 'selectionId is required' }, 400);
-      const r = await q(`update selections set finalized=true where id=$1 returning id`, [selectionId]);
-      if (!r.rows[0]) return json(res, { error: 'Unknown selection' }, 404);
+      // where finalized=false: a repeat finalize on an already-finalized
+      // selection must be a true no-op, not a second misleading audit row
+      // asserting the roster was "finalized" again when nothing changed
+      // (caught by adversarial audit review, 2026-08-12 — same class of bug
+      // already fixed in members.js's no-op upserts).
+      const r = await q(`update selections set finalized=true where id=$1 and finalized=false returning id`, [selectionId]);
+      if (!r.rows[0]) {
+        const existing = (await q('select id, finalized from selections where id=$1', [selectionId])).rows[0];
+        if (!existing) return json(res, { error: 'Unknown selection' }, 404);
+        return json(res, { ok: true, alreadyFinalized: true });
+      }
       await writeAudit({ req, actor, action: 'update', resourceType: 'selections', resourceId: selectionId, after: { finalized: true } });
       return json(res, { ok: true });
     }

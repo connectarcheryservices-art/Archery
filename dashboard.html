@@ -159,33 +159,44 @@ function render(){
   el.innerHTML = html;
 }
 
-async function becomeAthlete(){ const r = await jpost('/members/become-athlete', {}); if (r && r.ok) { await loadStatus(); } else { alert((r && r.error) || 'Could not create profile.'); } }
+// shared.js's alert() override infers success/failure from KEYWORDS in the
+// message (/sorry|could not|.../ -> red, else green) — a real server error
+// like "Unknown link" matches none of them and renders as a green success
+// toast, which is worse than no feedback at all. Call the toast API
+// directly with an explicit tone instead (falls back to alert() if
+// shared.js hasn't loaded yet for some reason).
+function notify(msg, ok){
+  if (window.ArcheryUI && window.ArcheryUI.toast) ArcheryUI.toast(msg, ok ? 'ok' : 'err');
+  else alert(msg);
+}
+
+async function becomeAthlete(){ const r = await jpost('/members/become-athlete', {}); if (r && r.ok) { await loadStatus(); } else { notify((r && r.error) || 'Could not create profile.', false); } }
 async function claimAthlete(){
   const athleteId = parseInt(document.getElementById('claim-athlete-id').value, 10);
   if (!athleteId) return;
   const r = await jpost('/members/claim-athlete', { athleteId });
-  alert(r && r.ok ? 'Claim submitted — a staff member will review it.' : ((r && r.error) || 'Could not submit claim.'));
+  notify(r && r.ok ? 'Claim submitted — a staff member will review it.' : ((r && r.error) || 'Could not submit claim.'), !!(r && r.ok));
 }
-async function becomeCoach(){ const r = await jpost('/members/become-coach', {}); if (r && r.ok) await loadStatus(); }
+async function becomeCoach(){ const r = await jpost('/members/become-coach', {}); if (r && r.ok) { await loadStatus(); } else { notify((r && r.error) || 'Could not update your role.', false); } }
 async function requestCoachLink(){
   const athleteId = parseInt(document.getElementById('request-coach-athlete-id').value, 10);
   if (!athleteId) return;
   const r = await jpost('/members/coach-link', { athleteId });
-  if (r && r.ok) { await loadStatus(); } else { alert((r && r.error) || 'Could not send request.'); }
+  if (r && r.ok) { await loadStatus(); } else { notify((r && r.error) || 'Could not send request.', false); }
 }
 async function inviteCoach(){
   const coachUserId = parseInt(document.getElementById('invite-coach-id').value, 10);
   if (!coachUserId) return;
   const r = await jpost('/members/coach-link', { coachUserId });
-  if (r && r.ok) { await loadStatus(); } else { alert((r && r.error) || 'Could not send invite.'); }
+  if (r && r.ok) { await loadStatus(); } else { notify((r && r.error) || 'Could not send invite.', false); }
 }
-async function respondCoachLink(linkId, accept){ const r = await jpost('/members/coach-link-respond', { linkId, accept }); if (r && r.ok) await loadStatus(); }
-async function revokeCoachLink(linkId){ const r = await jpost('/members/revoke-coach-link', { linkId }); if (r && r.ok) await loadStatus(); }
+async function respondCoachLink(linkId, accept){ const r = await jpost('/members/coach-link-respond', { linkId, accept }); if (r && r.ok) { await loadStatus(); } else { notify((r && r.error) || 'Could not respond to this request.', false); } }
+async function revokeCoachLink(linkId){ const r = await jpost('/members/revoke-coach-link', { linkId }); if (r && r.ok) { await loadStatus(); } else { notify((r && r.error) || 'Could not remove this relationship.', false); } }
 async function requestCertification(){
   const level = document.getElementById('cert-level').value;
   const issuingBody = document.getElementById('cert-body').value;
   const r = await jpost('/members/request-certification', { level, issuingBody });
-  if (r && r.ok) { await loadStatus(); } else { alert((r && r.error) || 'Could not submit request.'); }
+  if (r && r.ok) { await loadStatus(); } else { notify((r && r.error) || 'Could not submit request.', false); }
 }
 
 (function init(){

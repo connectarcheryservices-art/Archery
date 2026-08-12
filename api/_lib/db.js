@@ -76,4 +76,29 @@ async function q(text, params = []) {
   finally { client.release(); }
 }
 
-module.exports = { getPool, q };
+// Runs fn(client) inside a single BEGIN/COMMIT — use for any multi-statement
+// mutation where a failure partway through must leave NOTHING committed,
+// rather than a partial row set with no audit trail of what happened
+// (caught by adversarial audit review, 2026-08-12: api/_handlers/selection.js
+// 'generate' inserted a selections row then looped inserting
+// selection_entries as separate autocommit statements — a dropped
+// connection or constraint violation mid-loop left a real, permanent,
+// completely unaudited partial selection behind). fn must run its queries
+// against the CLIENT it's given, not the pool's q(), so every statement
+// shares the same transaction.
+async function withTransaction(fn) {
+  const client = await getPool().connect();
+  try {
+    await client.query('BEGIN');
+    const result = await fn(client);
+    await client.query('COMMIT');
+    return result;
+  } catch (e) {
+    await client.query('ROLLBACK').catch(() => {});
+    throw e;
+  } finally {
+    client.release();
+  }
+}
+
+module.exports = { getPool, q, withTransaction };

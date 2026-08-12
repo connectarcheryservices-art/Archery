@@ -19,23 +19,30 @@ async function requireStaff(req) {
 }
 const CHILD_TIER = { national: 'state', state: 'district' };
 
-// Is userId an officer of federationId itself, or of any ANCESTOR of it?
-// A national officer has jurisdiction over every state/district beneath
-// them; a state officer over their districts; a district officer only
-// over their own node.
-async function isFederationOfficerOrAncestor(userId, federationId) {
+// Does userId hold one of `offices` (or ANY office, if offices is null) at
+// federationId itself, or at any ANCESTOR of it? A national officer has
+// jurisdiction over every state/district beneath them; a state officer
+// over their districts; a district officer only over their own node.
+async function hasJurisdiction(userId, federationId, offices = null) {
   if (!userId || !federationId) return false;
   let currentId = federationId;
   const seen = new Set();
   while (currentId && !seen.has(currentId)) {
     seen.add(currentId);
-    const officer = (await q('select 1 from federation_members where user_id=$1 and federation_id=$2', [userId, currentId])).rows[0];
-    if (officer) return true;
-    const row = (await q('select parent_id from federations where id=$1', [currentId])).rows[0];
-    currentId = row ? row.parent_id : null;
+    const row = (await q('select office from federation_members where user_id=$1 and federation_id=$2', [userId, currentId])).rows[0];
+    if (row && (!offices || offices.includes(row.office))) return true;
+    const parent = (await q('select parent_id from federations where id=$1', [currentId])).rows[0];
+    currentId = parent ? parent.parent_id : null;
   }
   return false;
 }
+// Any office at all — sufficient to create a CHILD node (administrative,
+// not a governance decision) but NOT sufficient to appoint officers (see
+// assign-officer below, which requires president rank specifically —
+// caught by adversarial audit review, 2026-08-12: any office, including
+// the lowest, was previously enough to self-promote to president).
+const isFederationOfficerOrAncestor = (userId, federationId) => hasJurisdiction(userId, federationId, null);
+const isPresidentOrAncestor = (userId, federationId) => hasJurisdiction(userId, federationId, ['president']);
 
 module.exports = async (req, res) => {
   cors(res);
@@ -101,8 +108,12 @@ module.exports = async (req, res) => {
       return json(res, { ok: true, tree: roots });
     }
 
-    // ── ASSIGN-OFFICER: staff, or an officer of this federation or an
-    // ancestor, can appoint an officer here. ──
+    // ── ASSIGN-OFFICER: staff, or the CURRENT PRESIDENT of this federation
+    // (or an ancestor's), can appoint/reassign an officer here — appointing
+    // officers is a governance decision, not something any office-holder
+    // should be able to do to themself. (Any lesser office was previously
+    // sufficient, letting a member self-promote to president — caught by
+    // adversarial audit review, 2026-08-12.) ──
     if (action === 'assign-officer' && req.method === 'POST') {
       const b = readBody(req);
       const federationId = parseInt(b.federationId, 10);
@@ -117,11 +128,18 @@ module.exports = async (req, res) => {
       let actor = staff;
       if (!actor) {
         const member = await authedUserChecked(req);
-        if (member && await isFederationOfficerOrAncestor(member.id, federationId)) {
+        if (member && await isPresidentOrAncestor(member.id, federationId)) {
           actor = { role: 'member:federation-officer', sid: member.id, name: member.name };
         }
       }
-      if (!actor) return json(res, { error: 'Unauthorised' }, 401);
+      if (!actor) return json(res, { error: 'Unauthorised — staff, or the president of this federation (or an ancestor), can assign officers.' }, 401);
+
+      // Fetch the prior state so the audit row is accurate — a genuine
+      // no-op (same office already held) writes nothing; a reassignment is
+      // logged as 'update' with the real before-state, not as a fabricated
+      // second 'create' (caught by adversarial audit review, 2026-08-12).
+      const existing = (await q('select id, office from federation_members where federation_id=$1 and user_id=$2', [federationId, userId])).rows[0];
+      if (existing && existing.office === office) return json(res, { ok: true, id: existing.id, unchanged: true });
 
       const r = await q(
         `insert into federation_members (federation_id, user_id, office) values ($1,$2,$3)
@@ -129,7 +147,8 @@ module.exports = async (req, res) => {
            do update set office=excluded.office
          returning id`,
         [federationId, userId, office]);
-      await writeAudit({ req, actor, action: 'create', resourceType: 'federation_members', resourceId: r.rows[0].id, after: { federationId, userId, office } });
+      await writeAudit({ req, actor, action: existing ? 'update' : 'create', resourceType: 'federation_members', resourceId: r.rows[0].id,
+        before: existing ? { office: existing.office } : null, after: { federationId, userId, office } });
       return json(res, { ok: true, id: r.rows[0].id });
     }
 
