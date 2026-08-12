@@ -36,7 +36,10 @@ async function loadShootoffRounds(matchEntryIdA, matchEntryIdB) {
     let judgedClosestSide = null;
     if (endsA[i].judged_closest_to_centre === true) judgedClosestSide = 1;
     else if (endsB[i].judged_closest_to_centre === true) judgedClosestSide = 2;
-    rounds.push({ sequence: endsA[i].shootoff_sequence, arrowsA, arrowsB, judgedClosestSide });
+    // endIdA/endIdB let a caller (the scorer UI) record a judge's
+    // closest-to-centre decision (Art. 12.5.2.2) against the correct end
+    // row for THIS round — shootoff-judge writes to one specific ends.id.
+    rounds.push({ sequence: endsA[i].shootoff_sequence, arrowsA, arrowsB, judgedClosestSide, endIdA: endsA[i].id, endIdB: endsB[i].id });
   }
   return rounds;
 }
@@ -69,16 +72,22 @@ async function computeMatchState(matchId) {
   let state = match.format === 'set'
     ? scoring.setPlayState(endsA, endsB, match.team_type)
     : scoring.cumulativeState(endsA, endsB, match.team_type);
+  // Per-side end counts, not just the paired min in state.endResults — a
+  // scorer UI needs these to default the NEXT end number correctly even
+  // when one side is temporarily ahead of the other.
+  state = { ...state, endsPlayedA: endsA.length, endsPlayedB: endsB.length };
 
   let shootoff = null;
+  let shootoffRounds = null;
   if (!state.done && state.tiedAtCap) {
     const rounds = await loadShootoffRounds(entryA.id, entryB.id);
     if (rounds.length) {
+      shootoffRounds = rounds;
       shootoff = scoring.resolveShootoff(rounds);
       if (shootoff.resolved) state = { ...state, done: true, winnerSide: shootoff.winnerSide };
     }
   }
-  return { match, entries, state, shootoff };
+  return { match, entries, state, shootoff, shootoffRounds };
 }
 
 // If a match is now decided AND wired to a next-round match

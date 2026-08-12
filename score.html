@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="day">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Live Scoring — Archery.Services</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+:root{--tw:#FFFFFF;--tb:#1A1A1A;--tbl:#0F5FA8;--tr:#D22730;--ty:#C9A227;--bg:#F5F7FA;--bg2:#FFFFFF;--ink:#0D1B2E;--dim:#334155;--faint:#8899AA;--line:rgba(15,95,168,.1);}
+body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;margin:0;}
+[data-theme="night"]{--bg:#0D1117;--bg2:#161B22;--ink:#E6EDF3;--dim:#8B949E;--faint:#4A5568;--line:rgba(255,255,255,.08);}
+.page-hero{background:linear-gradient(135deg,#131316,#0F5FA8);padding:44px 24px 32px;text-align:center;color:#fff;}
+.page-hero h1{font-family:'Oswald',sans-serif;font-size:clamp(26px,5vw,42px);font-weight:700;text-transform:uppercase;margin:0 0 8px;}
+.page-hero h1 em{color:#C9A227;font-style:normal;}
+.page-hero p{font-size:14px;color:rgba(255,255,255,.75);max-width:520px;margin:0 auto;line-height:1.6;}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 60px;}
+.card{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:20px 22px;margin-bottom:20px;}
+.card h2{font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);margin:0 0 14px;}
+.field-input{padding:10px 14px;border:1.5px solid var(--line);border-radius:6px;font-size:14px;font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);outline:none;}
+.field-input:focus{border-color:#0F5FA8;}
+.btn{padding:10px 20px;border:none;border-radius:6px;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;cursor:pointer;}
+.btn-primary{background:#0F5FA8;color:#fff;}
+.btn-gold{background:#C9A227;color:#1A1A1A;}
+.btn:disabled{opacity:.45;cursor:not-allowed;}
+.loader-row{display:flex;gap:10px;}
+.loader-row .field-input{flex:1;}
+#login-overlay{position:fixed;inset:0;background:rgba(13,27,46,.72);display:flex;align-items:center;justify-content:center;z-index:900;}
+.login-box{background:var(--bg2);border-radius:12px;padding:32px;width:340px;max-width:90vw;}
+.login-box h2{font-family:'Oswald',sans-serif;font-size:18px;margin:0 0 4px;color:var(--ink);}
+.login-box p{font-size:12px;color:var(--faint);margin:0 0 18px;}
+.login-box .field-input{width:100%;box-sizing:border-box;margin-bottom:10px;}
+.login-err{color:#D22730;font-size:12px;margin-bottom:10px;display:none;}
+.match-title{font-family:'Oswald',sans-serif;font-size:20px;font-weight:700;color:var(--ink);}
+.match-sub{font-size:12px;color:var(--faint);margin-top:2px;}
+.score-row{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid var(--line);}
+.score-row:last-child{border-bottom:none;}
+.score-name{font-size:15px;color:var(--ink);}
+.score-name.winner{font-weight:700;color:#0F5FA8;}
+.score-name.winner::after{content:' ✓';color:#22C55E;}
+.score-val{font-family:'Oswald',sans-serif;font-size:24px;font-weight:700;color:#C9A227;}
+table.end-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px;}
+table.end-table th,table.end-table td{padding:6px 8px;text-align:center;border-bottom:1px solid var(--line);}
+table.end-table th{color:var(--faint);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.05em;}
+.arrow-select{width:52px;padding:6px 4px;border:1.5px solid var(--line);border-radius:5px;background:var(--bg);color:var(--ink);font-family:monospace;font-size:13px;text-align:center;}
+.arrow-row{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0;}
+.entry-form{border:1px solid var(--line);border-radius:8px;padding:14px 16px;margin-top:12px;}
+.entry-form h3{font-size:13px;margin:0 0 8px;color:var(--dim);}
+.entry-form.disabled{opacity:.45;pointer-events:none;}
+.end-num-field{width:70px;}
+.msg{padding:10px 14px;border-radius:6px;font-size:12px;margin-top:10px;}
+.msg-ok{background:rgba(34,197,94,.12);color:#16803C;}
+.msg-err{background:rgba(210,39,48,.12);color:#B91C24;}
+.msg-info{background:rgba(15,95,168,.1);color:#0F5FA8;}
+.badge{display:inline-block;padding:3px 9px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;background:var(--bg);color:var(--dim);border:1px solid var(--line);}
+</style>
+</head>
+<body>
+
+<nav style="position:sticky;top:0;z-index:300;background:#fff;border-bottom:1px solid rgba(15,95,168,.1);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;column-gap:12px;padding:6px clamp(14px,4vw,32px);min-height:60px;">
+  <a href="/" style="font-family:'Oswald',sans-serif;font-size:20px;font-weight:700;color:#0F5FA8;text-decoration:none;">Archery<span style="color:#C9A227">.</span>Services</a>
+  <div style="display:flex;gap:clamp(10px,3vw,24px);align-items:center;flex-wrap:wrap;justify-content:flex-end;">
+    <a href="draw.html" style="font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#334155;text-decoration:none;">Draws</a>
+  </div>
+</nav>
+
+<div class="page-hero">
+  <h1>Live <em>Scoring</em></h1>
+  <p>Record arrows end by end. Every value is an adjudicated fact, written once, never overwritten — corrections are new events with a reason (DOMAIN.md §3.1).</p>
+</div>
+
+<div class="wrap">
+  <div class="card">
+    <h2>Load a match</h2>
+    <div class="loader-row">
+      <input class="field-input" id="match-id-input" type="number" placeholder="Match ID">
+      <button class="btn btn-primary" onclick="loadMatch(document.getElementById('match-id-input').value)">Load</button>
+    </div>
+  </div>
+
+  <div id="match-panel"></div>
+</div>
+
+<div id="login-overlay" style="display:none;">
+  <div class="login-box">
+    <h2>Scorer sign-in</h2>
+    <p>Recording ends requires an owner or manager account (DOMAIN.md §1.4 — capability, not just "logged in").</p>
+    <div class="login-err" id="login-err"></div>
+    <input class="field-input" id="login-user" placeholder="Staff username (leave blank for owner)">
+    <input class="field-input" id="login-pw" type="password" placeholder="Password">
+    <input class="field-input" id="login-totp" placeholder="6-digit code (if enabled)" style="display:none;">
+    <button class="btn btn-primary" style="width:100%;" onclick="doLogin()">Sign in</button>
+  </div>
+</div>
+
+<script src="esc.js"></script>
+<script>
+const EMPTY=(msg)=>`<div style="background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:40px 24px;text-align:center;color:var(--faint);font-size:13px;line-height:1.7;">${msg}</div>`;
+const ARROW_VALUES=['X','10','9','8','7','6','5','4','3','2','1','M'];
+function arrowSelectValue(sel){
+  const v=sel.value;
+  if(v==='X') return {value:10,isX:true};
+  if(v==='M') return {value:0,isMiss:true};
+  return {value:Number(v)};
+}
+
+let AUTH_TOKEN=sessionStorage.getItem('archery_admin_token')||'';
+let ME_ROLE=sessionStorage.getItem('archery_admin_role')||'';
+let currentMatch=null;
+let currentMatchId=null;
+const ecArrowsPerEndCache={};
+
+function authHeaders(){
+  const h={'Content-Type':'application/json'};
+  if(AUTH_TOKEN) h['Authorization']='Bearer '+AUTH_TOKEN;
+  return h;
+}
+function showLogin(){ document.getElementById('login-overlay').style.display='flex'; }
+function hideLogin(){ document.getElementById('login-overlay').style.display='none'; }
+async function doLogin(e){
+  if(e&&e.preventDefault)e.preventDefault();
+  const pw=document.getElementById('login-pw').value;
+  const uname=document.getElementById('login-user').value.trim();
+  const totp=document.getElementById('login-totp').value.trim();
+  const err=document.getElementById('login-err'); err.style.display='none';
+  const body={password:pw}; if(uname) body.username=uname; if(totp) body.totp=totp;
+  const r=await fetch('/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(x=>x.json()).catch(()=>({ok:false}));
+  if(r&&r.ok&&r.token){
+    AUTH_TOKEN=r.token; ME_ROLE=r.role||'owner';
+    sessionStorage.setItem('archery_admin_token',AUTH_TOKEN);
+    sessionStorage.setItem('archery_admin_role',ME_ROLE);
+    sessionStorage.setItem('archery_admin_name',r.name||'');
+    hideLogin();
+    if(currentMatchId) loadMatch(currentMatchId);
+  }else if(r&&r.needsTotp){
+    document.getElementById('login-totp').style.display='block';
+    err.textContent=r.error||'Enter your authenticator code.'; err.style.display='block';
+  }else{
+    err.textContent=(r&&r.error)||'Incorrect credentials.'; err.style.display='block';
+  }
+  return false;
+}
+if(!AUTH_TOKEN || (ME_ROLE!=='owner'&&ME_ROLE!=='manager')) showLogin();
+
+async function eventCategoryArrowsPerEnd(ecId){
+  if(ecArrowsPerEndCache[ecId]!=null) return ecArrowsPerEndCache[ecId];
+  const rows=await fetch('/api/scoring/event-categories').then(r=>r.json()).catch(()=>[]);
+  const row=Array.isArray(rows)?rows.find(r=>String(r.id)===String(ecId)):null;
+  const n=row&&[3,6].includes(Number(row.arrowsPerEnd))?Number(row.arrowsPerEnd):6;
+  ecArrowsPerEndCache[ecId]=n;
+  return n;
+}
+
+async function loadMatch(matchId){
+  matchId=parseInt(matchId,10);
+  const panel=document.getElementById('match-panel');
+  if(!Number.isFinite(matchId)){ panel.innerHTML=EMPTY('Enter a valid match ID.'); return; }
+  currentMatchId=matchId;
+  panel.innerHTML='<div style="padding:24px;color:var(--faint);">Loading match…</div>';
+  const r=await fetch('/api/scoring/match?id='+matchId).then(x=>x.json()).catch(()=>null);
+  if(!r||!r.ok){ panel.innerHTML=EMPTY('Match not found.'); currentMatch=null; return; }
+  currentMatch=r;
+  await renderMatch();
+}
+
+function athleteLabel(entry){
+  if(!entry) return 'TBD — awaiting earlier round';
+  return entry.athlete_name?esc(entry.athlete_name):('Entry #'+esc(entry.entry_id));
+}
+
+async function renderMatch(){
+  const panel=document.getElementById('match-panel');
+  const m=currentMatch;
+  const match=m.match;
+  const entries=m.entries||[];
+  const a=entries.find(e=>e.side===1), b=entries.find(e=>e.side===2);
+
+  if(m.error || !m.state){
+    panel.innerHTML=`<div class="card">
+      <div class="match-title">${athleteLabel(a)} vs ${athleteLabel(b)}</div>
+      <div class="match-sub">${esc(match.kind)} · ${esc(match.format)}</div>
+      <div class="msg msg-info">This match isn't ready to score yet — it's waiting on an earlier round to determine both sides.</div>
+    </div>`;
+    return;
+  }
+
+  const arrowsPerEnd=await eventCategoryArrowsPerEnd(match.event_category_id);
+
+  if(match.kind==='qualification'){
+    renderQualification(match, entries[0], m.state, arrowsPerEnd);
+    return;
+  }
+
+  const st=m.state;
+  const isSet=match.format==='set';
+  const scoreA=isSet?st.setPointsA:st.totalA;
+  const scoreB=isSet?st.setPointsB:st.totalB;
+  const winnerSide=st.winnerSide;
+
+  let html=`<div class="card">
+    <div class="match-title">${athleteLabel(a)} <span style="color:var(--faint);font-weight:400;">vs</span> ${athleteLabel(b)}</div>
+    <div class="match-sub"><span class="badge">${esc(match.kind)}</span> <span class="badge">${isSet?'Set play':'Cumulative'}</span> <span class="badge">${esc(match.team_type)}</span></div>
+    <div class="score-row">
+      <div class="score-name${winnerSide===1?' winner':''}">${athleteLabel(a)}</div>
+      <div class="score-val">${scoreA!=null?esc(scoreA):'–'}</div>
+    </div>
+    <div class="score-row">
+      <div class="score-name${winnerSide===2?' winner':''}">${athleteLabel(b)}</div>
+      <div class="score-val">${scoreB!=null?esc(scoreB):'–'}</div>
+    </div>
+  </div>`;
+
+  if(isSet && Array.isArray(st.endResults) && st.endResults.length){
+    html+=`<div class="card"><h2>End-by-end</h2><table class="end-table"><thead><tr><th>End</th><th>${athleteLabel(a)}</th><th>${athleteLabel(b)}</th><th>Set pts</th></tr></thead><tbody>`;
+    for(const e of st.endResults){
+      html+=`<tr><td>${e.endNumber}</td><td>${esc(e.totalA)}</td><td>${esc(e.totalB)}</td><td>${e.ptsA}–${e.ptsB}</td></tr>`;
+    }
+    html+='</tbody></table></div>';
+  }
+
+  if(st.done){
+    html+=`<div class="card"><div class="msg msg-ok">Match complete — ${winnerSide?athleteLabel(winnerSide===1?a:b):'result recorded'} wins.</div></div>`;
+  }
+
+  panel.innerHTML=html;
+
+  if(!st.done && !st.tiedAtCap){
+    renderEntryForms(match, a, b, st, arrowsPerEnd);
+  }
+  if(st.tiedAtCap && !st.done){
+    renderShootoff(match, a, b, m.shootoffRounds||[], m.shootoff);
+  }
+}
+
+function renderQualification(match, entryA, st, arrowsPerEnd){
+  const panel=document.getElementById('match-panel');
+  let html=`<div class="card">
+    <div class="match-title">${athleteLabel(entryA)}</div>
+    <div class="match-sub"><span class="badge">qualification</span></div>
+    <div class="score-row"><div class="score-name">Running total</div><div class="score-val">${esc(st.total)}</div></div>
+    <div class="match-sub">${st.endsPlayed} end(s) recorded</div>
+  </div>`;
+  panel.innerHTML=html;
+  const nextEnd=st.endsPlayed+1;
+  const formHtml=buildEndForm('qual', 'this archer', entryA.id, nextEnd, arrowsPerEnd, false, null);
+  panel.insertAdjacentHTML('beforeend', `<div class="card">${formHtml}</div>`);
+}
+
+function buildEndForm(key, label, matchEntryId, endNumber, arrowsPerEnd, isShootoff, shootoffSequence){
+  let arrowsHtml='';
+  for(let i=0;i<arrowsPerEnd;i++){
+    arrowsHtml+=`<select class="arrow-select" id="arrow-${key}-${i}">${ARROW_VALUES.map(v=>`<option value="${v}">${v}</option>`).join('')}</select>`;
+  }
+  const seqArg=isShootoff?String(shootoffSequence):'null';
+  // label is passed in already-escaped (from athleteLabel()) or is a safe
+  // hardcoded string ('this archer', 'side 1') — do not double-escape.
+  return `<div class="entry-form" id="form-${key}">
+    <h3>Record end for ${label}</h3>
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:6px;">
+      <label style="font-size:11px;color:var(--faint);">End #</label>
+      <input class="field-input end-num-field" id="endnum-${key}" type="number" value="${endNumber}">
+    </div>
+    <div class="arrow-row">${arrowsHtml}</div>
+    <button class="btn btn-gold" onclick="submitEnd('${key}',${matchEntryId},${!!isShootoff},${seqArg})">Record End</button>
+    <div id="msg-${key}"></div>
+  </div>`;
+}
+
+function renderEntryForms(match, a, b, st, arrowsPerEnd){
+  const panel=document.getElementById('match-panel');
+  const nextA=(st.endsPlayedA||0)+1;
+  const nextB=(st.endsPlayedB||0)+1;
+  let html='<div class="card"><h2>Record ends</h2>';
+  html+=a?buildEndForm('1', athleteLabel(a), a.id, nextA, arrowsPerEnd, false, null):'<div class="msg msg-info">Side 1 not seated yet.</div>';
+  html+=b?buildEndForm('2', athleteLabel(b), b.id, nextB, arrowsPerEnd, false, null):'<div class="msg msg-info">Side 2 not seated yet.</div>';
+  html+='</div>';
+  panel.insertAdjacentHTML('beforeend', html);
+}
+
+function renderShootoff(match, a, b, shootoffRounds, shootoff){
+  const panel=document.getElementById('match-panel');
+  const nextSeq=shootoffRounds.length+1;
+  const maxEnds=match.team_type==='individual'?5:4;
+  const shootoffEndNumber=maxEnds+1;
+  let html=`<div class="card"><h2>Shoot-off (Art. 12.5.2)</h2>
+    <div class="msg msg-info">Set points are tied — one arrow each, closest to centre wins if the score also ties.</div>`;
+
+  if(shootoffRounds.length){
+    html+=`<table class="end-table"><thead><tr><th>Round</th><th>${athleteLabel(a)}</th><th>${athleteLabel(b)}</th></tr></thead><tbody>`;
+    for(const r of shootoffRounds){
+      const tA=r.arrowsA.reduce((s,x)=>s+Number(x.value),0), tB=r.arrowsB.reduce((s,x)=>s+Number(x.value),0);
+      html+=`<tr><td>${r.sequence}</td><td>${tA}</td><td>${tB}</td></tr>`;
+    }
+    html+='</tbody></table>';
+  }
+
+  const lastRound=shootoffRounds[shootoffRounds.length-1];
+  const needsJudgeCall = shoot0ffNeedsJudge(shootoff, lastRound);
+
+  if(needsJudgeCall){
+    html+=`<div class="msg msg-err">Scores tied again — a judge must record which arrow landed closer to the centre (Art. 12.5.2.2). This is never guessed.</div>
+      <div style="display:flex;gap:10px;margin-top:8px;">
+        <button class="btn btn-primary" onclick="submitShootoffJudge(${lastRound.endIdA})">${athleteLabel(a)} was closer</button>
+        <button class="btn btn-primary" onclick="submitShootoffJudge(${lastRound.endIdB})">${athleteLabel(b)} was closer</button>
+      </div>`;
+  }else{
+    html+=buildEndForm('so1', 'shoot-off — '+athleteLabel(a), a.id, shootoffEndNumber, 1, true, nextSeq);
+    html+=buildEndForm('so2', 'shoot-off — '+athleteLabel(b), b.id, shootoffEndNumber, 1, true, nextSeq);
+  }
+  html+='</div>';
+  panel.insertAdjacentHTML('beforeend', html);
+}
+function shoot0ffNeedsJudge(shootoff, lastRound){
+  if(!lastRound) return false;
+  if(!shootoff) return false;
+  return shootoff.resolved===false && shootoff.reason==='tied_awaiting_measurement_or_next_round';
+}
+
+async function submitEnd(key, matchEntryId, isShootoff, shootoffSequence){
+  const msgEl=document.getElementById('msg-'+key);
+  const endNumInput=document.getElementById('endnum-'+key);
+  const endNumber=parseInt(endNumInput.value,10);
+  const selects=[...document.querySelectorAll(`[id^="arrow-${key}-"]`)];
+  const arrows=selects.map(arrowSelectValue);
+  if(!arrows.length){ if(msgEl) msgEl.innerHTML='<div class="msg msg-err">No arrows to record.</div>'; return; }
+  const body={ matchEntryId, endNumber, arrows, isShootoff: !!isShootoff, clientId: (crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random()) };
+  if(isShootoff) body.shootoffSequence=shootoffSequence;
+  const res=await fetch('/api/scoring/end',{method:'POST',headers:authHeaders(),body:JSON.stringify(body)}).catch(()=>null);
+  if(!res){ if(msgEl) msgEl.innerHTML='<div class="msg msg-err">Network error.</div>'; return; }
+  if(res.status===401){ showLogin(); return; }
+  const r=await res.json().catch(()=>({error:'Could not record this end.'}));
+  if(!r||r.error){
+    if(msgEl) msgEl.innerHTML=`<div class="msg msg-err">${esc((r&&r.error)||'Could not record this end.')}</div>`;
+    return;
+  }
+  let note='';
+  if(r.advanced) note=` — winner advanced to match #${r.advanced.nextMatchId}`;
+  if(msgEl) msgEl.innerHTML=`<div class="msg msg-ok">End recorded${esc(note)}.</div>`;
+  await loadMatch(currentMatchId);
+}
+
+async function submitShootoffJudge(endId){
+  const res=await fetch('/api/scoring/shootoff-judge',{method:'POST',headers:authHeaders(),body:JSON.stringify({endId,closest:true})}).catch(()=>null);
+  if(!res) return;
+  if(res.status===401){ showLogin(); return; }
+  const r=await res.json().catch(()=>({error:'Could not record this decision.'}));
+  if(!r||r.error) return;
+  await loadMatch(currentMatchId);
+}
+
+(function initFromUrl(){
+  const params=new URLSearchParams(location.search);
+  const mid=params.get('matchId');
+  if(mid) document.getElementById('match-id-input').value=mid;
+  if(mid) loadMatch(mid);
+  else document.getElementById('match-panel').innerHTML=EMPTY('Enter a match ID above to start scoring, or open this page from a bracket\'s "Score" link.');
+})();
+</script>
+<script src="shared.js"></script>
+</body>
+</html>
