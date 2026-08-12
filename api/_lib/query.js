@@ -44,6 +44,11 @@ function buildListQuery(table, query, { admin } = {}) {
   const p = [];
   const where = [];
   if (!admin) where.push('active is not false');
+  // `knowledge` has an independent `published` column (admin.html exposes it
+  // as its own checkbox, separate from `active`). Only `active` was ever
+  // filtered here, so an admin unchecking just "Published" left the article
+  // fully visible to every anonymous visitor — the toggle was cosmetic.
+  if (!admin && table === 'knowledge') where.push('published is not false');
 
   const q = (query.q || query.search || '').trim();
   const useFts = q && FULLTEXT.has(table);

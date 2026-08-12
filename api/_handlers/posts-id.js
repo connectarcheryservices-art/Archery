@@ -3,6 +3,7 @@
 const { cors, json, readBody } = require('../_lib/respond');
 const { checkAdmin } = require('../_lib/auth');
 const { q } = require('../_lib/db');
+const { writeAudit } = require('../_lib/audit');
 
 const rowToObj = row => { const o = {}; for (const [k,v] of Object.entries(row)) o[k.replace(/_([a-z])/g, (_,c) => c.toUpperCase())] = v; return o; };
 
@@ -16,16 +17,24 @@ module.exports = async (req, res) => {
       const r = await q('select * from posts where id=$1', [id]);
       return r.rows[0] ? json(res, rowToObj(r.rows[0])) : json(res, { error: 'Not found' }, 404);
     }
-    if (!checkAdmin(req)) return json(res, { error: 'Unauthorised' }, 401);
+    const actor = checkAdmin(req);
+    if (!actor) return json(res, { error: 'Unauthorised' }, 401);
     if (req.method === 'PUT') {
       const b = readBody(req);
-      const sets = [], vals = [];
-      if (b.pinned !== undefined) { vals.push(!!b.pinned); sets.push(`pinned=$${vals.length}`); }
-      if (b.active !== undefined) { vals.push(!!b.active); sets.push(`active=$${vals.length}`); }
+      const before = (await q('select pinned, active from posts where id=$1', [id])).rows[0] || null;
+      const sets = [], vals = [], after = {};
+      if (b.pinned !== undefined) { vals.push(!!b.pinned); sets.push(`pinned=$${vals.length}`); after.pinned = !!b.pinned; }
+      if (b.active !== undefined) { vals.push(!!b.active); sets.push(`active=$${vals.length}`); after.active = !!b.active; }
       if (sets.length) { vals.push(id); await q(`update posts set ${sets.join(',')} where id=$${vals.length}`, vals); }
+      await writeAudit({ req, actor, action: 'update', resourceType: 'posts', resourceId: id, before, after });
       return json(res, { ok: true });
     }
-    if (req.method === 'DELETE') { await q('delete from posts where id=$1', [id]); return json(res, { ok: true }); }
+    if (req.method === 'DELETE') {
+      const before = (await q('select title, author, category from posts where id=$1', [id])).rows[0] || null;
+      await q('delete from posts where id=$1', [id]);
+      await writeAudit({ req, actor, action: 'delete', resourceType: 'posts', resourceId: id, before });
+      return json(res, { ok: true });
+    }
     return json(res, { error: 'Method not allowed' }, 405);
   } catch (e) { console.error('posts/[id]:', e?.message); return json(res, { error: 'Server error' }, 500); }
 };

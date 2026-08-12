@@ -1,11 +1,13 @@
 // Generic table CRUD shared by /api/[resource] and /api/[resource]/[id].
-// Public can read active rows; only an admin token can write. Column allow-lists
-// prevent a client from setting arbitrary columns.
+// Public can read active rows; only an admin token with the 'content'
+// capability can write. Column allow-lists prevent a client from setting
+// arbitrary columns.
 'use strict';
 const { q } = require('./db');
-const { checkAdmin } = require('./auth');
+const { checkAdmin, can } = require('./auth');
 const { json, readBody } = require('./respond');
 const { buildListQuery } = require('./query');
+const { writeAudit } = require('./audit');
 
 const TABLES = {
   products:    ['name','brand','description','price','was','category','stock','img_url','active'],
@@ -80,12 +82,15 @@ async function listOrCreate(table, req, res) {
     }
   }
   if (req.method === 'POST') {
-    if (!checkAdmin(req)) return json(res, { error: 'Unauthorised' }, 401);
+    const actor = checkAdmin(req);
+    if (!actor) return json(res, { error: 'Unauthorised' }, 401);
+    if (!can(actor, 'content')) return json(res, { error: 'Your role does not have access to content editing.' }, 403);
     const cols = pick(table, readBody(req));
     if (!Object.keys(cols).length) return json(res, { error: 'No valid fields' }, 400);
     const keys = Object.keys(cols), vals = Object.values(cols);
     const ph = keys.map((_, i) => `$${i + 1}`).join(',');
     const r = await q(`insert into ${table} (${keys.join(',')}) values (${ph}) returning id`, vals);
+    await writeAudit({ req, actor, action: 'create', resourceType: table, resourceId: r.rows[0].id, after: cols });
     return json(res, { ok: true, id: r.rows[0].id });
   }
   return json(res, { error: 'Method not allowed' }, 405);
@@ -93,20 +98,35 @@ async function listOrCreate(table, req, res) {
 
 async function itemOps(table, id, req, res) {
   if (req.method === 'GET') {
+    const admin = checkAdmin(req);
     const r = await q(`select * from ${table} where id=$1`, [id]);
-    return r.rows[0] ? json(res, rowToObj(r.rows[0])) : json(res, { error: 'Not found' }, 404);
+    const row = r.rows[0];
+    if (!row) return json(res, { error: 'Not found' }, 404);
+    // Same visibility rule as the list endpoint (query.js): a non-admin must
+    // not be able to fetch an inactive/unpublished row just by guessing its
+    // id — the toggle has to actually hide the row, not just hide it from
+    // the list view.
+    if (!admin && row.active === false) return json(res, { error: 'Not found' }, 404);
+    if (!admin && table === 'knowledge' && row.published === false) return json(res, { error: 'Not found' }, 404);
+    return json(res, rowToObj(row));
   }
-  if (!checkAdmin(req)) return json(res, { error: 'Unauthorised' }, 401);
+  const actor = checkAdmin(req);
+  if (!actor) return json(res, { error: 'Unauthorised' }, 401);
+  if (!can(actor, 'content')) return json(res, { error: 'Your role does not have access to content editing.' }, 403);
   if (req.method === 'PUT') {
     const cols = pick(table, readBody(req));
     if (!Object.keys(cols).length) return json(res, { error: 'No valid fields' }, 400);
     const keys = Object.keys(cols), vals = Object.values(cols);
+    const before = (await q(`select ${keys.join(',')} from ${table} where id=$1`, [id])).rows[0] || null;
     const set = keys.map((c, i) => `${c}=$${i + 1}`).join(',');
     await q(`update ${table} set ${set} where id=$${keys.length + 1}`, [...vals, id]);
+    await writeAudit({ req, actor, action: 'update', resourceType: table, resourceId: id, before, after: cols });
     return json(res, { ok: true });
   }
   if (req.method === 'DELETE') {
+    const before = (await q(`select * from ${table} where id=$1`, [id])).rows[0] || null;
     await q(`delete from ${table} where id=$1`, [id]);
+    await writeAudit({ req, actor, action: 'delete', resourceType: table, resourceId: id, before });
     return json(res, { ok: true });
   }
   return json(res, { error: 'Method not allowed' }, 405);

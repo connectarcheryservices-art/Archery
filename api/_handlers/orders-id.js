@@ -1,7 +1,7 @@
 // /api/orders/<id> — admin: get one / update status / delete.
 'use strict';
 const { cors, json, readBody } = require('../_lib/respond');
-const { checkAdmin } = require('../_lib/auth');
+const { checkAdmin, can } = require('../_lib/auth');
 const { q } = require('../_lib/db');
 const { rowToObj } = require('../_lib/crud');
 const { writeAudit } = require('../_lib/audit');
@@ -13,6 +13,7 @@ module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') return res.status(204).end();
   const actor = checkAdmin(req);
   if (!actor) return json(res, { error: 'Unauthorised' }, 401);
+  if (!can(actor, 'orders')) return json(res, { error: 'Your role does not have access to orders.' }, 403);
   const id = parseInt(req.query.id, 10);
   if (!Number.isFinite(id)) return json(res, { error: 'Bad id' }, 400);
   try {
