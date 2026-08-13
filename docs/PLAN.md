@@ -82,6 +82,23 @@ production just because it's in `supabase/migrations/` and works locally;
 verify against the live API (or ask for direct confirmation) before
 shipping code that depends on it.
 
+**Same day, fifth pass — Consumer Protection (E-Commerce) Rules 2020
+compliance shipped (commit `0a32c0c`).** Was flagged plainly as "Currently:
+none implemented" — closed the three concretely-specifiable pieces:
+grievance mechanism (`grievances` table, real filed_at/acknowledged_at/
+resolved_at with computed — never asserted — SLA-breach flags, public
+filing form on refund-policy.html, admin management panel), country of
+origin (`products.country_of_origin`, admin form field, product.html
+display), seller identity disclosure (product.html now shows the real
+seller business_name for an APPROVED seller via a new crud.js join — was
+captured since migration 006 but never displayed). **Still needs real
+business info, not code**: the Grievance Officer's actual name/contact go
+into Admin → Settings → Grievance Officer — flagged to the user directly,
+not fabricated. Verified: 21 API assertions + a full CDP browser pass
+(real filing, honest not-yet-designated state, admin panel showing the
+real complaint). Migration 043 needs manual application to production
+(same pattern as 037-042).
+
 **Same day, fourth pass — federation tier: rankings roll-up, member sync,
 communications board shipped (commit `96e0f04`).** The rankings engine
 already existed in full (api/_lib/ranking.js + scoring.js's record/
