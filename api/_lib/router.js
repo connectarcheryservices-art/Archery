@@ -86,6 +86,11 @@ module.exports = (req, res) => {
     }
     // Verified-purchase product reviews: /api/reviews?productId=N.
     if (r0 === 'reviews' && n === 1) return H('reviews')(req, res);
+    // Return/refund requests: /api/returns[?orderNo=N], /api/returns/<id>.
+    if (r0 === 'returns') {
+      if (n === 2) q.id = seg[1];
+      return H('returns')(req, res);
+    }
     // Seller accounts (admin): /api/sellers, /api/sellers/<id>
     if (r0 === 'sellers') {
       if (n === 2) q.id = seg[1];

@@ -410,6 +410,11 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
       Grievances
       <span class="badge-count badge-red" id="grievance-badge" style="display:none;">0</span>
     </button>
+    <button class="nav-item" onclick="showPanel('returns',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+      Returns
+      <span class="badge-count badge-red" id="returns-badge" style="display:none;">0</span>
+    </button>
 
     <div class="sidebar-section-label">System</div>
     <button class="nav-item" id="nav-team" onclick="showPanel('team',this);loadStaff();">
@@ -1212,6 +1217,18 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
         </div>
       </div>
       <div id="grievances-list"></div>
+    </div>
+
+    <!-- ── RETURN / REFUND REQUESTS ── -->
+    <div class="panel" id="panel-returns">
+      <div class="breadcrumb">Admin <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg> <span>Return Requests</span></div>
+      <div class="card" style="margin-bottom:14px;">
+        <div style="font-size:12.5px;color:var(--text-2);line-height:1.6;">
+          Marking a request <b>refunded</b> here records that a human processed the refund through Razorpay's own
+          dashboard — this panel does not itself move money.
+        </div>
+      </div>
+      <div id="returns-list"></div>
     </div>
 
     <!-- ── SHOP ORDERS ── -->
@@ -2357,6 +2374,38 @@ async function resolveGrievance(id,status){
   loadGrievances(); toast(status==='resolved'?'Marked resolved':'Rejected');
 }
 
+// ── RETURN / REFUND REQUESTS ──
+async function loadReturns(){
+  const data=await get('returns'); if(!Array.isArray(data))return;
+  setBadge('returns-badge', data.filter(r=>r.status==='requested').length);
+  const el=document.getElementById('returns-list'); if(!el)return;
+  if(!data.length){ el.innerHTML='<div class="card" style="color:var(--text-2);">No return requests.</div>'; return; }
+  el.innerHTML=data.map(r=>{
+    const badge = r.status==='requested' ? 'badge-pending' : r.status==='approved' ? 'badge-soon' : r.status==='refunded' ? 'badge-active' : r.status==='received' ? 'badge-soon' : 'badge-inactive';
+    const actions = r.status==='requested' ? `<button class="btn-edit" onclick="setReturnStatus(${r.id},'approved')">Approve</button><button class="btn-delete" onclick="setReturnStatus(${r.id},'rejected')">Reject</button>` :
+      r.status==='approved' ? `<button class="btn-edit" onclick="setReturnStatus(${r.id},'received')">Mark item received</button>` :
+      r.status==='received' ? `<button class="btn-edit" onclick="setReturnStatus(${r.id},'refunded')">Mark refunded</button>` : '';
+    return `<div class="card" style="margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:start;gap:12px;flex-wrap:wrap;">
+        <div>
+          <div style="font-family:'Oswald',sans-serif;font-size:14px;font-weight:600;color:var(--text);">#${r.id} — Order ${escA(r.orderNo)}</div>
+          <div style="font-size:12px;color:var(--text-2);margin-top:2px;">${escA(r.customerName||'')} · ${escA(r.customerEmail||'')} · order total ${escA(r.orderTotal)} · requested ${new Date(r.requestedAt).toLocaleString('en-IN')}</div>
+        </div>
+        <span class="td-badge ${badge}">${escA(r.status)}</span>
+      </div>
+      <div style="font-size:13px;color:var(--text);margin:10px 0;"><b>${escA(r.reason)}</b>${r.details?'<br>'+escA(r.details):''}</div>
+      ${r.notes?`<div style="font-size:12.5px;color:var(--text-2);border-left:2px solid var(--line);padding-left:10px;margin-bottom:10px;">${escA(r.notes)}</div>`:''}
+      <div style="display:flex;gap:8px;">${actions}</div>
+    </div>`;
+  }).join('');
+}
+async function setReturnStatus(id,status){
+  const notes = (status==='rejected') ? (prompt('Reason for rejecting:')||'') : '';
+  const r=await put('returns',id,{status,notes});
+  if(!r||r.error){ toast((r&&r.error)||'Could not update.'); return; }
+  loadReturns(); toast('Updated');
+}
+
 // ── KNOWLEDGE HUB (dynamic) ──
 async function loadKnowledge(){
   const data=await get('knowledge'); if(!Array.isArray(data))return;
@@ -2397,6 +2446,7 @@ function loadPanel(name){
   else if(name==='applications'){loadApplications();loadFederationTree();}
   else if(name==='chat'){loadChat();}
   else if(name==='grievances'){loadGrievances();}
+  else if(name==='returns'){loadReturns();}
   else if(name==='settings'){loadSettings();}
   else if(name==='announcements'){loadSettings();}
   else if(name==='analytics'){loadAnalytics();}
@@ -2687,7 +2737,7 @@ async function testMail(){
 async function toggleStaff(id,active){ const r=await put('staff',id,{active:!active}); if(!r||r.error){ toast((r&&r.error)||'Could not update.'); return; } loadStaff(); toast('Updated'); }
 async function delStaff(id){ const s=STAFF_CACHE.find(x=>String(x.id)===String(id)); if(!confirm('Remove '+(s?s.name:'this team member')+'? They will lose access immediately.'))return; const r=await del('staff',id); if(!r||r.error){ toast((r&&r.error)||'Could not remove them.'); return; } loadStaff(); toast('Removed'); }
 
-function boot(){ applyRole(); loadStats(); loadDashboard(); loadOrders(); loadRegistrations(); loadReports(); loadApplications(); loadChat(); loadGrievances(); }
+function boot(){ applyRole(); loadStats(); loadDashboard(); loadOrders(); loadRegistrations(); loadReports(); loadApplications(); loadChat(); loadGrievances(); loadReturns(); }
 if(AUTH_TOKEN){ hideLogin(); boot(); } else { showLogin(); }
 </script>
 </body>

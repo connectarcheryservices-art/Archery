@@ -25,6 +25,7 @@
 </style>
 </head>
 <body>
+<script src="esc.js"></script>
 <script>(function(){var s=document.createElement('script');s.src='nav.js';document.head.appendChild(s);})();</script>
 
 <div class="page-hero">
@@ -42,6 +43,7 @@
     <a href="#nonreturnable">Non-returnable items</a>
     <a href="#tournaments">Tournament registrations</a>
     <a href="#contact">How to request a refund</a>
+    <a href="#return-tracker">Track a return</a>
     <a href="#grievance">Grievance Officer</a>
   </nav>
   <div class="legal-body reveal">
@@ -78,7 +80,27 @@
     <h2 id="contact">7. How to Request a Refund</h2>
     <p>Write to us at <a href="mailto:shop@archery.services">shop@archery.services</a> or use the <a href="contact.html">contact form</a> / on-site chat, quoting your order number. We respond to refund requests within 2 business days.</p>
 
-    <h2 id="grievance">8. Grievance Officer</h2>
+    <h2 id="return-tracker">8. Track or Request a Return</h2>
+    <p>Have your order number ready (from your confirmation email). Filing here creates a real, tracked request our team reviews — it's the same request Section 2 describes, with a status you can check back on.</p>
+    <form id="return-form" style="display:grid;gap:10px;max-width:480px;margin:14px 0;font-family:'Inter',sans-serif;">
+      <input id="rt-order" placeholder="Order number (e.g. ARC-...)" required style="padding:11px 13px;border-radius:7px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.03);color:inherit;font:inherit;">
+      <select id="rt-reason" required style="padding:11px 13px;border-radius:7px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.03);color:inherit;font:inherit;">
+        <option value="">Reason for return</option>
+        <option value="Changed my mind">Changed my mind</option>
+        <option value="Wrong item received">Wrong item received</option>
+        <option value="Damaged or defective">Damaged or defective</option>
+        <option value="Other">Other</option>
+      </select>
+      <textarea id="rt-details" rows="3" placeholder="Details (optional)" style="padding:11px 13px;border-radius:7px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.03);color:inherit;font:inherit;resize:vertical;"></textarea>
+      <button type="submit" style="padding:12px 18px;border-radius:7px;border:none;background:var(--ember,#C9622A);color:#fff;font-weight:600;cursor:pointer;">Request a return</button>
+      <div id="rt-status" style="font-size:13px;"></div>
+    </form>
+    <div style="max-width:480px;">
+      <button id="rt-check-btn" type="button" style="background:none;border:none;color:var(--ember-light);text-decoration:underline;cursor:pointer;padding:0;font-size:13px;">Already requested? Check status</button>
+      <div id="rt-check-result" style="margin-top:8px;font-size:13px;"></div>
+    </div>
+
+    <h2 id="grievance">9. Grievance Officer</h2>
     <p>Per the Consumer Protection (E-Commerce) Rules 2020, complaints filed below are acknowledged within <strong>48 hours</strong> of receipt and resolved within <strong>one month</strong>.</p>
     <div id="grievance-officer-block" style="background:rgba(255,255,255,.03);border:1px solid var(--line,rgba(255,255,255,.08));border-radius:10px;padding:16px 18px;margin:14px 0 22px;font-family:'Inter',sans-serif;font-size:13.5px;">Loading…</div>
 
@@ -107,6 +129,46 @@ fetch('/api/settings').then(r=>r.json()).then(s=>{
     el.textContent = 'A Grievance Officer has not yet been designated. Complaints filed below still reach our team and are tracked against the same acknowledgement/resolution timelines.';
   }
 }).catch(()=>{ document.getElementById('grievance-officer-block').textContent = 'Grievance Officer details are temporarily unavailable.'; });
+
+document.getElementById('return-form').addEventListener('submit', async function(e){
+  e.preventDefault();
+  const statusEl = document.getElementById('rt-status');
+  statusEl.textContent = 'Sending…'; statusEl.style.color = '';
+  try {
+    const r = await fetch('/api/returns', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({
+      orderNo: document.getElementById('rt-order').value,
+      reason: document.getElementById('rt-reason').value,
+      details: document.getElementById('rt-details').value,
+    })}).then(x=>x.json());
+    if (r && r.ok) {
+      statusEl.style.color = '#3FB27F';
+      statusEl.textContent = 'Return request received (#' + r.id + '). We\'ll review it and follow up by email.';
+      document.getElementById('return-form').reset();
+    } else {
+      statusEl.style.color = '#D9534F';
+      statusEl.textContent = (r && r.error === 'Unauthorised') ? 'We could not find that order number — please double-check it.' : ((r && r.error) || 'Could not submit your request — please email shop@archery.services instead.');
+    }
+  } catch (err) {
+    statusEl.style.color = '#D9534F';
+    statusEl.textContent = 'Could not submit your request — please email shop@archery.services instead.';
+  }
+});
+document.getElementById('rt-check-btn').addEventListener('click', async function(){
+  const orderNo = prompt('Enter your order number:');
+  if (!orderNo) return;
+  const resultEl = document.getElementById('rt-check-result');
+  resultEl.textContent = 'Checking…';
+  try {
+    const rows = await fetch('/api/returns?orderNo=' + encodeURIComponent(orderNo)).then(r=>r.json());
+    if (!Array.isArray(rows)) { resultEl.style.color = '#D9534F'; resultEl.textContent = 'We could not find that order number.'; return; }
+    if (!rows.length) { resultEl.style.color = ''; resultEl.textContent = 'No return request found for that order.'; return; }
+    resultEl.style.color = '';
+    resultEl.innerHTML = rows.map(r => `<div>#${esc(r.id)} — <b>${esc(r.status)}</b> (requested ${new Date(r.requestedAt).toLocaleDateString('en-IN')})${r.notes ? '<br>Note: '+esc(r.notes) : ''}</div>`).join('');
+  } catch (e) {
+    resultEl.style.color = '#D9534F';
+    resultEl.textContent = 'Could not check status right now.';
+  }
+});
 
 document.getElementById('grievance-form').addEventListener('submit', async function(e){
   e.preventDefault();

@@ -527,7 +527,17 @@ been run as a live tournament by a real federation yet, and isn't deployed to pr
       platform as supplier of record — a documented simplification, not a silent gap).
 - [ ] Order lifecycle, returns, refunds, shipping; courier restrictions on archery equipment
       (investigate state-level constraints).
-- [ ] Server-side recommendations from **aggregate real** behaviour; **under-18s excluded**.
+- [x] Recommendations from **aggregate real** behaviour; **under-18s excluded**. Corrected
+      2026-08-13: this was checked as not-done, but `reco.js` already fully implements it —
+      on-device scoring from real tracked views/searches/cart/wishlist (co-view lift, category/
+      price affinity, exponential decay), a real server-side trending fallback
+      (`/api/products?sort=trending`, computed from genuinely logged `analytics_events`
+      product_views, not invented), and `isSignedInMinor()` gating EVERY track/score/rank
+      function — a signed-in minor gets zero personalisation, by construction, cited to
+      CLAUDE.md §1.8/DPDP s.9(3) in the file's own header comment. Real gap, left open: an
+      anonymous/signed-out visitor has no age signal at all, so this can't (and doesn't try to)
+      exclude them — already documented as such in `reco.js` itself and tracked in
+      THREAT_MODEL.md.
 - [ ] Reviews **only from verified purchases**.
 
 **Gate:** a real order ships, is **GST-correct**, can be returned, and **every number traces to
