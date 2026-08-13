@@ -205,20 +205,18 @@ const CAT_META = {
   'Risers':['riser','#A855F7'], 'Accessories':['tab','#F97316'],
   'Protective Gear':['guard','#14B8A6'], 'Maintenance':['kit','#22C55E'],
 };
-const CATALOG = [
-  {id:1,name:'Pro Recurve Bow — 68" 36lbs',brand:'Recurve Bows',category:'Recurve Bows',price:24500,was:29900,stock:14,icon:'recurve',color:'#C9A227',bg:'#17181D'},
-  {id:2,name:'Carbon Compound Bow — 60lbs Draw',brand:'Compound Bows',category:'Compound Bows',price:42000,was:null,stock:6,icon:'compound',color:'#22C55E',bg:'#17181D'},
-  {id:3,name:'Aluminium Arrow Set — 12pcs Spine 400',brand:'Arrows',category:'Arrows',price:3200,was:3800,stock:47,icon:'arrows',color:'#1F3E9C',bg:'#17181D'},
-  {id:4,name:'Competition Target Face — 80cm WA',brand:'Targets',category:'Targets',price:850,was:960,stock:200,icon:'target',color:'#D22730',bg:'#17181D'},
-  {id:5,name:'Olympic Recurve Riser — Carbon ILF',brand:'Risers',category:'Risers',price:68000,was:78000,stock:3,icon:'riser',color:'#A855F7',bg:'#17181D'},
-  {id:6,name:'Finger Tab — Pro Leather Right Hand',brand:'Accessories',category:'Accessories',price:1200,was:null,stock:32,icon:'tab',color:'#F97316',bg:'#17181D'},
-  {id:7,name:'Bowstand Foldable — Carbon Fibre',brand:'Accessories',category:'Accessories',price:2800,was:3200,stock:25,icon:'stand',color:'#C9A227',bg:'#17181D'},
-  {id:8,name:'Carbon Arrow Set — 12pcs Spine 500 ACE',brand:'Arrows',category:'Arrows',price:8400,was:9200,stock:40,icon:'arrows',color:'#EC4899',bg:'#17181D'},
-  {id:9,name:'Arm Guard — Full Length Leather',brand:'Protective Gear',category:'Protective Gear',price:650,was:null,stock:60,icon:'guard',color:'#14B8A6',bg:'#17181D'},
-  {id:10,name:'Recurve Sight — Olympic 4-Pin',brand:'Accessories',category:'Accessories',price:12500,was:15000,stock:12,icon:'sight',color:'#1F3E9C',bg:'#17181D'},
-  {id:11,name:'String Wax & Maintenance Kit',brand:'Maintenance',category:'Maintenance',price:380,was:null,stock:90,icon:'kit',color:'#22C55E',bg:'#17181D'},
-  {id:12,name:'Long Rod Stabiliser — 28" Carbon',brand:'Accessories',category:'Accessories',price:5600,was:6500,stock:18,icon:'rod',color:'#C9A227',bg:'#17181D'},
-];
+// Real catalogue for "related/recently viewed/recommended" strips — fetched
+// from /api/products at boot (see the main IIFE below), same endpoint
+// shop.html uses. Fixed 2026-08-13: this used to be 12 HARDCODED fake
+// products (fake names, prices, stock counts) — CLAUDE.md §1.1. The
+// PRIMARY product shown on this page was already fixed to be real-only on
+// 2026-07-16 (see that fix's comment lower in this file), but that pass
+// only touched `p`/`CURRENT`, not this array — every "related products"/
+// "recently viewed"/"recommended for you" strip was still drawing from the
+// fake list regardless. If there aren't enough real products to fill a
+// strip, it shows fewer (or none) — an honest gap, never backfilled with
+// invented rows.
+let CATALOG = [];
 
 function hexToRgb(hex){const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return `${r},${g},${b}`;}
 function getProductSVG(icon,color){const o={
@@ -462,6 +460,21 @@ function populateReco(){
     }
   }catch(e){}
   if(!p){ notFound(); return; }
+  // Real catalogue for related/recently-viewed/recommended strips — see
+  // CATALOG's own comment above. Fetched once, before render(), since
+  // render() builds the "related products" strip synchronously from it.
+  try{
+    const list=await fetch('/api/products').then(r=>r.ok?r.json():[]);
+    if(Array.isArray(list)){
+      CATALOG=list.map(x=>{
+        const meta=CAT_META[x.category]||['recurve','#C9A227'];
+        return {id:Number(x.id),name:x.name,brand:x.brand||x.category||'',category:x.category||'',
+          price:Number(x.price)||0,was:x.was?Number(x.was):null,
+          stock:x.stock!=null?Number(x.stock):null,imgUrl:x.imgUrl||null,
+          icon:meta[0],color:meta[1],bg:'#17181D'};
+      });
+    }
+  }catch(e){}
   CURRENT=p;
   render(p);
   populateReco();
