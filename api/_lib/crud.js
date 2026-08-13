@@ -94,6 +94,19 @@ async function listOrCreate(table, req, res) {
       // (age-category/contact purposes); the public site never did and
       // never should (CLAUDE.md §1.8).
       if (table === 'athletes' && !admin) for (const o of objs) { delete o.dob; delete o.email; }
+      // athletes.club_id (migration 038) is an FK, not a display name — a
+      // separate lookup rather than joining it into the main query above,
+      // so the shared query-builder's WHERE/ORDER clauses (which assume
+      // unqualified column names) don't collide with `clubs` having its
+      // own `active`/`name` columns.
+      if (table === 'athletes') {
+        const clubIds = [...new Set(objs.map(o => o.clubId).filter(Boolean))];
+        if (clubIds.length) {
+          const cr = await q('select id, name from clubs where id = any($1)', [clubIds]);
+          const nameById = new Map(cr.rows.map(c => [String(c.id), c.name]));
+          for (const o of objs) o.clubName = o.clubId ? (nameById.get(String(o.clubId)) || null) : null;
+        }
+      }
       return json(res, objs);
     } catch (e) {
       // DB unavailable: fail loudly. Previously this served seed rows, i.e. a
@@ -134,6 +147,10 @@ async function itemOps(table, id, req, res) {
     if (table === 'profiles' && !(await filterUnconsentedMinorProfiles([row])).length) return json(res, { error: 'Not found' }, 404);
     const obj = rowToObj(row);
     if (table === 'athletes' && !admin) { delete obj.dob; delete obj.email; } // see listOrCreate's note
+    if (table === 'athletes' && obj.clubId) {
+      const cr = await q('select name from clubs where id=$1', [obj.clubId]);
+      obj.clubName = cr.rows[0] ? cr.rows[0].name : null;
+    }
     return json(res, obj);
   }
   const actor = await checkAdmin(req);

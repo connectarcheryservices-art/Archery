@@ -200,7 +200,7 @@ fetch('/api/athletes')
     // headed "rankings" (CLAUDE.md §1.1). Position is the row number within the
     // current filter, labelled as such; it is NOT a ranking.
     const sorted=data.slice().sort((a,b)=>(Number(b.pb)||0)-(Number(a.pb)||0));
-    sorted.forEach((a,i)=>{const[c,bg]=PAL[i%4];ATHLETES.push({pos:i+1,disc:a.discipline||'',init:(a.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase(),name:a.name,state:a.state||'',club:a.club||'',pb:a.pb||null,color:c,bg:bg,img:a.imgUrl});});
+    sorted.forEach((a,i)=>{const[c,bg]=PAL[i%4];ATHLETES.push({pos:i+1,disc:a.discipline||'',init:(a.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase(),name:a.name,state:a.state||'',club:a.clubName||'',pb:a.pb||null,color:c,bg:bg,img:a.imgUrl});});
     renderHeroCard(sorted[0]);
   } else { renderHeroCard(null); } filterAthletes('');})
   .catch(()=>{ ATHLETES.length=0; renderHeroCard(null); filterAthletes(''); });

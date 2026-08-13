@@ -450,6 +450,18 @@ seller-marketplace/Consumer-Protection-Rules items above are still open.
       audit rows despite being a mutation endpoint — fixed in the same pass (§1.5 has no
       exceptions). Attendance, scheduling, coach assignment, and finance are still **not** built.
       Tested: `club-federation-test.js` + `club-federation-ui-test.js`, 33 assertions, all green.
+      **2026-08-13: `athletes.club_id` now exists and is wired end to end** (migration 038, built
+      alongside the scoring bridge above) — `athletes.html`'s club display was dead code before
+      this (rendered `a.club`, a field the API never returned; only ever blank for real data,
+      confirmed by the comment already in that file about the fabricated-data cleanup that left
+      it behind). Admin can set a club on create (a real `<select>` populated from `/api/clubs`,
+      never a static list) and on edit; `api/_lib/crud.js` joins the club name into both the
+      athletes list and single-item read (a separate lookup, not folded into the shared
+      query-builder's WHERE/ORDER SQL, since `clubs` has its own colliding `active`/`name`
+      columns). Verified end-to-end: real club + athlete created via the API, club name correctly
+      visible to both admin and public reads (club affiliation isn't PII, unlike the `dob`/`email`
+      columns added in the same migration), CDP-verified the admin dropdown and `athletes.html`
+      both render it live. Full regression suite re-run clean.
 - [~] Coaching: **consent-based coach-athlete linking is real** (migration 024 — either side can
       initiate, the other must accept, either can revoke). **Licensing is now real too**
       (2026-08-12, migration 032): a separate `coach_certifications` table, not a reuse of

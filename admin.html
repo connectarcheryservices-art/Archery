@@ -560,6 +560,7 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
           <div class="form-group"><label class="form-label">Full Name</label><input class="form-input" id="a-name" placeholder="Full Name"></div>
           <div class="form-group"><label class="form-label">State</label><input class="form-input" id="a-state" placeholder="State"></div>
           <div class="form-group"><label class="form-label">Discipline</label><select class="form-select" id="a-disc"><option>Recurve Open</option><option>Compound Open</option><option>Barebow</option><option>Para Recurve</option></select></div>
+          <div class="form-group"><label class="form-label">Club (optional)</label><select class="form-select" id="a-club"><option value="">No club</option></select></div>
           <div class="form-group"><label class="form-label">National Rank</label><input class="form-input" id="a-rank" type="number" placeholder="1"></div>
           <div class="form-group"><label class="form-label">Personal Best Score</label><input class="form-input" id="a-pb" type="number" placeholder="687"></div>
         </div>
@@ -1479,7 +1480,7 @@ async function loadAthletes(){
   document.getElementById('athletes-tbody').innerHTML = data.map(a=>`
     <tr>
       <td>#${escA(a.rank)}</td>
-      <td class="td-name">${escA(a.name)}</td>
+      <td class="td-name">${escA(a.name)}${a.clubName?`<br><span style="color:var(--text-2);font-size:11px;">${escA(a.clubName)}</span>`:''}</td>
       <td>${escA(a.state)}</td>
       <td>${escA(a.discipline)}</td>
       <td>${escA(a.pb)}</td>
@@ -1489,10 +1490,20 @@ async function loadAthletes(){
         <button class="btn-delete" onclick="deleteItem('athletes',${a.id})">Remove</button>
       </td>
     </tr>`).join('');
+  // Populate the club dropdown from the REAL clubs directory (never a
+  // static/fabricated list — CLAUDE.md §1.1) whenever the panel loads.
+  const clubSel = document.getElementById('a-club');
+  if (clubSel) {
+    const clubs = await get('clubs');
+    if (Array.isArray(clubs)) {
+      clubSel.innerHTML = '<option value="">No club</option>' + clubs.map(c=>`<option value="${c.id}">${escA(c.name)}</option>`).join('');
+    }
+  }
 }
 
 async function saveAthlete(){
-  const d={name:document.getElementById('a-name').value,state:document.getElementById('a-state').value,discipline:document.getElementById('a-disc').value,rank:+document.getElementById('a-rank').value,pb:+document.getElementById('a-pb').value,active:true};
+  const clubId = document.getElementById('a-club').value;
+  const d={name:document.getElementById('a-name').value,state:document.getElementById('a-state').value,discipline:document.getElementById('a-disc').value,clubId:clubId?+clubId:null,rank:+document.getElementById('a-rank').value,pb:+document.getElementById('a-pb').value,active:true};
   if(!d.name){return;}
   const r=await post('athletes',d);
   if(!r||r.error){ toast((r&&r.error)||'Could not add the athlete.'); return; }
@@ -2340,7 +2351,7 @@ function loadPanel(name){
 const EDIT_SCHEMA={
   products:[{k:'name',l:'Name'},{k:'brand',l:'Brand'},{k:'category',l:'Category'},{k:'price',l:'Price (₹)',t:'number'},{k:'was',l:'Was / MRP (₹)',t:'number'},{k:'stock',l:'Stock',t:'number'},{k:'hsnCode',l:'HSN Code'},{k:'gstRate',l:'GST Rate (decimal, e.g. 0.05 = 5%)',t:'number'},{k:'description',l:'Description',t:'area'},{k:'imgUrl',l:'Product photo',t:'image'},{k:'active',l:'Visible in shop',t:'bool'}],
   tournaments:[{k:'name',l:'Name'},{k:'date',l:'Date',t:'date'},{k:'location',l:'Location'},{k:'prize',l:'Prize pool (₹)',t:'number'},{k:'slots',l:'Slots',t:'number'},{k:'registered',l:'Registered',t:'number'},{k:'status',l:'Status',t:'select',opts:['open','soon','live','done']},{k:'active',l:'Visible',t:'bool'}],
-  athletes:[{k:'name',l:'Name'},{k:'state',l:'State'},{k:'discipline',l:'Discipline'},{k:'rank',l:'Rank',t:'number'},{k:'pb',l:'Personal best',t:'number'},{k:'imgUrl',l:'Photo',t:'image'},{k:'active',l:'Active',t:'bool'}],
+  athletes:[{k:'name',l:'Name'},{k:'state',l:'State'},{k:'discipline',l:'Discipline'},{k:'clubId',l:'Club ID (see the Clubs panel; blank = no club)',t:'number'},{k:'rank',l:'Rank',t:'number'},{k:'pb',l:'Personal best',t:'number'},{k:'imgUrl',l:'Photo',t:'image'},{k:'active',l:'Active',t:'bool'}],
   jobs:[{k:'title',l:'Title'},{k:'org',l:'Organisation'},{k:'location',l:'Location'},{k:'type',l:'Type'},{k:'salary',l:'Salary'},{k:'description',l:'Description',t:'area'},{k:'active',l:'Open',t:'bool'}],
   knowledge:[{k:'title',l:'Title'},{k:'category',l:'Category'},{k:'level',l:'Level'},{k:'readTime',l:'Read time'},{k:'excerpt',l:'Excerpt',t:'area'},{k:'body',l:'Body',t:'area'},{k:'published',l:'Published',t:'bool'},{k:'active',l:'Active',t:'bool'}],
   news:[{k:'title',l:'Title'},{k:'category',l:'Category'},{k:'date',l:'Date',t:'date'},{k:'excerpt',l:'Excerpt',t:'area'},{k:'imgUrl',l:'Cover photo',t:'image'},{k:'active',l:'Visible',t:'bool'}],
