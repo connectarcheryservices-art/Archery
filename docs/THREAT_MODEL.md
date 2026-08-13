@@ -382,6 +382,99 @@ are all rejected (404); a swept range of 6 sequential ids around a real thread l
 the token is never echoed back in any GET response or in the admin list view; the admin panel's
 list/read/reply/mark-read flow is unaffected.
 
+### T16 — External audit findings, 2026-08-13 · **CRITICAL** (two of six)
+An external security audit of the working tree (before any deploy/merge) reported six findings.
+Every one was independently re-verified against the actual code — not accepted on the audit's
+word — before being fixed, per CLAUDE.md §6 ("verify, don't assume"). One additional gap
+(#7 below) was found independently while verifying #6's test failures.
+
+1. **CRITICAL — predictable fallback signing secrets permitted token forgery.**
+   `api/_lib/userauth.js` and `api/_lib/auth.js` fell back to a **fixed, public string**
+   (`'user-token-secret-not-configured'` / `'session-secret-not-configured'` — literally in this
+   public repo) when `USER_TOKEN_SECRET`/`SESSION_SECRET` were unset, while their own comments
+   claimed an unconfigured deployment "fails safe." It did not: anyone could compute a valid HMAC
+   for a forged `{id: <any user id>}` (userauth.js) or `{sid: <any staff id>}` (auth.js) claim
+   against a misconfigured deployment. Owner-role forgery had a real gate
+   (`if (!process.env.ADMIN_PASSWORD) return null`), but **staff-role forgery did not** — and a
+   forged token for a `role:'manager'` staff row grants full owner-equivalent capability via
+   `can()`. `.env.example` never listed either var, making the misconfiguration easy to hit.
+   **Fixed**: `secret()`/`SESSION_SECRET()` now return `null` when unset; `sign()` throws (loud,
+   not silently forgeable) and `verify()`/`verifyToken()` return `null` (reject **everything**) —
+   a real fail-closed default: nobody can be authenticated, not everybody. Both vars added to
+   `.env.example` with a comment explaining the fail-closed behaviour. The dead, never-called
+   `ADMIN_PW()` (same stale fallback pattern, unused) removed from auth.js.
+
+2. **CRITICAL — any staff role could rewrite global settings, including a persistent XSS payload.**
+   `api/_handlers/resource.js`'s settings `PUT` checked only `checkAdmin(req)` ("is *some* staff
+   logged in"), never `can(actor, 'settings')` — even though `can()` already names `'settings'` as
+   owner/manager-only in its own comment. A `support`/`editor` account could set
+   `announcementText`, which `shared.js` inserted via `banner.innerHTML = text + '<button…'` on
+   **every page** — a site-wide stored-XSS vector reachable by the lowest-privilege staff tier,
+   directly violating CLAUDE.md §1.7. **Fixed**: `resource.js` now calls `can(actor, 'settings')`
+   and returns 403 for anyone it disallows. Independently hardened the sink too (defense in depth
+   — a compromised owner/manager session shouldn't become site-wide XSS either): the banner is
+   now built with `textContent` + a real `<button>` element via `addEventListener`, never
+   `innerHTML`, matching CLAUDE.md §1.7's stated preference order exactly.
+
+3. **HIGH — vulnerable production dependencies.** `nodemailer` 6.10.1 carried a high-severity DoS
+   plus SMTP/header/SSRF-adjacent advisories; `@anthropic-ai/sdk` 0.88.x carried a moderate one.
+   **Fixed**: upgraded to `nodemailer@9.0.5` / `@anthropic-ai/sdk@0.116.0` after confirming (via
+   the nodemailer changelog) no breaking change touches this codebase's usage — `createTransport`
+   options, `verify()`, `sendMail()` signatures are unchanged across the range, and this code
+   already explicitly sets `tls.rejectUnauthorized` rather than relying on any default that
+   shifted. `npm audit` now reports 0 vulnerabilities.
+
+4. **MEDIUM — unauthenticated club-membership calls revealed club existence.**
+   `api/_handlers/club-members.js`'s `POST` looked up the target club **before** checking auth,
+   so an unauthenticated caller could distinguish a real `clubId` (401) from a fake one (404) with
+   no credential at all. **Fixed**: auth now runs first for `POST` (the existence check doesn't
+   need to happen first — `requireStaffOrClubAdmin` works fine against a nonexistent id). `PUT`/
+   `DELETE` have the mirror problem in a narrower form (their own row lookup is *structurally*
+   required first, to learn which club scopes the auth check) — fixed there by returning the
+   **same** 404 for "no such member" and "not authorised" instead of 401, collapsing the oracle
+   rather than reordering, matching the pattern already used for `chat.js` (T15 above). A written
+   test (`clubs.test.js`) had already encoded the *intended* (auth-first) behaviour and was
+   failing against the *actual* code — independent confirmation this was a real, not theoretical, gap.
+
+5. **MEDIUM — a legacy script crashed with `ReferenceError: CA is not defined`.** Root `migrate.js`
+   (a pre-Supabase "seed Neon from data.json" script) referenced an undefined `CA` in its TLS
+   config. **Fixed by deletion, not patching** — confirmed dead first: not referenced by
+   `package.json`'s scripts or any other file in the repo; `DEPLOY.md:95` already documents
+   `data.json` as unused since the Supabase migration; both are gitignored. This matches ADR-0001's
+   precedent (`local-server.js` was deleted outright, not patched, as dead/dangerous legacy code) —
+   migrations are `supabase/migrations/` only, applied via `supabase/apply.js` (CLAUDE.md §4).
+
+6. **Test suite: 2 of 6 suites failing.** `ai.test.js` — the DB-backed revocation check
+   (`authedUserChecked()`, migration 019) was added after the test's fake `q` was written, so
+   `select token_valid_after from users where id=$1` fell through to an empty-rows default and
+   every authenticated call looked revoked (401). `clubs.test.js` — the `DELETE` handler's actual
+   lookup query (`select id, club_id, name, member_role from club_members where id=$1`) was never
+   mocked (only the *list* query, a different `SELECT`, was), so `existing` was always `undefined`
+   and every delete 404'd. **Fixed**: both fakes now match the handlers' real queries. Full suite:
+   6/6 green, 170+ assertions.
+
+7. **Found independently while verifying #6 — test doubles silently hid untested money-code.**
+   `test/helpers.js`'s `stubDb()` replaced `db.js`'s entire module exports with `{q, pool}`,
+   omitting `withTransaction` (added for the GST invoice-numbering fix, itself an earlier
+   2026-08-13 adversarial-review finding — see `api/_lib/payments.js`'s own comment). Every
+   transactional code path — invoice minting, scoring, selection, the registration bridge — threw
+   `"withTransaction is not a function"` under test, caught by each caller's own try/catch and
+   never asserted on, so the suite looked green while the invoice-numbering path (CGST Rule
+   46(b) — a real legal requirement) was completely unexercised in `payments.test.js`. **Fixed**:
+   `stubDb()` now also fakes `withTransaction(fn)` by calling `fn({query: (sql,p) => q(sql,p)})`
+   (adequate since these fakes have no real transactional semantics to roll back anyway).
+   `payments.test.js` gained real fake-DB cases for the invoice-mint queries and two new
+   assertions: a real, correctly-formatted, sequential invoice number is minted on a successful
+   payment (`AS/FY/000001`), and a duplicate webhook delivery neither reissues nor re-burns a
+   sequence number.
+
+Verified end-to-end against the local dev stack after all fixes (`security-audit-fix-test.js`):
+owner login and owner settings-write still work; a freshly created `support`-role staff account
+is rejected (403) attempting the exact XSS payload from finding #2, and the settings row is
+provably unchanged; an unauthenticated `club-members` POST against a nonexistent club now returns
+401 (not 404); a token forged with finding #1's old fallback secret string is rejected (401) now
+that a real, distinct secret is configured.
+
 ---
 
 ## 4. Non-goals (v1)

@@ -739,7 +739,18 @@
         const banner = document.createElement('div');
         banner.id = 'announcement-banner';
         banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:var(--gold);color:var(--ink);text-align:center;padding:8px 40px;font-size:13px;font-weight:600;';
-        banner.innerHTML = s.announcementText + ' <button onclick="this.parentElement.remove()" style="position:absolute;right:16px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:18px;cursor:pointer;color:var(--ink);">×</button>';
+        // CLAUDE.md §1.7: settings.announcementText is admin-authored, but a
+        // compromised staff session (or a settings write that slips past the
+        // capability gate) must not turn this into site-wide innerHTML XSS —
+        // built with textContent, not string-concatenated into innerHTML.
+        const textEl = document.createElement('span');
+        textEl.textContent = s.announcementText;
+        banner.appendChild(textEl);
+        const closeBtn = document.createElement('button');
+        closeBtn.textContent = '×';
+        closeBtn.style.cssText = 'position:absolute;right:16px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:18px;cursor:pointer;color:var(--ink);';
+        closeBtn.addEventListener('click', () => banner.remove());
+        banner.appendChild(closeBtn);
         document.body.prepend(banner);
         if (nav) nav.style.top = '36px';
       }

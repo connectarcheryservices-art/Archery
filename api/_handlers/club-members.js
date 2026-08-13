@@ -66,12 +66,19 @@ module.exports = async (req, res) => {
       if (!clubId) return json(res, { error: 'A clubId is required.' }, 400);
       if (!name) return json(res, { error: 'A member name is required.' }, 400);
 
+      // Fixed 2026-08-13 (audit finding): the club-existence lookup used to
+      // run BEFORE auth, so an unauthenticated caller could probe arbitrary
+      // clubIds and tell which exist from the 404-vs-401 response alone —
+      // an enumeration oracle with no credential required. requireStaffOrClub
+      // Admin() works fine against a nonexistent clubId (isClubAdmin just
+      // returns false), so auth can — and now does — run first.
+      const actor = await requireStaffOrClubAdmin(req, clubId);
+      if (!actor) return json(res, { error: 'Unauthorised' }, 401);
+
       // The club must exist — no orphan members.
       const club = (await q('select id from clubs where id=$1', [clubId])).rows[0];
       if (!club) return json(res, { error: 'That club does not exist.' }, 404);
 
-      const actor = await requireStaffOrClubAdmin(req, clubId);
-      if (!actor) return json(res, { error: 'Unauthorised' }, 401);
       const requestedRole = ROLES.includes(b.memberRole) ? b.memberRole : 'archer';
       if (requestedRole === 'admin' && !(await checkAdmin(req))) {
         return json(res, { error: 'Only staff can grant the club-admin role.' }, 403);
@@ -99,7 +106,13 @@ module.exports = async (req, res) => {
       const existing = (await q('select id, club_id, status, discipline, member_role from club_members where id=$1', [parseInt(id, 10)])).rows[0];
       if (!existing) return json(res, { error: 'Not found' }, 404);
       const actor = await requireStaffOrClubAdmin(req, existing.club_id);
-      if (!actor) return json(res, { error: 'Unauthorised' }, 401);
+      // Same shape as chat.js's fix (2026-08-13): the member row must be
+      // looked up before auth can even be evaluated (its club_id is the
+      // scope), so — unlike POST above — this lookup can't be deferred.
+      // Returning the SAME 404 for "no such member" and "not authorised"
+      // avoids turning that into an existence oracle for a roster this
+      // codebase's own header comment says is "NEVER public" (CLAUDE.md §1.8).
+      if (!actor) return json(res, { error: 'Not found' }, 404);
       const b = readBody(req);
       if (b.memberRole === 'admin' && !(await checkAdmin(req))) {
         return json(res, { error: 'Only staff can grant the club-admin role.' }, 403);
@@ -121,7 +134,8 @@ module.exports = async (req, res) => {
       const existing = (await q('select id, club_id, name, member_role from club_members where id=$1', [parseInt(id, 10)])).rows[0];
       if (!existing) return json(res, { error: 'Not found' }, 404);
       const actor = await requireStaffOrClubAdmin(req, existing.club_id);
-      if (!actor) return json(res, { error: 'Unauthorised' }, 401);
+      // Same 404-not-401 reasoning as PUT above.
+      if (!actor) return json(res, { error: 'Not found' }, 404);
       await q('delete from club_members where id=$1', [parseInt(id, 10)]);
       await writeAudit({ req, actor, action: 'delete', resourceType: 'club_members', resourceId: parseInt(id, 10),
         before: { name: existing.name, memberRole: existing.member_role } });

@@ -10,34 +10,47 @@
 // and anyone who learned the admin password could mint a token for ANY user
 // id. Tokens also never expired and had no server-side revocation.
 //
-// Now: a dedicated USER_TOKEN_SECRET (falls back to a fixed non-secret marker
-// when unconfigured, never to ADMIN_PASSWORD or any human-chosen password —
-// an unconfigured deployment fails safe, not shared), a 30-day expiry claim,
-// and a DB-backed revocation check (`users.token_valid_after`, migration 019)
-// so a password reset or explicit logout invalidates existing tokens even
-// though the stateless signature would otherwise still verify.
+// Now: a dedicated USER_TOKEN_SECRET (never ADMIN_PASSWORD or any
+// human-chosen password), a 30-day expiry claim, and a DB-backed revocation
+// check (`users.token_valid_after`, migration 019) so a password reset or
+// explicit logout invalidates existing tokens even though the stateless
+// signature would otherwise still verify.
+//
+// Fixed 2026-08-13 (audit finding): the "unconfigured deployment fails safe"
+// claim above used to be false — an unset USER_TOKEN_SECRET fell back to the
+// FIXED STRING 'user-token-secret-not-configured', which is public (it's in
+// this file, in a public repo) rather than a secret. Anyone could compute a
+// valid HMAC for a forged {id: <any user id>} claim against a misconfigured
+// deployment and mint a session for any user — the opposite of failing safe.
+// Now an unconfigured secret makes verifyToken() reject EVERY token (nobody
+// can be authenticated) and sign() refuse to mint one at all (loud failure,
+// not a silent forgeable one) — a real fail-closed default.
 'use strict';
 const crypto = require('crypto');
 
-const secret = () => process.env.USER_TOKEN_SECRET || 'user-token-secret-not-configured';
+const secret = () => process.env.USER_TOKEN_SECRET || null;
 
 const TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
 function sign(user) {
+  const key = secret();
+  if (!key) throw new Error('USER_TOKEN_SECRET is not configured — refusing to mint a customer session token.');
   const payload = Buffer.from(JSON.stringify({
     id: user.id, name: user.name, email: user.email,
     iat: Date.now(), exp: Date.now() + TOKEN_TTL_MS,
   })).toString('base64url');
-  const sig = crypto.createHmac('sha256', secret()).update(payload).digest('base64url');
+  const sig = crypto.createHmac('sha256', key).update(payload).digest('base64url');
   return payload + '.' + sig;
 }
 
 // Signature + expiry only. Does NOT check server-side revocation (that needs
 // a DB read) — use authedUserChecked() for anything beyond a cheap sync gate.
 function verifyToken(token) {
+  const key = secret();
+  if (!key) return null; // fail closed: nobody can be authenticated, not everybody
   const [payload, sig] = String(token || '').split('.');
   if (!payload || !sig) return null;
-  const want = crypto.createHmac('sha256', secret()).update(payload).digest('base64url');
+  const want = crypto.createHmac('sha256', key).update(payload).digest('base64url');
   const a = Buffer.from(sig), b = Buffer.from(want);
   if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
   let claims;

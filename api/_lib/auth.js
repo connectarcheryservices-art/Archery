@@ -13,26 +13,36 @@
 // log in again, which for a non-expiring token could be never.
 //
 // Now: a dedicated SESSION_SECRET (never ADMIN_PASSWORD, never a
-// human-chosen password — falls back to a fixed non-secret marker when
-// unconfigured so an unconfigured deployment fails safe), tokens carry
-// iat/exp (12h — shorter than the customer default, since this is the
-// highest-privilege account class on the platform), and checkAdmin() is now
-// async: for staff it re-reads role/name/active from the `staff` table on
-// EVERY request (the token payload only carries which row to look up, never
-// the role itself) and checks a revocation watermark
-// (staff.token_valid_after / owner_security.token_valid_after, migration
-// 020) so a password change invalidates old sessions immediately instead of
-// leaving them valid until they happen to expire.
+// human-chosen password), tokens carry iat/exp (12h — shorter than the
+// customer default, since this is the highest-privilege account class on
+// the platform), and checkAdmin() is now async: for staff it re-reads
+// role/name/active from the `staff` table on EVERY request (the token
+// payload only carries which row to look up, never the role itself) and
+// checks a revocation watermark (staff.token_valid_after /
+// owner_security.token_valid_after, migration 020) so a password change
+// invalidates old sessions immediately instead of leaving them valid until
+// they happen to expire.
 //
 // checkAdmin(req) returns a Promise<actor|null> — every callsite must
 // `await` it now (18 callsites, all already inside async functions, audited
 // before this change).
+//
+// Fixed 2026-08-13 (audit finding): the "unconfigured deployment fails safe"
+// claim above used to be false for SESSION_SECRET — an unset value fell back
+// to the FIXED, PUBLIC string 'session-secret-not-configured', letting
+// anyone forge a valid staff token ({sid: <any staff id>}) against a
+// misconfigured deployment. Owner-role forgery had a real gate
+// (`if (!process.env.ADMIN_PASSWORD) return null` below) but STAFF forgery
+// did not — and a forged token for a staff row with role 'manager' grants
+// full owner-equivalent capability per can() below. Now an unconfigured
+// secret makes verify() reject EVERY token and sign() refuse to mint one —
+// nobody can be authenticated, not everybody. The unused ADMIN_PW() fallback
+// (never called, not exported, same stale pattern) is removed below too.
 'use strict';
 const crypto = require('crypto');
 const { q } = require('./db');
 
-const ADMIN_PW = () => process.env.ADMIN_PASSWORD || 'no-admin-password-set';
-const SESSION_SECRET = () => process.env.SESSION_SECRET || 'session-secret-not-configured';
+const SESSION_SECRET = () => process.env.SESSION_SECRET || null;
 const TOKEN_TTL_MS = 12 * 60 * 60 * 1000; // 12h — short-lived, high-privilege session
 
 function timingEq(x, y) {
@@ -79,14 +89,18 @@ function verifyPassword(pw, stored) {
 
 // ── signed session tokens: <base64url payload>.<hmac>, SESSION_SECRET-keyed ──
 function sign(payload) {
+  const key = SESSION_SECRET();
+  if (!key) throw new Error('SESSION_SECRET is not configured — refusing to mint an admin/staff session token.');
   const body = Buffer.from(JSON.stringify({ ...payload, iat: Date.now(), exp: Date.now() + TOKEN_TTL_MS })).toString('base64url');
-  const sig = crypto.createHmac('sha256', SESSION_SECRET()).update(body).digest('base64url');
+  const sig = crypto.createHmac('sha256', key).update(body).digest('base64url');
   return body + '.' + sig;
 }
 function verify(token) {
+  const key = SESSION_SECRET();
+  if (!key) return null; // fail closed: nobody can be authenticated, not everybody
   const [body, sig] = String(token || '').split('.');
   if (!body || !sig) return null;
-  const want = crypto.createHmac('sha256', SESSION_SECRET()).update(body).digest('base64url');
+  const want = crypto.createHmac('sha256', key).update(body).digest('base64url');
   const a = Buffer.from(sig), b = Buffer.from(want);
   if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
   let claims;

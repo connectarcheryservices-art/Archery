@@ -4,7 +4,7 @@
 const { cors, json, readBody } = require('../_lib/respond');
 const { TABLES, listOrCreate } = require('../_lib/crud');
 const { INBOX, inboxList, inboxCreate } = require('../_lib/inbox');
-const { checkAdmin } = require('../_lib/auth');
+const { checkAdmin, can } = require('../_lib/auth');
 const { q } = require('../_lib/db');
 const { SETTINGS: SEED_SETTINGS } = require('../_lib/seed');
 const { writeAudit } = require('../_lib/audit');
@@ -64,6 +64,13 @@ module.exports = async (req, res) => {
       }
       const actor = await checkAdmin(req);
       if (!actor) return json(res, { error: 'Unauthorised' }, 401);
+      // Fixed 2026-08-13 (audit finding): this only checked "is SOME staff
+      // member logged in", not the capability gate that already exists for
+      // exactly this — can()'s own comment names 'settings' as owner/manager
+      // only. A support or editor account could set announcementText, which
+      // shared.js renders — a persistent, site-wide payload from the
+      // lowest-privilege staff tier. §1.4: capability, not "is logged in".
+      if (!can(actor, 'settings')) return json(res, { error: 'Forbidden' }, 403);
       const body = readBody(req);
       // Best-effort snapshot for the audit row only — the merge itself below
       // does not depend on this being perfectly fresh.

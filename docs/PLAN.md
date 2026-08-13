@@ -64,6 +64,20 @@ and `POST /api/chat {id,text}` let anyone append to any thread. Fixed same-day, 
 everything else queued, per CLAUDE.md's CISO-first precedence — see **THREAT_MODEL.md T15** for
 the full writeup and `chat-idor-fix-test.js`/`chat-admin-path-test.js` for the verification.
 
+**Same day, second pass — external audit, "do not deploy/merge yet":** while club-analytics/
+currency work was in progress (see below), the user relayed a 6-finding external security audit
+of the uncommitted tree. Every finding was independently re-verified against the real code before
+being fixed (two came back CRITICAL: predictable fallback signing secrets that made token forgery
+possible on a misconfigured deployment, and a missing `can(actor,'settings')` capability check
+that let any staff role — not just owner/manager — write a persistent site-wide XSS payload via
+the announcement banner). Also fixed: an existence-oracle ordering bug in `club-members.js`,
+vulnerable `nodemailer`/`@anthropic-ai/sdk` versions (now 0 vulnerabilities), and a dead legacy
+`migrate.js` deleted outright (ADR-0001 precedent). Two test suites were failing for real reasons
+(stale DB mocks, not flaky tests) and are now fixed; a third gap — `withTransaction` silently
+missing from the test double, hiding a completely untested GST invoice-numbering path — was found
+independently while fixing those and is now covered by real assertions. Full writeup, evidence,
+and verification: **THREAT_MODEL.md T16**. `npm test`: 6/6 suites, 170+ assertions, green.
+
 ### Where we stopped
 Committed so far:
 
@@ -103,7 +117,7 @@ payment has completed. The first real payment would have hit it.
 | Hardcoded stats "in `schema.sql` (50240/1247)" | Not found in `supabase/schema.sql`. **Confirmed in `seed.js`** (52000/1400/142) and `index.html`; `resource.js:32` `{...SEED, ...(data||{})}` makes seed the answer. Substance holds. |
 | "WA-compliant equipment claimed on the shop" | **Not currently present** (grep = 0 in `shop.html`/`product.html`). May be stale or removed. Flagged in DOMAIN §7 if re-added. |
 | "8–8 tie in a bronze match" | Under Art. 12.1.4.1 a set-play match ends at **6** set points → **8–8 set points cannot occur**. Tie state is **5–5** → shoot-off. 8–8 is an **arrow-score** tie within a set (→ 1 set point each), or a compound cumulative tie. **Open question — ask which.** DOMAIN §3.4. |
-| §3 findings otherwise | **All confirmed.** T1–T15 in THREAT_MODEL (T15 added 2026-08-13, found during a T12 audit — public chat widget IDOR, fixed same day). |
+| §3 findings otherwise | **All confirmed.** T1–T16 in THREAT_MODEL (T15 added 2026-08-13, found during a T12 audit — public chat widget IDOR; T16 added same day — a 6-finding external audit, incl. 2 CRITICAL fail-open secrets/settings-XSS findings — both fixed same day). |
 
 **Everything else in §3 verified true**, including the central one: **there is no scores table.
 The only occurrence of "arrow" in the schema is a product name.**

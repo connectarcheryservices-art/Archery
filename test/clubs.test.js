@@ -5,6 +5,8 @@
 const { R, stubDb, call, check, section, report } = require('./helpers');
 
 process.env.ADMIN_PASSWORD = 'club-portal-test-owner-password';
+process.env.SESSION_SECRET = 'clubs-test-session-secret';
+process.env.USER_TOKEN_SECRET = 'clubs-test-user-token-secret';
 
 // ── in-memory stand-in ───────────────────────────────────────────────────
 const DB = { clubs: [], members: [], users: [], failNext: false };
@@ -38,6 +40,11 @@ stubDb(async (sql, params = []) => {
   if (s.startsWith('select id from clubs where id')) return { rows: DB.clubs.filter(c => c.id === params[0]).map(c => ({ id: c.id })) };
   if (s.startsWith('select id from users where email')) return { rows: DB.users.filter(u => u.email === params[0]).map(u => ({ id: u.id })) };
   if (s.startsWith('select id, club_id, user_id, name')) return { rows: DB.members.filter(m => m.club_id === params[0]) };
+  // PUT/DELETE's own scoped lookup (finds a member's club_id before checking auth).
+  if (s.startsWith('select id, club_id, status, discipline, member_role from club_members where id')
+    || s.startsWith('select id, club_id, name, member_role from club_members where id')) {
+    return { rows: DB.members.filter(m => m.id === params[0]) };
+  }
   if (s.startsWith('insert into club_members')) {
     const row = { id: DB.members.length + 1, club_id: params[0], user_id: params[1], name: params[2], email: params[3], discipline: params[4], member_role: params[5], status: 'active' };
     DB.members.push(row);

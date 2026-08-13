@@ -10,11 +10,22 @@ const R = p => path.join(ROOT, p);
 /**
  * Replace api/_lib/db.js in the require cache with a fake `q`.
  * Call BEFORE requiring any handler. Returns a restore function.
+ *
+ * Also fakes withTransaction(fn) — real db.js runs fn(client) inside a real
+ * BEGIN/COMMIT/ROLLBACK, but these fakes are plain in-memory arrays with no
+ * real transactional semantics to roll back anyway, so the fake just calls
+ * fn({query: (sql, params) => q(sql, params)}) directly. Found 2026-08-13:
+ * without this, every withTransaction() caller (invoice minting, scoring,
+ * selection, the registration bridge) threw "withTransaction is not a
+ * function" in every test that exercised it — silently caught by callers'
+ * own try/catch (payments.js's invoice mint) and never asserted on, so the
+ * test suite was blind to whether that code path worked at all.
  */
 function stubDb(q) {
   const p = require.resolve(R('api/_lib/db.js'));
   const prev = require.cache[p];
-  require.cache[p] = { id: p, filename: p, loaded: true, exports: { q, pool: null } };
+  const withTransaction = fn => fn({ query: (sql, params) => q(sql, params) });
+  require.cache[p] = { id: p, filename: p, loaded: true, exports: { q, withTransaction, pool: null } };
   return () => { if (prev) require.cache[p] = prev; else delete require.cache[p]; };
 }
 

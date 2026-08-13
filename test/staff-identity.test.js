@@ -3,6 +3,8 @@
 const { R, stubDb, call, check, section, report } = require('./helpers');
 
 process.env.ADMIN_PASSWORD = 'owner-master-password-for-test';
+process.env.SESSION_SECRET = 'staff-identity-test-session-secret';
+process.env.USER_TOKEN_SECRET = 'staff-identity-test-user-token-secret';
 
 const DB = { staff: [], attempts: [] };
 stubDb(async (sql, params = []) => {

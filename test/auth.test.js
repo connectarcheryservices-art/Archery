@@ -7,6 +7,8 @@
 const { R, stubDb, call, check, section, report } = require('./helpers');
 
 process.env.ADMIN_PASSWORD = 'correct-horse-battery-staple-owner';
+process.env.SESSION_SECRET = 'auth-test-session-secret-distinct-from-admin-pw';
+process.env.USER_TOKEN_SECRET = 'auth-test-user-token-secret-also-distinct';
 const PW = process.env.ADMIN_PASSWORD;
 
 // ── in-memory stand-in for the tables the login path touches ────────────────

@@ -14,14 +14,15 @@ process.env.RAZORPAY_KEY_SECRET = 'key-secret-different-thing';
 process.env.RAZORPAY_KEY_ID = 'rzp_test_fake';
 
 // ── fake tables ────────────────────────────────────────────────────────────
-const DB = { orders: [], webhook_events: [], products: [], analytics: [] };
+const DB = { orders: [], webhook_events: [], products: [], analytics: [], invoice_counters: [] };
 const reset = () => {
   DB.orders = [{ id: 1, order_no: 'ARC-1', items: [{ id: 7, name: 'Bow', qty: 2, price: 500 }],
                  total: '1000.00', customer_name: 'A', customer_email: null,
-                 payment_status: 'pending', razorpay_order_id: 'order_ABC' }];
+                 payment_status: 'pending', razorpay_order_id: 'order_ABC', invoice_no: null }];
   DB.webhook_events = [];
   DB.products = [{ id: 7, stock: 10 }];
   DB.analytics = [];
+  DB.invoice_counters = [];
 };
 reset();
 
@@ -73,6 +74,28 @@ stubDb(async (sql, params = []) => {
     return { rows: [] };
   }
   if (s.startsWith('insert into analytics_events')) { DB.analytics.push({ value: params[0] }); return { rows: [] }; }
+
+  // ── invoice minting (payments.js's withTransaction block, GST Rule 46(b)) ──
+  if (s.startsWith('select invoice_no from orders where id=$1 for update')) {
+    const o = DB.orders.find(o => o.id === params[0]);
+    return { rows: o ? [{ invoice_no: o.invoice_no }] : [] };
+  }
+  if (s.startsWith('insert into invoice_counters')) {
+    if (!DB.invoice_counters.some(c => c.financial_year === params[0])) {
+      DB.invoice_counters.push({ financial_year: params[0], next_seq: 1 });
+    }
+    return { rows: [] };
+  }
+  if (s.startsWith('update invoice_counters set next_seq')) {
+    const c = DB.invoice_counters.find(c => c.financial_year === params[0]);
+    const seq = c.next_seq; c.next_seq += 1;
+    return { rows: [{ seq }] };
+  }
+  if (s.startsWith('update orders set invoice_no=$1')) {
+    const o = DB.orders.find(o => o.id === params[1]);
+    if (o) o.invoice_no = params[0];
+    return { rows: [] };
+  }
   return { rows: [] };
 });
 
@@ -130,6 +153,14 @@ const captured = (amount = 100000, orderId = 'order_ABC') => ({
   check(DB.orders[0].payment_source === 'webhook', 'recorded as settled by the webhook, not the browser');
   check(DB.products[0].stock === 8, `stock decremented once: 10 -> ${DB.products[0].stock}`);
   check(DB.analytics.length === 1, 'exactly one purchase event recorded');
+  check(/^AS\/\d{2}-\d{2}\/\d{6}$/.test(DB.orders[0].invoice_no || ''),
+    `a real, sequential GST invoice number was minted (Rule 46(b)): ${DB.orders[0].invoice_no}`);
+
+  section('a duplicate fulfil() never re-mints or burns a second invoice number');
+  const firstInvoiceNo = DB.orders[0].invoice_no;
+  r = await wh.fetch(signed(captured(), { eventId: 'evt_1b' }));
+  check(DB.orders[0].invoice_no === firstInvoiceNo, 'the SAME invoice number is kept, not reissued, on a duplicate delivery');
+  check(DB.invoice_counters[0].next_seq === 2, 'the counter advanced exactly once — a duplicate delivery does not burn a sequence number');
 
   section('idempotency — Razorpay WILL deliver twice');
   r = await wh.fetch(signed(captured(), { eventId: 'evt_1' }));

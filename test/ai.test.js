@@ -8,6 +8,8 @@ const { R, stubDb, call, check, section, report } = require('./helpers');
 
 process.env.ADMIN_PASSWORD = 'test-admin-password';
 process.env.ANTHROPIC_API_KEY = 'sk-ant-fake-for-tests';
+process.env.SESSION_SECRET = 'ai-test-session-secret';
+process.env.USER_TOKEN_SECRET = 'ai-test-user-token-secret';
 
 // ── stub the Anthropic SDK before the handler requires it ──────────────────
 let lastRequest = null;
@@ -46,6 +48,11 @@ let convSeq = 1;
 
 stubDb(async (sql, params = []) => {
   const s = sql.replace(/\s+/g, ' ').trim().toLowerCase();
+  // authedUserChecked()'s DB-backed revocation check (migration 019) — TOKEN
+  // (user 1) and OTHER (user 2) are both unrevoked in these tests.
+  if (s.startsWith('select token_valid_after from users where id=$1')) {
+    return { rows: [1, 2].includes(params[0]) ? [{ token_valid_after: null }] : [] };
+  }
   if (s.startsWith('select * from ai_config')) return { rows: DB.cfg ? [DB.cfg] : [] };
   if (s.includes('from ai_usage') && s.includes('user_id=$1'))
     return { rows: [{ n: DB.usage.filter(u => u.user_id === params[0]).reduce((a, u) => a + u.cost_paise, 0) }] };
