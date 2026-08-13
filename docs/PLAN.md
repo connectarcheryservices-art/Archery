@@ -220,8 +220,18 @@ CLAUDE.md §6, "verify, don't assume" — this is a paraphrase of commit message
       `docs/THREAT_MODEL.md` T9. Tested: `age-assurance-test.js` (21 API assertions, all green)
       + `age-assurance-ui-test.js` (signup field reveal, tracking gate); full 34-file regression
       suite re-run clean after fixing 3 pre-existing tests that registered accounts without a DOB.
-      **Not covered:** `tournaments.html`'s free-text `registrations.dob` field (a separate,
-      unauthenticated DOB path); `dashboard.html` doesn't yet surface consent status in the UI
+      **2026-08-13: the "not covered" gap below is now closed** — migration
+      `037_registration_age_assurance.sql` gives `tournaments.html`'s free-text, unauthenticated
+      registration form the same real DOB validation + minor detection + verifiable parental
+      consent as account signup (arguably the bigger surface: most competitive entries are
+      U15/U18/U21, and this form needs no account at all). A minor registration starts in a new
+      `pending_consent` status that staff cannot approve (409, enforced centrally) until a parent
+      grants consent via the same token-gated `parental-consent.html` page (now branches on
+      `?type=registration` instead of forking a second page); a denial auto-rejects. Also fixed:
+      the admin registrations listing was leaking the raw consent token (a bearer credential) via
+      `select *` — stripped before it ever leaves the server. Tested: 27 API assertions + 2 CDP UI
+      passes, all green; full regression suite (age-assurance/flow/admin ×2/security) re-run clean.
+      **Still not covered:** `dashboard.html` doesn't yet surface consent status in the UI
       (server-side block is real either way).
 
 **Gate:** you can **fire a staff member and prove their access died within 60 seconds**. You can

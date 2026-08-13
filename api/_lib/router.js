@@ -24,6 +24,14 @@ module.exports = (req, res) => {
     if (r0 === 'audit-log' && n === 1) return H('audit-log')(req, res);
     if (r0 === 'coach' && n === 1) return H('coach')(req, res);
     if (r0 === 'users' && n === 2) { q.action = seg[1]; return H('users-action')(req, res); }
+    // Parent/guardian consent for a minor's tournament registration:
+    // /api/registrations/parent-consent-info, /api/registrations/verify-parent-consent.
+    // Must come BEFORE the generic CRUD fallback below, or `n===2` would
+    // route "parent-consent-info" through resource-id.js as if it were a
+    // registration id.
+    if (r0 === 'registrations' && n === 2 && (seg[1] === 'parent-consent-info' || seg[1] === 'verify-parent-consent')) {
+      q.action = seg[1]; return H('registration-consent')(req, res);
+    }
     // Scoring domain: /api/scoring/<action> (categories/events/matches/end/etc.)
     if (r0 === 'scoring' && n === 2) { q.action = seg[1]; return H('scoring')(req, res); }
     // Member capability: /api/members/<action> (become-athlete/coach-link/etc.)

@@ -103,7 +103,12 @@
         <div class="rs"><div class="rs-num">4</div><div class="rs-label">Confirm</div></div>
       </div>
       <div class="form-row"><div class="form-group"><label class="form-label">First Name</label><input class="form-input" id="rf-first" placeholder="Rahul"></div><div class="form-group"><label class="form-label">Last Name</label><input class="form-input" id="rf-last" placeholder="Verma"></div></div>
-      <div class="form-row"><div class="form-group"><label class="form-label">Date of Birth</label><input class="form-input" id="rf-dob" type="date"></div><div class="form-group"><label class="form-label">Gender</label><select class="form-select" id="rf-gender"><option>Male</option><option>Female</option><option>Non-binary</option></select></div></div>
+      <div class="form-row"><div class="form-group"><label class="form-label">Date of Birth</label><input class="form-input" id="rf-dob" type="date" required oninput="checkRegMinor()"></div><div class="form-group"><label class="form-label">Gender</label><select class="form-select" id="rf-gender"><option>Male</option><option>Female</option><option>Non-binary</option></select></div></div>
+      <div class="form-group" id="rf-parent-email-field" style="display:none;">
+        <label class="form-label">Parent / Guardian Email</label>
+        <input class="form-input" id="rf-parent-email" type="email" maxlength="160" placeholder="parent@example.com">
+        <div style="font-size:12px;color:var(--text-2,#8a8f9c);margin-top:6px;">Required for an under-18 archer — Indian law (the DPDP Act) requires their verifiable consent before this registration is reviewed. We never use this data for personalised ads or behavioural tracking, regardless of what they choose.</div>
+      </div>
       <div class="form-group"><label class="form-label">AAI Registration Number</label><input class="form-input" id="rf-fed" placeholder="AAI-2024-XXXXX"></div>
       <div class="form-group"><label class="form-label">State Association</label><select class="form-select" id="rf-assoc"><option>Assam Archery Association</option><option>Maharashtra Archery Association</option><option>Delhi Archery Association</option><option>Karnataka Archery Association</option><option>Tamil Nadu Archery Association</option><option>West Bengal Archery Association</option><option>Jharkhand Archery Association</option><option>Bihar Archery Association</option></select></div>
       <div class="form-row"><div class="form-group"><label class="form-label">Discipline</label><select class="form-select" id="rf-disc"><option>Recurve Open</option><option>Compound Open</option><option>Barebow</option><option>Recurve U-21</option><option>Recurve U-18</option><option>Recurve U-15</option><option>Para Recurve</option></select></div><div class="form-group"><label class="form-label">Level</label><select class="form-select" id="rf-level"><option>Beginner</option><option>Intermediate</option><option>Advanced</option><option>National</option></select></div></div>
@@ -324,20 +329,49 @@ let regT={id:null,name:''};
 function openModal(id,name,meta){regT={id,name};document.getElementById('modal-name').textContent=name;document.getElementById('modal-meta').textContent=meta;document.getElementById('reg-modal').classList.add('open');}
 function closeModal(){document.getElementById('reg-modal').classList.remove('open');}
 document.getElementById('reg-modal').addEventListener('click',e=>{if(e.target===document.getElementById('reg-modal'))closeModal();});
+
+// Age assurance (CLAUDE.md §1.8) — mirrors signup.html's checkMinor()
+// exactly. This form collects a real archer's DOB with no login required,
+// so it needs the same client-side minor detection + parent-email prompt;
+// the server (api/_lib/inbox.js) enforces this for real regardless of
+// what the client does or skips.
+function computeRegIsMinor(dobStr){
+  if(!dobStr) return null;
+  const dob=new Date(dobStr+'T00:00:00');
+  if(isNaN(dob.getTime())) return null;
+  const now=new Date();
+  let age=now.getFullYear()-dob.getFullYear();
+  const m=now.getMonth()-dob.getMonth();
+  if(m<0||(m===0&&now.getDate()<dob.getDate())) age--;
+  return age<18;
+}
+function checkRegMinor(){
+  const dob=document.getElementById('rf-dob').value;
+  const minor=computeRegIsMinor(dob);
+  document.getElementById('rf-parent-email-field').style.display=minor?'block':'none';
+}
+
 async function submitReg(){
   const v=id=>{const el=document.getElementById(id);return el?el.value.trim():'';};
-  const first=v('rf-first'),last=v('rf-last');
+  const first=v('rf-first'),last=v('rf-last'),dob=v('rf-dob');
   if(!first||!last){alert('Please enter your first and last name.');return;}
+  if(!dob){alert('Please enter a date of birth.');return;}
+  const minor=computeRegIsMinor(dob);
+  const parentEmail=v('rf-parent-email');
+  if(minor&&!parentEmail){alert("A parent or guardian's email is required to register an under-18 archer.");return;}
   const b=document.getElementById('modal-submit-btn');const orig=b.textContent;
   b.textContent='Submitting…';b.style.opacity='.7';b.disabled=true;
-  const payload={tournamentId:regT.id,tournamentName:regT.name,firstName:first,lastName:last,dob:v('rf-dob'),gender:v('rf-gender'),fedNumber:v('rf-fed'),country:v('rf-assoc'),discipline:v('rf-disc'),level:v('rf-level'),club:v('rf-club')};
+  const payload={tournamentId:regT.id,tournamentName:regT.name,firstName:first,lastName:last,dob,gender:v('rf-gender'),fedNumber:v('rf-fed'),country:v('rf-assoc'),discipline:v('rf-disc'),level:v('rf-level'),club:v('rf-club'),parentEmail:minor?parentEmail:undefined,origin:location.origin};
   const res=await fetch('/api/registrations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).then(r=>r.json()).catch(()=>null);
   b.textContent=orig;b.style.opacity='1';b.disabled=false;
   if(res&&res.ok){
     closeModal();
     try{const r=JSON.parse(localStorage.getItem('my_regs')||'[]');if(regT.id&&!r.includes(regT.id)){r.push(regT.id);localStorage.setItem('my_regs',JSON.stringify(r));}}catch(e){}
-    alert('Registration submitted! Our team will review your entry and confirm by email. Find it under the My Events tab.');
-    ['rf-first','rf-last','rf-dob','rf-fed','rf-club'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    alert(res.pendingConsent
+      ? "Registration received — because this archer is under 18, we've emailed the parent/guardian for consent. It will be reviewed once they respond. Find it under the My Events tab."
+      : 'Registration submitted! Our team will review your entry and confirm by email. Find it under the My Events tab.');
+    ['rf-first','rf-last','rf-dob','rf-fed','rf-club','rf-parent-email'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    document.getElementById('rf-parent-email-field').style.display='none';
   }else{
     alert((res&&res.error)||'Could not submit your registration. Please try again.');
   }

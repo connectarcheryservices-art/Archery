@@ -39,13 +39,23 @@
 <script>
 const params = new URLSearchParams(location.search);
 const token = params.get('token') || '';
+// Two independent things get gated behind this exact same real-consent
+// mechanism (single-use emailed token, public token-gated info+decision
+// pair, status pending->granted|denied): a new account (migration 027,
+// api/_handlers/users-action.js) and a tournament registration (migration
+// 037, api/_handlers/registration-consent.js). Same page, same UX, just a
+// different API base and a different sentence describing what's waiting —
+// duplicating this whole page for one word of copy difference isn't worth
+// the drift risk of two copies of a consent flow going out of sync.
+const type = params.get('type') === 'registration' ? 'registration' : 'account';
+const API_BASE = type === 'registration' ? '/api/registrations' : '/api/users';
 const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 async function init(){
   const loading = document.getElementById('pc-loading');
   const content = document.getElementById('pc-content');
   if (!token) { loading.innerHTML = '<p>This link is missing its consent token — please use the link from the email exactly as sent.</p>'; return; }
-  const r = await fetch('/api/users/parent-consent-info?token=' + encodeURIComponent(token)).then(x => x.json()).catch(() => null);
+  const r = await fetch(API_BASE + '/parent-consent-info?token=' + encodeURIComponent(token)).then(x => x.json()).catch(() => null);
   loading.style.display = 'none';
   content.style.display = 'block';
   if (!r || !r.ok) {
@@ -56,11 +66,15 @@ async function init(){
     content.innerHTML = `<p>This request has already been responded to (status: <b>${esc(r.status)}</b>). No further action is needed.</p>`;
     return;
   }
+  const intro = type === 'registration'
+    ? `<p><b>${esc(r.childName)}</b> has been registered for <b>${esc(r.tournamentName)}</b> on Archery.Services, listing you as their parent or guardian.</p>
+       <div class="pc-box">Because they are under 18, Indian law (the DPDP Act) requires your verifiable consent before this registration is reviewed. Until you respond, it stays on hold — it is not entered into the tournament.</div>`
+    : `<p><b>${esc(r.childName)}</b> (${esc(r.childEmail)}) has created an account on Archery.Services and listed you as their parent or guardian.</p>
+       <div class="pc-box">Because they are under 18, Indian law (the DPDP Act) requires your verifiable consent before we process their data beyond a bare account. Until you respond, they cannot connect with a coach, register for a tournament, or have a public profile.</div>`;
   content.innerHTML = `
-    <p><b>${esc(r.childName)}</b> (${esc(r.childEmail)}) has created an account on Archery.Services and listed you as their parent or guardian.</p>
-    <div class="pc-box">Because they are under 18, Indian law (the DPDP Act) requires your verifiable consent before we process their data beyond a bare account. Until you respond, they cannot connect with a coach, register for a tournament, or have a public profile.</div>
-    <div class="pc-protect">Regardless of what you choose: we never show this account personalised ads, and we never track their browsing or activity for marketing or profiling. That protection is not something consent unlocks or removes — it's always on for an under-18 account.</div>
-    <p>If you don't recognise this request, choose "I do not consent" below and nothing further will happen.</p>
+    ${intro}
+    <div class="pc-protect">Regardless of what you choose: we never show personalised ads, and we never track browsing or activity for marketing or profiling, for anyone under 18. That protection is not something consent unlocks or removes — it's always on.</div>
+    <p>If you don't recognise this request, choose "I do not consent" below and nothing further will happen${type === 'registration' ? ' — the registration will be rejected automatically' : ''}.</p>
     <div class="pc-actions">
       <button class="pc-btn pc-btn-grant" id="btn-grant" onclick="respond(true)">I consent</button>
       <button class="pc-btn pc-btn-deny" id="btn-deny" onclick="respond(false)">I do not consent</button>
@@ -71,13 +85,15 @@ async function respond(grant){
   const msg = document.getElementById('pc-msg');
   document.getElementById('btn-grant').disabled = true;
   document.getElementById('btn-deny').disabled = true;
-  const r = await fetch('/api/users/verify-parent-consent', {
+  const r = await fetch(API_BASE + '/verify-parent-consent', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ token, decision: grant ? 'grant' : 'deny' }),
   }).then(x => x.json()).catch(() => null);
   if (r && r.ok) {
     msg.className = 'a-msg ok';
-    msg.textContent = grant ? 'Thank you — consent recorded. Their account now has full access.' : 'Recorded — consent was not given. Their account remains limited.';
+    msg.textContent = type === 'registration'
+      ? (grant ? 'Thank you — consent recorded. The registration will now be reviewed.' : 'Recorded — consent was not given. The registration has been rejected.')
+      : (grant ? 'Thank you — consent recorded. Their account now has full access.' : 'Recorded — consent was not given. Their account remains limited.');
     document.getElementById('pc-content').querySelector('.pc-actions').remove();
   } else {
     msg.className = 'a-msg err';

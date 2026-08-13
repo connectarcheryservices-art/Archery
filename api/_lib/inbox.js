@@ -6,14 +6,21 @@ const { json, readBody } = require('./respond');
 const { checkAdmin } = require('./auth');
 const { writeAudit } = require('./audit');
 const { getSettings } = require('./settings');
+const { validateDob, isMinor } = require('./age');
+
+const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 const INBOX = {
   registrations: {
     table: 'registrations',
-    fields: ['tournamentId','tournamentName','firstName','lastName','dob','gender','fedNumber','country','discipline','level','club'],
+    fields: ['tournamentId','tournamentName','firstName','lastName','dob','gender','fedNumber','country','discipline','level','club','parentEmail'],
     required: r => (String(r.firstName||'').trim() || String(r.lastName||'').trim()) ? null : 'Your name is required.',
     defaultStatus: 'pending',
-    statuses: ['pending', 'approved', 'rejected'],
+    // 'pending_consent' — a minor's registration sits here, out of the
+    // normal review queue, until a parent/guardian responds (CLAUDE.md
+    // §1.8; see migration 037). It is not staff-actionable: inboxItem's
+    // PUT below refuses to move it to 'approved' from this state.
+    statuses: ['pending', 'pending_consent', 'approved', 'rejected'],
   },
   reports: {
     table: 'reports',
@@ -43,7 +50,14 @@ const rowToObj = row => { const o = {}; for (const [k,v] of Object.entries(row))
 async function inboxList(resource, req, res) {
   if (!(await checkAdmin(req))) return json(res, { error: 'Unauthorised' }, 401);
   const r = await q(`select * from ${INBOX[resource].table} order by id desc`);
-  return json(res, r.rows.map(rowToObj));
+  const rows = r.rows.map(rowToObj);
+  // The consent token is a bearer credential — whoever holds it can decide
+  // consent on the parent's behalf via the public verify endpoint. Staff
+  // don't need it to do their job (parentConsentStatus tells them what
+  // they need), so it never leaves the server via this listing — least
+  // privilege, not just "nobody happens to misuse it" (CLAUDE.md §1.8).
+  if (resource === 'registrations') for (const row of rows) delete row.parentConsentToken;
+  return json(res, rows);
 }
 
 async function inboxCreate(resource, req, res) {
@@ -72,12 +86,68 @@ async function inboxCreate(resource, req, res) {
   }
   const err = cfg.required ? cfg.required(rec) : null;
   if (err) return json(res, { ok: false, error: err }, 400);
-  rec.status = cfg.defaultStatus;
+
+  // Age assurance at the point of collection (CLAUDE.md §1.8, migration
+  // 037) — a tournament registration is one of this platform's largest
+  // sources of a real child's PII, submitted by an anonymous, unauthenticated
+  // form, so it gets the exact same real-DOB-required + minor-detection +
+  // verifiable-parental-consent treatment account signup already has
+  // (api/_handlers/users-action.js), not a lighter version of it.
+  let minor = false, consentToken = null;
+  if (resource === 'registrations') {
+    const dobCheck = validateDob(rec.dob);
+    if (!dobCheck.valid) return json(res, { ok: false, error: dobCheck.error }, 400);
+    rec.dob = dobCheck.date;
+    minor = isMinor(dobCheck.date) === true;
+    rec.parentEmail = String(rec.parentEmail || '').trim().toLowerCase().slice(0, 160);
+    if (minor) {
+      if (!rec.parentEmail || !EMAIL_RE.test(rec.parentEmail)) {
+        return json(res, { ok: false, error: "A parent or guardian's email is required to register an under-18 archer." }, 400);
+      }
+      consentToken = require('crypto').randomBytes(24).toString('base64url');
+      rec.isMinor = true;
+      rec.parentConsentStatus = 'pending';
+      rec.parentConsentToken = consentToken;
+      rec.parentConsentSentAt = new Date();
+    } else {
+      rec.parentEmail = rec.parentEmail || null;
+      rec.isMinor = false;
+      rec.parentConsentStatus = 'not_required';
+    }
+  }
+
+  rec.status = minor ? 'pending_consent' : cfg.defaultStatus;
   rec.createdAt = Date.now();
   const snake = toSnake(rec), keys = Object.keys(snake), vals = Object.values(snake);
   const ph = keys.map((_, i) => `$${i+1}`).join(',');
   const r = await q(`insert into ${cfg.table} (${keys.join(',')}) values (${ph}) returning id`, vals);
-  return json(res, { ok: true, id: r.rows[0].id });
+  const id = r.rows[0].id;
+
+  // Verifiable parental consent, requested from the PARENT's inbox, never
+  // the child's or the submitter's — "verifiable" means the parent takes an
+  // action on their own email, matching migration 027's exact standard.
+  if (resource === 'registrations' && minor) {
+    try {
+      const { sendMail, branded } = require('./mailer');
+      const { safeOrigin } = require('./origin');
+      const site = safeOrigin(data.origin);
+      const link = `${site}/parental-consent.html?type=registration&token=${consentToken}`;
+      const childName = `${rec.firstName || ''} ${rec.lastName || ''}`.trim() || 'An archer';
+      const tourName = rec.tournamentName || 'a tournament';
+      await sendMail({
+        to: rec.parentEmail,
+        subject: `${childName}'s tournament registration needs your consent`,
+        html: branded({
+          heading: 'Parental consent requested',
+          preheader: 'A parent/guardian confirmation is required',
+          body: `${childName} has been registered for <b>${tourName}</b> on Archery.Services, listing you as their parent or guardian. Because they are under 18, Indian law (the DPDP Act) requires your verifiable consent before this registration is reviewed. We never use this data for personalised ads or behavioural tracking, with or without your consent — that protection is not optional and does not depend on what you choose below.<br><br>If you don't recognise this request, choose "I do not consent" and the registration will be rejected automatically.`,
+          cta: 'Review and respond', ctaUrl: link,
+        }),
+      }).catch(() => {});
+    } catch (e) { console.error('inboxCreate: parent consent email failed:', e?.message); }
+  }
+
+  return json(res, { ok: true, id, pendingConsent: minor });
 }
 
 async function inboxItem(resource, id, req, res) {
@@ -86,7 +156,10 @@ async function inboxItem(resource, id, req, res) {
   const cfg = INBOX[resource];
   if (req.method === 'GET') {
     const r = await q(`select * from ${cfg.table} where id=$1`, [id]);
-    return r.rows[0] ? json(res, rowToObj(r.rows[0])) : json(res, { error: 'Not found' }, 404);
+    if (!r.rows[0]) return json(res, { error: 'Not found' }, 404);
+    const row = rowToObj(r.rows[0]);
+    if (resource === 'registrations') delete row.parentConsentToken; // see inboxList's note
+    return json(res, row);
   }
   if (req.method === 'PUT') {
     const data = readBody(req);
@@ -109,6 +182,18 @@ async function inboxItem(resource, id, req, res) {
     if (!cfg.statuses.includes(status)) return json(res, { error: `Invalid status. Must be one of: ${cfg.statuses.join(', ')}` }, 400);
     const before = (await q(`select status from ${cfg.table} where id=$1`, [id])).rows[0];
     if (!before) return json(res, { error: 'Not found' }, 404);
+    if (resource === 'registrations' && status !== 'rejected') {
+      // Capability enforced centrally, not left to the admin UI to
+      // remember not to offer (CLAUDE.md §4) — a minor's registration
+      // cannot leave pending-consent limbo into anything but 'rejected'
+      // until a parent/guardian has actually granted consent, no matter
+      // what an admin session tries to PUT. DPDP s.9(3) is an absolute
+      // prohibition; a staff override is not a lawful way around it.
+      const cur = (await q('select parent_consent_status from registrations where id=$1', [id])).rows[0];
+      if (cur && cur.parent_consent_status === 'pending') {
+        return json(res, { error: 'This registration is waiting on parental consent and cannot be actioned yet.' }, 409);
+      }
+    }
     if (resource === 'registrations' && status === 'approved') {
       const cur = (await q('select status, tournament_id from registrations where id=$1', [id])).rows[0];
       if (cur && cur.status !== 'approved' && cur.tournament_id)

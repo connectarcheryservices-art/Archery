@@ -178,8 +178,36 @@ profile/search visibility) and `age-assurance-ui-test.js` (signup.html field rev
 tracking gate, adult-visitor sanity check) both green; full 34-file regression suite re-run
 clean after updating the three pre-existing tests (`flow-test.js`, `security-test.js`,
 `coach-test.js`) that registered accounts without a DOB.
-**Not yet covered:** `tournaments.html`'s standalone `registrations.dob` field (unauthenticated,
-free-text, not linked to an account) is a separate DOB-collection path this fix does not touch.
+**Status: also fixed for the registration path** (migration `037_registration_age_assurance.sql`,
+2026-08-13) — the gap this file itself flagged above is closed. `tournaments.html`'s standalone
+`registrations.dob` field is arguably the bigger surface than account signup: it's public,
+unauthenticated, and is the platform's primary point of collecting a real child's PII (most
+competitive entries are U15/U18/U21). `api/_lib/inbox.js`'s `inboxCreate` now runs the same
+`validateDob()`/`isMinor()` machinery as account registration before ever inserting a row; a
+minor registration requires a real, valid `parentEmail` or is rejected outright. Consent is the
+same *verifiable* standard — a single-use token mailed only to the parent, resolved on
+`parental-consent.html?type=registration` (extended to branch between the account and
+registration flows rather than forking a second copy of the same page), not a checkbox on the
+submitter's behalf. A minor's registration starts in a new `pending_consent` status, structurally
+outside the normal staff review queue; `inboxItem`'s `PUT` handler refuses (409) to move it to
+`approved` while `parent_consent_status='pending'` **regardless of what an admin session
+tries** — capability enforced centrally (CLAUDE.md §4), not left to the admin UI to remember not
+to offer. A denial auto-rejects the registration; DPDP s.9(3) leaves no lawful partial-processing
+state to fall back to. Fixed alongside this: `inboxList`/`inboxItem`'s admin-facing `select *`
+was leaking the raw `parent_consent_token` — a bearer credential equivalent — to any admin
+viewing the registrations list; it's now stripped before the row ever leaves the server, the same
+least-privilege standard the emailed-link-only design already implied.
+Verified end-to-end against the local dev stack: 27 API-level assertions (adult path unchanged,
+minor-without-parent-email rejected, garbage DOB rejected, minor-with-consent flow, admin listing
+shows status but never the token, staff blocked from approving pending-consent, wrong-token
+rejected, grant flow, single-use token enforcement, staff can approve once granted, deny
+auto-rejects) plus two CDP UI passes (`tournaments.html`'s minor-DOB field toggle and blocked/
+successful submission; `parental-consent.html?type=registration` rendering real data and a real
+grant click flipping the DB) — all green. Full regression suite (`age-assurance-test.js`,
+`flow-test.js`, `admin-test.js`, `admin-test2.js`, `security-test.js`) re-run clean, confirming
+the shared `safeOrigin()` extraction (moved from `users-action.js` into `api/_lib/origin.js` so
+both consent flows use one origin allow-list, not two that could drift) didn't regress the
+existing account-consent path.
 `dashboard.html` does not yet render the `isMinor`/`parentConsentStatus`/`consentBlocked` fields
 `members/my-status` now returns — a blocked minor sees only the generic 403 message, not a
 persistent status explanation (UX gap, not a compliance gap: the block itself is fully

@@ -14,17 +14,8 @@ const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const { sign, authedUserChecked, revokeSessions } = require('../_lib/userauth');
 const { isMinor, validateDob } = require('../_lib/age');
 const { isValidGstin } = require('../_lib/gst');
+const { safeOrigin } = require('../_lib/origin');
 
-// A reset/welcome link must point back at a real, known Archery.Services
-// origin — never at whatever `origin` a caller puts in the request body.
-// Otherwise a crafted `{email, origin:'https://evil.example'}` POST turns a
-// real, valid, single-use token into a link handed to attacker infrastructure
-// (classic password-reset-link poisoning).
-const ALLOWED_ORIGINS = [/^https:\/\/(www\.)?archery\.services$/, /^http:\/\/localhost:\d+$/, /^http:\/\/127\.0\.0\.1:\d+$/];
-function safeOrigin(origin) {
-  const o = String(origin || '');
-  return ALLOWED_ORIGINS.some(re => re.test(o)) ? o : 'https://archery.services';
-}
 // A unique, URL-safe handle for the public profile (archery.services/<handle>).
 async function uniqueHandle(name) {
   const base = String(name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'archer';

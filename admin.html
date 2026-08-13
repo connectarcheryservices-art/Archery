@@ -636,7 +636,7 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
         <div class="card-title">Tournament Registrations <span class="td-badge badge-soon" style="font-size:11px;" id="reg-count">0 Pending</span></div>
         <p style="font-size:13px;color:var(--text-2);margin-bottom:14px;">Submissions from the public tournament registration form. Approving an entry adds it to that tournament's registered count.</p>
         <table class="data-table">
-          <thead><tr><th>Athlete</th><th>Tournament</th><th>Discipline</th><th>Country</th><th>Applied</th><th>Status / Actions</th></tr></thead>
+          <thead><tr><th>Athlete</th><th>Tournament</th><th>Discipline</th><th>Country</th><th>Consent</th><th>Applied</th><th>Status / Actions</th></tr></thead>
           <tbody id="registrations-tbody"></tbody>
         </table>
       </div>
@@ -1901,12 +1901,23 @@ async function loadRegistrations(){
   tb.innerHTML=data.length?data.map(r=>{
     const name=escA(((r.firstName||'')+' '+(r.lastName||'')).trim()||'—');
     const when=r.createdAt?new Date(r.createdAt).toLocaleString('en-IN'):'';
-    const badge=r.status==='approved'?'badge-active':r.status==='rejected'?'badge-inactive':'badge-soon';
-    const act=r.status==='pending'
+    const badge=r.status==='approved'?'badge-active':r.status==='rejected'?'badge-inactive':r.status==='pending_consent'?'badge-pending':'badge-soon';
+    // A minor's registration can't be approved/rejected by staff while
+    // parental consent is still pending — api/_lib/inbox.js enforces this
+    // server-side (409 if tried); this just avoids offering a button that
+    // would fail, and shows staff WHY it's stuck (CLAUDE.md §1.8).
+    const consent = r.isMinor
+      ? (r.parentConsentStatus==='granted' ? '<span class="td-badge badge-active">Granted</span>'
+         : r.parentConsentStatus==='denied' ? '<span class="td-badge badge-inactive">Denied</span>'
+         : '<span class="td-badge badge-pending">Awaiting parent</span>')
+      : '<span style="color:var(--text-2);font-size:12px;">—</span>';
+    const act=r.status==='pending_consent'
+      ?`<span class="td-badge badge-pending">Waiting on parent</span> <button class="btn-delete" onclick="delInbox('registrations',${r.id})">Delete</button>`
+      :r.status==='pending'
       ?`<button class="btn-toggle" onclick="setInbox('registrations',${r.id},'approved')">Approve</button><button class="btn-delete" onclick="setInbox('registrations',${r.id},'rejected')">Reject</button>`
       :`<span class="td-badge ${badge}">${r.status}</span> <button class="btn-delete" onclick="delInbox('registrations',${r.id})">Delete</button>`;
-    return `<tr><td class="td-name">${name}</td><td>${escA(r.tournamentName||'—')}</td><td>${escA(r.discipline||'')}</td><td>${escA(r.country||'')}</td><td style="font-size:12px;">${when}</td><td class="td-actions">${act}</td></tr>`;
-  }).join(''):'<tr><td colspan="6" style="padding:22px;color:var(--text-2);">No registrations yet.</td></tr>';
+    return `<tr><td class="td-name">${name}</td><td>${escA(r.tournamentName||'—')}</td><td>${escA(r.discipline||'')}</td><td>${escA(r.country||'')}</td><td>${consent}</td><td style="font-size:12px;">${when}</td><td class="td-actions">${act}</td></tr>`;
+  }).join(''):'<tr><td colspan="7" style="padding:22px;color:var(--text-2);">No registrations yet.</td></tr>';
 }
 async function loadReports(){
   const data=await get('reports'); if(!Array.isArray(data))return;
