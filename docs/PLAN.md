@@ -275,11 +275,18 @@ This is ADR-0005 ("one design system") and it is the honest root of "disconnecte
       states verified. The 16 pages that had NO nav (account, checkout, sign-in, seller, …) now
       have one. Taxonomy chosen as literal labels (system of record favours clarity over
       marketing verbs); revisit with the user if the brand voice should win instead.
-- [ ] **1.11** Every page loads the same stylesheet. 6 currently do not, which is how a CSS fix
-      can land everywhere except the homepage. **Deliberately not touched 2026-08-13**: `style.css`
-      and `index.html` (2 of the 6) currently carry uncommitted, unreviewed design-refresh changes
-      from a concurrent process — migrating other pages onto `style.css` right now would mean
-      building on an unknown, moving target. Revisit once that work is reconciled with the user.
+- [x] **1.11** — 5 of 6 done (2026-08-13, commit `cd751bf`): checkout, community, federation,
+      jobs, shop all now load `style.css`. Verified rather than assumed safe: an initial concern
+      (federation.html's nav is transparent-until-scrolled by its own design; style.css sets an
+      unconditional nav background, and CSS cascades per-property) turned out to be moot —
+      shared.js already replaces every page's static `<nav>` with its own fully self-contained
+      `#main-nav`, independent of style.css. Confirmed empirically for all 5: identical computed
+      nav/body background/padding before and after, zero console errors, visual screenshots clean
+      on checkout + shop. Only the `<link>` tag is committed, not `style.css` itself, which still
+      carries unrelated uncommitted changes from a concurrent design pass — these pages load
+      whatever's actually committed at deploy time. **`index.html` (6th page) deliberately still
+      not touched** — it has its own uncommitted, unreviewed changes in progress; revisit once
+      that's reconciled with the user.
 
 **Already fixed** (2026-07-15, live): the nav no longer greets users by name; `authNav` no
 longer lost a race against `nav.js` (a signed-in user was shown "Sign In / Join Free" on all 11
@@ -526,7 +533,13 @@ been run as a live tournament by a real federation yet, and isn't deployed to pr
       (CLAUDE.md §1.1). Removed. Separately noted, out of scope for this fix: the whole
       brand-showcase panel is currently dead code (`BRAND_INFO={}`, never populated, so
       `filterBrand()` never actually shows it for any real tab) — a real bug, not touched here.
-      **Product taxonomy** itself remains open — not built.
+      **Product taxonomy** itself: **now built** (2026-08-13, migration 046, commit `d055e35`) —
+      the six category values are real, ordered `product_categories` rows (managed from a new
+      admin panel), not hardcoded `<option>` tags; adding a category no longer needs a deploy.
+      Also found and fixed while starting this work, unrelated but urgent: `product.html`'s
+      related/recently-viewed/recommended strips were still drawing from 12 hardcoded FAKE
+      products (commit `84d7d19`) — a live CLAUDE.md §1.1 violation a 2026-07-16 fix had only
+      partially closed (it fixed the primary product shown, never this array).
 - [ ] Seller marketplace: verified identity, obligations, payouts, settlement, returns.
 - [ ] **Consumer Protection (E-Commerce) Rules 2020**: published **Grievance Officer**, 48-hour
       acknowledgement, 1-month resolution, **country of origin** per listing, seller identity
