@@ -64,6 +64,24 @@ and `POST /api/chat {id,text}` let anyone append to any thread. Fixed same-day, 
 everything else queued, per CLAUDE.md's CISO-first precedence — see **THREAT_MODEL.md T15** for
 the full writeup and `chat-idor-fix-test.js`/`chat-admin-path-test.js` for the verification.
 
+**Same day, third pass — club analytics (Club/Range tier gap) shipped.**
+`api/_handlers/club-analytics.js` (real membership/attendance/competitive
+stats, no fabrication) + a `dashboard.html` "View analytics" UI inside the
+existing My Clubs → Manage panel. Verified via a full CDP browser test
+against real seeded data (7 members, 8 sessions, ~40 attendance rows).
+Commit `c27e5a5`. **Also found and fixed while shipping this**: migrations
+037-039 (registration age-assurance, the registrations→scoring bridge,
+club sessions/attendance) had only ever been applied to the local dev
+stack, never to production — the same gap migration 040 turned out to
+have. All three are idempotent (`if not exists` throughout) so re-running
+them is safe regardless of exact prior state; applied via the same
+Supabase-SQL-editor path used for 040/041. **Lesson for future sessions:**
+this repo's local dev stack (PGlite) and production Supabase have drifted
+apart repeatedly this session — don't assume a migration reached
+production just because it's in `supabase/migrations/` and works locally;
+verify against the live API (or ask for direct confirmation) before
+shipping code that depends on it.
+
 **Same day, second pass — external audit, "do not deploy/merge yet":** while club-analytics/
 currency work was in progress (see below), the user relayed a 6-finding external security audit
 of the uncommitted tree. Every finding was independently re-verified against the real code before
