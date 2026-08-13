@@ -17,6 +17,7 @@ const { rankingScoreForResult, selectBest7 } = require('../_lib/ranking');
 const { generateBracket, roundCount, advancesTo } = require('../_lib/seeding');
 const { requireScorerForMatchEntry, requireScorerForEnd, canActForAthlete, isAthleteConsentBlocked } = require('../_lib/member-capability');
 const { authedUserChecked } = require('../_lib/userauth');
+const { clubIdsUnderFederation } = require('../_lib/federation-lib');
 
 const rowToObj = row => { const o = {}; for (const [k, v] of Object.entries(row)) o[k.replace(/_([a-z])/g, (_, c) => c.toUpperCase())] = v; return o; };
 async function requireScorer(req) {
@@ -466,16 +467,29 @@ module.exports = async (req, res) => {
       return json(res, { ok: true, listId, entries });
     }
 
-    // ── RANKING: public read of the latest published list for a category ──
+    // ── RANKING: public read of the latest published list for a category.
+    // An optional federationId (DOMAIN.md "district rankings"/"state
+    // rankings"/"national rankings" — the Club/Range... federation tier
+    // copy) scopes the SAME published list down to athletes whose club
+    // falls under that federation node, rather than re-ranking anything —
+    // rank numbers are recomputed within the filtered set (1..N of the
+    // scoped athletes), never reusing the unscoped rank, since "3rd in the
+    // country" and "3rd in this district" are different, both real, claims. ──
     if (action === 'ranking') {
       const categoryId = parseInt(req.query.categoryId, 10);
       if (!categoryId) return json(res, { error: 'categoryId is required' }, 400);
+      const federationId = req.query.federationId ? parseInt(req.query.federationId, 10) : null;
       const list = (await q('select id, published_at from ranking_lists where category_id=$1 order by published_at desc limit 1', [categoryId])).rows[0];
       if (!list) return json(res, { ok: true, list: null, entries: [] });
-      const entries = (await q(
-        `select re.rank, re.athlete_id, re.added_ranking_score, a.name as athlete_name
+      let entries = (await q(
+        `select re.rank, re.athlete_id, re.added_ranking_score, a.name as athlete_name, a.club_id
            from ranking_entries re join athletes a on a.id = re.athlete_id
           where re.ranking_list_id = $1 order by re.rank`, [list.id])).rows;
+      if (federationId) {
+        const clubIds = new Set((await clubIdsUnderFederation(federationId)).map(String));
+        entries = entries.filter(e => e.club_id != null && clubIds.has(String(e.club_id)))
+          .map((e, i) => ({ ...e, rank: i + 1 }));
+      }
       return json(res, { ok: true, list: rowToObj(list), entries: entries.map(rowToObj) });
     }
 

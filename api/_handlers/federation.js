@@ -10,6 +10,7 @@ const { checkAdmin } = require('../_lib/auth');
 const { authedUserChecked } = require('../_lib/userauth');
 const { q } = require('../_lib/db');
 const { writeAudit } = require('../_lib/audit');
+const { isFederationOfficerOrAncestor, isPresidentOrAncestor } = require('../_lib/federation-lib');
 
 const rowToObj = row => { const o = {}; for (const [k, v] of Object.entries(row)) o[k.replace(/_([a-z])/g, (_, c) => c.toUpperCase())] = v; return o; };
 async function requireStaff(req) {
@@ -18,31 +19,6 @@ async function requireStaff(req) {
   return actor;
 }
 const CHILD_TIER = { national: 'state', state: 'district' };
-
-// Does userId hold one of `offices` (or ANY office, if offices is null) at
-// federationId itself, or at any ANCESTOR of it? A national officer has
-// jurisdiction over every state/district beneath them; a state officer
-// over their districts; a district officer only over their own node.
-async function hasJurisdiction(userId, federationId, offices = null) {
-  if (!userId || !federationId) return false;
-  let currentId = federationId;
-  const seen = new Set();
-  while (currentId && !seen.has(currentId)) {
-    seen.add(currentId);
-    const row = (await q('select office from federation_members where user_id=$1 and federation_id=$2', [userId, currentId])).rows[0];
-    if (row && (!offices || offices.includes(row.office))) return true;
-    const parent = (await q('select parent_id from federations where id=$1', [currentId])).rows[0];
-    currentId = parent ? parent.parent_id : null;
-  }
-  return false;
-}
-// Any office at all — sufficient to create a CHILD node (administrative,
-// not a governance decision) but NOT sufficient to appoint officers (see
-// assign-officer below, which requires president rank specifically —
-// caught by adversarial audit review, 2026-08-12: any office, including
-// the lowest, was previously enough to self-promote to president).
-const isFederationOfficerOrAncestor = (userId, federationId) => hasJurisdiction(userId, federationId, null);
-const isPresidentOrAncestor = (userId, federationId) => hasJurisdiction(userId, federationId, ['president']);
 
 module.exports = async (req, res) => {
   cors(res);

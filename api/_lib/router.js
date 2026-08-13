@@ -72,6 +72,13 @@ module.exports = (req, res) => {
     }
     // Club analytics: /api/club-analytics?clubId=N (read-only).
     if (r0 === 'club-analytics' && n === 1) return H('club-analytics')(req, res);
+    // Federation member sync: /api/federation-roster?federationId=N (read-only).
+    if (r0 === 'federation-roster' && n === 1) return H('federation-roster')(req, res);
+    // Federation communications board: /api/federation-board[?federationId=N], /api/federation-board/<id>.
+    if (r0 === 'federation-board') {
+      if (n === 2) q.id = seg[1];
+      return H('federation-board')(req, res);
+    }
     // Seller accounts (admin): /api/sellers, /api/sellers/<id>
     if (r0 === 'sellers') {
       if (n === 2) q.id = seg[1];
