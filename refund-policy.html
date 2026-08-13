@@ -42,6 +42,7 @@
     <a href="#nonreturnable">Non-returnable items</a>
     <a href="#tournaments">Tournament registrations</a>
     <a href="#contact">How to request a refund</a>
+    <a href="#grievance">Grievance Officer</a>
   </nav>
   <div class="legal-body reveal">
     <div class="legal-updated">Last updated: 5 July 2026</div>
@@ -76,8 +77,64 @@
 
     <h2 id="contact">7. How to Request a Refund</h2>
     <p>Write to us at <a href="mailto:shop@archery.services">shop@archery.services</a> or use the <a href="contact.html">contact form</a> / on-site chat, quoting your order number. We respond to refund requests within 2 business days.</p>
+
+    <h2 id="grievance">8. Grievance Officer</h2>
+    <p>Per the Consumer Protection (E-Commerce) Rules 2020, complaints filed below are acknowledged within <strong>48 hours</strong> of receipt and resolved within <strong>one month</strong>.</p>
+    <div id="grievance-officer-block" style="background:rgba(255,255,255,.03);border:1px solid var(--line,rgba(255,255,255,.08));border-radius:10px;padding:16px 18px;margin:14px 0 22px;font-family:'Inter',sans-serif;font-size:13.5px;">Loading…</div>
+
+    <form id="grievance-form" style="display:grid;gap:10px;max-width:480px;margin-top:6px;font-family:'Inter',sans-serif;">
+      <input id="gr-name" placeholder="Your name" required style="padding:11px 13px;border-radius:7px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.03);color:inherit;font:inherit;">
+      <input id="gr-email" type="email" placeholder="Your email" required style="padding:11px 13px;border-radius:7px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.03);color:inherit;font:inherit;">
+      <input id="gr-phone" placeholder="Phone (optional)" style="padding:11px 13px;border-radius:7px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.03);color:inherit;font:inherit;">
+      <input id="gr-order" placeholder="Order number (optional)" style="padding:11px 13px;border-radius:7px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.03);color:inherit;font:inherit;">
+      <input id="gr-subject" placeholder="Subject" required style="padding:11px 13px;border-radius:7px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.03);color:inherit;font:inherit;">
+      <textarea id="gr-desc" rows="4" placeholder="Describe your complaint" required style="padding:11px 13px;border-radius:7px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.03);color:inherit;font:inherit;resize:vertical;"></textarea>
+      <button type="submit" style="padding:12px 18px;border-radius:7px;border:none;background:var(--ember,#C9622A);color:#fff;font-weight:600;cursor:pointer;">File a complaint</button>
+      <div id="gr-status" style="font-size:13px;"></div>
+    </form>
   </div>
 </div>
+
+<script>
+fetch('/api/settings').then(r=>r.json()).then(s=>{
+  const el = document.getElementById('grievance-officer-block');
+  if (s.grievanceOfficerName) {
+    el.innerHTML = '<b>' + s.grievanceOfficerName + '</b>' + (s.grievanceOfficerDesignation ? ' — ' + s.grievanceOfficerDesignation : '') +
+      (s.grievanceOfficerEmail ? '<br>Email: <a href="mailto:'+s.grievanceOfficerEmail+'">'+s.grievanceOfficerEmail+'</a>' : '') +
+      (s.grievanceOfficerPhone ? '<br>Phone: '+s.grievanceOfficerPhone : '') +
+      (s.grievanceOfficerAddress ? '<br>' + s.grievanceOfficerAddress : '');
+  } else {
+    el.textContent = 'A Grievance Officer has not yet been designated. Complaints filed below still reach our team and are tracked against the same acknowledgement/resolution timelines.';
+  }
+}).catch(()=>{ document.getElementById('grievance-officer-block').textContent = 'Grievance Officer details are temporarily unavailable.'; });
+
+document.getElementById('grievance-form').addEventListener('submit', async function(e){
+  e.preventDefault();
+  const statusEl = document.getElementById('gr-status');
+  statusEl.textContent = 'Sending…'; statusEl.style.color = '';
+  try {
+    const r = await fetch('/api/grievances', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({
+      name: document.getElementById('gr-name').value,
+      email: document.getElementById('gr-email').value,
+      phone: document.getElementById('gr-phone').value,
+      orderNo: document.getElementById('gr-order').value,
+      subject: document.getElementById('gr-subject').value,
+      description: document.getElementById('gr-desc').value,
+    })}).then(x=>x.json());
+    if (r && r.ok) {
+      statusEl.style.color = '#3FB27F';
+      statusEl.textContent = 'Received — your reference number is #' + r.referenceId + '. We will acknowledge this within 48 hours.';
+      document.getElementById('grievance-form').reset();
+    } else {
+      statusEl.style.color = '#D9534F';
+      statusEl.textContent = (r && r.error) || 'Could not send your complaint — please email shop@archery.services instead.';
+    }
+  } catch (err) {
+    statusEl.style.color = '#D9534F';
+    statusEl.textContent = 'Could not send your complaint — please email shop@archery.services instead.';
+  }
+});
+</script>
 
 <footer><div class="footer-inner"><div class="footer-bottom"><p class="footer-copy">© 2026 Archery.Services</p><div class="footer-legal"><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="refund-policy.html">Refunds</a><a href="shipping-policy.html">Shipping</a></div></div></div></footer>
 <script src="shared.js"></script>

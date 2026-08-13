@@ -25,7 +25,7 @@ async function filterUnconsentedMinorProfiles(rows) {
 }
 
 const TABLES = {
-  products:    ['name','brand','description','price','was','category','stock','img_url','active','hsn_code','gst_rate'],
+  products:    ['name','brand','description','price','was','category','stock','img_url','active','hsn_code','gst_rate','country_of_origin'],
   tournaments: ['name','date','location','prize','slots','registered','status','active'],
   athletes:    ['name','state','discipline','rank','pb','img_url','active','dob','email','club_id'],
   jobs:        ['title','org','location','type','salary','description','active'],
@@ -150,6 +150,15 @@ async function itemOps(table, id, req, res) {
     if (table === 'athletes' && obj.clubId) {
       const cr = await q('select name from clubs where id=$1', [obj.clubId]);
       obj.clubName = cr.rows[0] ? cr.rows[0].name : null;
+    }
+    // Consumer Protection (E-Commerce) Rules 2020, Rule 5 — seller identity
+    // disclosure. Only for an APPROVED seller: an unvetted seller_id is not
+    // something to publish as "who this is sold by" (and never a bare
+    // account id/email — just the real business_name already captured at
+    // apply-seller, migration 006).
+    if (table === 'products' && obj.sellerId) {
+      const sr = await q(`select business_name from users where id=$1 and seller_status='approved'`, [obj.sellerId]);
+      obj.sellerName = sr.rows[0] ? sr.rows[0].business_name : null;
     }
     return json(res, obj);
   }

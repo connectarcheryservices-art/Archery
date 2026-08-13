@@ -79,6 +79,11 @@ module.exports = (req, res) => {
       if (n === 2) q.id = seg[1];
       return H('federation-board')(req, res);
     }
+    // Consumer Protection Rules 2020 grievances: /api/grievances, /api/grievances/<id>.
+    if (r0 === 'grievances') {
+      if (n === 2) q.id = seg[1];
+      return H('grievances')(req, res);
+    }
     // Seller accounts (admin): /api/sellers, /api/sellers/<id>
     if (r0 === 'sellers') {
       if (n === 2) q.id = seg[1];

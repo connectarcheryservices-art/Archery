@@ -405,6 +405,11 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
       Live Chat
       <span class="badge-count badge-red" id="chat-badge" style="display:none;">0</span>
     </button>
+    <button class="nav-item" onclick="showPanel('grievances',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+      Grievances
+      <span class="badge-count badge-red" id="grievance-badge" style="display:none;">0</span>
+    </button>
 
     <div class="sidebar-section-label">System</div>
     <button class="nav-item" id="nav-team" onclick="showPanel('team',this);loadStaff();">
@@ -497,6 +502,7 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
           <div class="form-group"><label class="form-label">Stock Quantity</label><input class="form-input" id="p-stock" type="number" placeholder="10"></div>
           <div class="form-group"><label class="form-label">HSN Code</label><input class="form-input" id="p-hsn" placeholder="9506"></div>
           <div class="form-group"><label class="form-label">GST Rate (%)</label><input class="form-input" id="p-gst" type="number" step="0.01" placeholder="5"></div>
+          <div class="form-group"><label class="form-label">Country of Origin <span style="opacity:.6;font-weight:400;">(Consumer Protection Rules 2020)</span></label><input class="form-input" id="p-origin" placeholder="e.g. India"></div>
           <div class="form-group" style="grid-column:1/-1;">
             <label class="form-label">Product Photo</label>
             <div id="p-img-drop" onclick="document.getElementById('p-img-file').click()" style="border:2px dashed rgba(201,162,39,.3);border-radius:10px;padding:22px;text-align:center;cursor:pointer;background:rgba(201,162,39,.04);">
@@ -819,6 +825,20 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
           <div class="form-group" style="margin-bottom:14px;"><label class="form-label">Platform Address</label><textarea class="form-input" id="set-address" rows="3" placeholder="Registered business address"></textarea></div>
           <div class="form-actions" style="margin-top:16px;">
             <button class="btn-save" onclick="savePricing()">Save Pricing</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Grievance Officer <span style="opacity:.6;font-weight:400;">— Consumer Protection (E-Commerce) Rules 2020, Rule 4(4)(b)</span></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+            <div class="form-group" style="margin-bottom:14px;"><label class="form-label">Name</label><input class="form-input" id="set-grievance-name" placeholder="Full name"></div>
+            <div class="form-group" style="margin-bottom:14px;"><label class="form-label">Designation</label><input class="form-input" id="set-grievance-designation" placeholder="e.g. Grievance Officer"></div>
+            <div class="form-group" style="margin-bottom:14px;"><label class="form-label">Email</label><input class="form-input" id="set-grievance-email" type="email"></div>
+            <div class="form-group" style="margin-bottom:14px;"><label class="form-label">Phone</label><input class="form-input" id="set-grievance-phone"></div>
+          </div>
+          <div class="form-group" style="margin-bottom:14px;"><label class="form-label">Address</label><textarea class="form-input" id="set-grievance-address" rows="2"></textarea></div>
+          <div style="font-size:12px;color:var(--text-2);margin-bottom:14px;">Shown publicly on refund-policy.html. Left blank, the page honestly says no officer has been designated yet — it never invents one.</div>
+          <div class="form-actions">
+            <button class="btn-save" onclick="savePricing()">Save Grievance Officer</button>
           </div>
         </div>
       </div>
@@ -1181,6 +1201,19 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
       </div>
     </div>
 
+    <!-- ── GRIEVANCES (Consumer Protection Rules 2020) ── -->
+    <div class="panel" id="panel-grievances">
+      <div class="breadcrumb">Admin <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg> <span>Grievances</span></div>
+      <div class="card" style="margin-bottom:14px;">
+        <div style="font-size:12.5px;color:var(--text-2);line-height:1.6;">
+          Consumer Protection (E-Commerce) Rules 2020, Rule 4(4)(b): acknowledge within <b>48 hours</b> of receipt,
+          resolve within <b>one month</b>. Rows past either window are flagged below — this is a real, computed check
+          against filed_at/acknowledged_at/resolved_at, not a claim.
+        </div>
+      </div>
+      <div id="grievances-list"></div>
+    </div>
+
     <!-- ── SHOP ORDERS ── -->
     <div class="panel" id="panel-orders">
       <div class="breadcrumb">Admin <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg> <span>Shop Orders</span></div>
@@ -1430,7 +1463,7 @@ function handleProductImg(input){
   });
 }
 async function saveProduct(){
-  const d={name:document.getElementById('p-name').value,brand:document.getElementById('p-brand').value,category:document.getElementById('p-cat').value,price:+document.getElementById('p-price').value,was:+document.getElementById('p-was').value||null,stock:+document.getElementById('p-stock').value,imgUrl:productImg||null,active:true,hsnCode:document.getElementById('p-hsn').value||'9506',gstRate:(parseFloat(document.getElementById('p-gst').value)||5)/100};
+  const d={name:document.getElementById('p-name').value,brand:document.getElementById('p-brand').value,category:document.getElementById('p-cat').value,price:+document.getElementById('p-price').value,was:+document.getElementById('p-was').value||null,stock:+document.getElementById('p-stock').value,imgUrl:productImg||null,active:true,hsnCode:document.getElementById('p-hsn').value||'9506',gstRate:(parseFloat(document.getElementById('p-gst').value)||5)/100,countryOfOrigin:document.getElementById('p-origin').value||null};
   if(!d.name||!d.price){toast('Fill in name and price');return;}
   // This used to `await post(...)` and then say "Product saved" unconditionally,
   // without ever looking at the result — so a failed save (expired session,
@@ -1442,7 +1475,7 @@ async function saveProduct(){
   productImg=null;
   const pv=document.getElementById('p-img-preview'); if(pv){pv.style.display='none';pv.src='';}
   const dz=document.getElementById('p-img-drop'); if(dz) dz.style.borderColor='rgba(201,162,39,.3)';
-  ['p-name','p-brand','p-price','p-was','p-stock','p-hsn','p-gst'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['p-name','p-brand','p-price','p-was','p-stock','p-hsn','p-gst','p-origin'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
 }
 
 // ── TOURNAMENTS ──
@@ -1585,6 +1618,11 @@ async function loadSettings(){
   document.getElementById('set-legal-name').value       = s.platformLegalName||'';
   document.getElementById('set-reg-state').value        = s.platformRegisteredState||'';
   document.getElementById('set-address').value          = s.platformAddress||'';
+  document.getElementById('set-grievance-name').value        = s.grievanceOfficerName||'';
+  document.getElementById('set-grievance-designation').value = s.grievanceOfficerDesignation||'';
+  document.getElementById('set-grievance-email').value       = s.grievanceOfficerEmail||'';
+  document.getElementById('set-grievance-phone').value       = s.grievanceOfficerPhone||'';
+  document.getElementById('set-grievance-address').value     = s.grievanceOfficerAddress||'';
 }
 
 // ── AUDIT LOG ──
@@ -1774,9 +1812,14 @@ async function savePricing(){
     platformLegalName: document.getElementById('set-legal-name').value,
     platformRegisteredState: document.getElementById('set-reg-state').value,
     platformAddress: document.getElementById('set-address').value,
+    grievanceOfficerName: document.getElementById('set-grievance-name').value,
+    grievanceOfficerDesignation: document.getElementById('set-grievance-designation').value,
+    grievanceOfficerEmail: document.getElementById('set-grievance-email').value,
+    grievanceOfficerPhone: document.getElementById('set-grievance-phone').value,
+    grievanceOfficerAddress: document.getElementById('set-grievance-address').value,
   };
   const r = await post('settings', d);
-  toast(r&&!r.error ? 'Pricing saved' : ((r&&r.error)||'Could not save pricing.'));
+  toast(r&&!r.error ? 'Saved' : ((r&&r.error)||'Could not save.'));
 }
 
 async function saveSettings(){
@@ -2277,6 +2320,43 @@ async function sendChatReply(e){
   return false;
 }
 
+// ── GRIEVANCES (Consumer Protection Rules 2020) ──
+async function loadGrievances(){
+  const data=await get('grievances'); if(!Array.isArray(data))return;
+  const open=data.filter(g=>g.status==='received'||g.status==='acknowledged');
+  const overdue=open.filter(g=>g.ackBreached||g.resolveBreached).length;
+  setBadge('grievance-badge', overdue);
+  const el=document.getElementById('grievances-list'); if(!el)return;
+  if(!data.length){ el.innerHTML='<div class="card" style="color:var(--text-2);">No grievances filed.</div>'; return; }
+  el.innerHTML=data.map(g=>{
+    const badge = g.status==='received' ? 'badge-pending' : g.status==='acknowledged' ? 'badge-soon' : g.status==='resolved' ? 'badge-active' : 'badge-inactive';
+    const slaFlags = [g.ackBreached?'<span class="badge badge-inactive" title="Not acknowledged within 48 hours">ACK OVERDUE</span>':'',
+                       g.resolveBreached?'<span class="badge badge-inactive" title="Not resolved within 1 month">RESOLVE OVERDUE</span>':''].join(' ');
+    const actions = (g.status==='received') ? `<button class="btn-edit" onclick="ackGrievance(${g.id})">Acknowledge</button>` : '';
+    const resolveActions = (g.status==='received'||g.status==='acknowledged') ?
+      `<button class="btn-edit" onclick="resolveGrievance(${g.id},'resolved')">Resolve</button><button class="btn-delete" onclick="resolveGrievance(${g.id},'rejected')">Reject</button>` : '';
+    return `<div class="card" style="margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:start;gap:12px;flex-wrap:wrap;">
+        <div>
+          <div style="font-family:'Oswald',sans-serif;font-size:14px;font-weight:600;color:var(--text);">#${g.id} — ${escA(g.subject)}</div>
+          <div style="font-size:12px;color:var(--text-2);margin-top:2px;">${escA(g.name)} · ${escA(g.email)}${g.orderNo?' · Order '+escA(g.orderNo):''} · filed ${new Date(g.filedAt).toLocaleString('en-IN')}</div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;"><span class="td-badge ${badge}">${escA(g.status)}</span>${slaFlags}</div>
+      </div>
+      <div style="font-size:13px;color:var(--text);margin:10px 0;white-space:pre-wrap;">${escA(g.description)}</div>
+      ${g.resolutionNotes?`<div style="font-size:12.5px;color:var(--text-2);border-left:2px solid var(--line);padding-left:10px;margin-bottom:10px;">Resolution: ${escA(g.resolutionNotes)}</div>`:''}
+      <div style="display:flex;gap:8px;">${actions}${resolveActions}</div>
+    </div>`;
+  }).join('');
+}
+async function ackGrievance(id){ const r=await put('grievances',id,{status:'acknowledged'}); if(!r||r.error){ toast((r&&r.error)||'Could not acknowledge.'); return; } loadGrievances(); toast('Acknowledged'); }
+async function resolveGrievance(id,status){
+  const notes = prompt(status==='resolved' ? 'Resolution notes (shown to nobody but staff):' : 'Reason for rejecting this grievance:') || '';
+  const r=await put('grievances',id,{status,resolutionNotes:notes});
+  if(!r||r.error){ toast((r&&r.error)||'Could not update.'); return; }
+  loadGrievances(); toast(status==='resolved'?'Marked resolved':'Rejected');
+}
+
 // ── KNOWLEDGE HUB (dynamic) ──
 async function loadKnowledge(){
   const data=await get('knowledge'); if(!Array.isArray(data))return;
@@ -2316,6 +2396,7 @@ function loadPanel(name){
   else if(name==='reports'){loadReports();}
   else if(name==='applications'){loadApplications();loadFederationTree();}
   else if(name==='chat'){loadChat();}
+  else if(name==='grievances'){loadGrievances();}
   else if(name==='settings'){loadSettings();}
   else if(name==='announcements'){loadSettings();}
   else if(name==='analytics'){loadAnalytics();}
@@ -2349,7 +2430,7 @@ function loadPanel(name){
   ov.addEventListener('click',function(e){if(e.target===ov)closeEdit();});
 })();
 const EDIT_SCHEMA={
-  products:[{k:'name',l:'Name'},{k:'brand',l:'Brand'},{k:'category',l:'Category'},{k:'price',l:'Price (CHF)',t:'number'},{k:'was',l:'Was / MRP (CHF)',t:'number'},{k:'stock',l:'Stock',t:'number'},{k:'hsnCode',l:'HSN Code'},{k:'gstRate',l:'GST Rate (decimal, e.g. 0.05 = 5%)',t:'number'},{k:'description',l:'Description',t:'area'},{k:'imgUrl',l:'Product photo',t:'image'},{k:'active',l:'Visible in shop',t:'bool'}],
+  products:[{k:'name',l:'Name'},{k:'brand',l:'Brand'},{k:'category',l:'Category'},{k:'price',l:'Price (CHF)',t:'number'},{k:'was',l:'Was / MRP (CHF)',t:'number'},{k:'stock',l:'Stock',t:'number'},{k:'hsnCode',l:'HSN Code'},{k:'gstRate',l:'GST Rate (decimal, e.g. 0.05 = 5%)',t:'number'},{k:'countryOfOrigin',l:'Country of Origin'},{k:'description',l:'Description',t:'area'},{k:'imgUrl',l:'Product photo',t:'image'},{k:'active',l:'Visible in shop',t:'bool'}],
   tournaments:[{k:'name',l:'Name'},{k:'date',l:'Date',t:'date'},{k:'location',l:'Location'},{k:'prize',l:'Prize pool (CHF)',t:'number'},{k:'slots',l:'Slots',t:'number'},{k:'registered',l:'Registered',t:'number'},{k:'status',l:'Status',t:'select',opts:['open','soon','live','done']},{k:'active',l:'Visible',t:'bool'}],
   athletes:[{k:'name',l:'Name'},{k:'state',l:'State'},{k:'discipline',l:'Discipline'},{k:'clubId',l:'Club ID (see the Clubs panel; blank = no club)',t:'number'},{k:'rank',l:'Rank',t:'number'},{k:'pb',l:'Personal best',t:'number'},{k:'imgUrl',l:'Photo',t:'image'},{k:'active',l:'Active',t:'bool'}],
   jobs:[{k:'title',l:'Title'},{k:'org',l:'Organisation'},{k:'location',l:'Location'},{k:'type',l:'Type'},{k:'salary',l:'Salary'},{k:'description',l:'Description',t:'area'},{k:'active',l:'Open',t:'bool'}],
@@ -2606,7 +2687,7 @@ async function testMail(){
 async function toggleStaff(id,active){ const r=await put('staff',id,{active:!active}); if(!r||r.error){ toast((r&&r.error)||'Could not update.'); return; } loadStaff(); toast('Updated'); }
 async function delStaff(id){ const s=STAFF_CACHE.find(x=>String(x.id)===String(id)); if(!confirm('Remove '+(s?s.name:'this team member')+'? They will lose access immediately.'))return; const r=await del('staff',id); if(!r||r.error){ toast((r&&r.error)||'Could not remove them.'); return; } loadStaff(); toast('Removed'); }
 
-function boot(){ applyRole(); loadStats(); loadDashboard(); loadOrders(); loadRegistrations(); loadReports(); loadApplications(); loadChat(); }
+function boot(){ applyRole(); loadStats(); loadDashboard(); loadOrders(); loadRegistrations(); loadReports(); loadApplications(); loadChat(); loadGrievances(); }
 if(AUTH_TOKEN){ hideLogin(); boot(); } else { showLogin(); }
 </script>
 </body>
