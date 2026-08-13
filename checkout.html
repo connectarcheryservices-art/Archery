@@ -166,7 +166,7 @@
 </div>
 
 <script>
-const INR = n => 'CHF ' + Number(n||0).toLocaleString('de-CH');
+const INR = n => '₹' + Number(n||0).toLocaleString('en-IN');
 let cart = [];
 let delivery = 'standard';
 let geo = null;
@@ -174,10 +174,13 @@ let lastQuote = null;
 
 // Client-side fallback pricing so the page still shows a total if the quote
 // API is briefly unreachable. Must actually mirror api/_lib/pricing.js's
-// DEFAULTS — these were left at their pre-CHF-conversion INR values (49/149/
-// 999) after the 2026-07-16 currency change, so a real quote-API hiccup was
-// showing a delivery fee ~10x the real one (CLAUDE.md §1.6).
-const FALLBACK = { taxRate:0.10, platformFeeRate:0.05, deliveryStandard:5, deliverySameDay:15, freeDeliveryThreshold:99 };
+// DEFAULTS. Currency went INR -> CHF (2026-07-16) -> back to INR (2026-08-12,
+// owner's instruction — GST is inherently INR-denominated). This FALLBACK
+// object has to move with pricing.js's DEFAULTS every time, or a real
+// quote-API hiccup silently shows the wrong currency's numbers under the
+// right currency's label (CLAUDE.md §1.6) — exactly what happened here once
+// already during the CHF conversion, when this was left at the old values.
+const FALLBACK = { taxRate:0.10, platformFeeRate:0.05, deliveryStandard:49, deliverySameDay:149, freeDeliveryThreshold:999 };
 function localQuote(items, deliv){
   const goods = items.reduce((s,i)=>s+i.price*i.qty,0);
   let fee = goods===0?0 : deliv==='sameday'?FALLBACK.deliverySameDay : (goods>=FALLBACK.freeDeliveryThreshold?0:FALLBACK.deliveryStandard);

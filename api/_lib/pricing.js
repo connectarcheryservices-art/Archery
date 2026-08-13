@@ -1,21 +1,27 @@
 // api/_lib/pricing.js
-// Comprehensive checkout pricing for Archery.Services (CHF).
+// Comprehensive checkout pricing for Archery.Services (INR).
 // Single source of truth for the order total so the client display and the
 // Razorpay charge can never disagree. All rates are admin-configurable
 // (loaded from the `settings` row) and fall back to these defaults.
 'use strict';
 
-// Currency changed INR -> CHF on 2026-07-16 at the owner's instruction. The
-// stored product prices were converted in the same change (migration 011), so
-// the displayed price and the amount charged stay in the same currency — showing
-// one and charging the other would be a lie about money (§1.6).
+// Currency changed INR -> CHF on 2026-07-16, then back to INR on 2026-08-12
+// at the owner's explicit instruction (real GST compliance is inherently
+// INR-denominated — CGST/SGST/IGST returns are always filed in rupees
+// regardless of storefront currency — and this business ships within India
+// with rupee delivery per api/_lib/fees.js's own long-standing comment).
+// The stored product prices are converted back in the same change (migration
+// 035), so the displayed price and the amount charged stay in the same
+// currency — showing one and charging the other would be a lie about money
+// (§1.6). These are the same defaults the site used before the CHF detour —
+// recovered from git history, not reinvented.
 const DEFAULTS = {
-  currency: 'CHF',
-  taxRate: 0.10,             // 10% tax, applied to the goods subtotal
-  platformFeeRate: 0.05,     // 5% platform fee, applied to the goods subtotal
-  deliveryStandard: 5,       // standard delivery (CHF)
-  deliverySameDay: 15,       // express delivery (CHF)
-  freeDeliveryThreshold: 99, // standard delivery is free at/above this goods value
+  currency: 'INR',
+  taxRate: 0.10,              // 10% tax, applied to the goods subtotal
+  platformFeeRate: 0.05,      // 5% platform fee, applied to the goods subtotal
+  deliveryStandard: 49,       // standard PAN-India delivery (INR)
+  deliverySameDay: 149,       // super-fast same-day PAN-India delivery (INR)
+  freeDeliveryThreshold: 999, // standard delivery is free at/above this goods value
 };
 
 function round2(n) { return Math.round((Number(n) + Number.EPSILON) * 100) / 100; }

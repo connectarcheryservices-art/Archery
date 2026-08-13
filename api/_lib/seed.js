@@ -56,14 +56,14 @@ const ROWS = {
 };
 
 // currency/delivery/threshold must mirror api/_lib/pricing.js's DEFAULTS —
-// these were still the pre-2026-07-16 INR values (49/149/999, currency INR)
-// a full currency conversion later, meaning a fresh install's /api/settings
-// (and, before migration 016, checkout.html's own now-fixed client fallback)
-// would have shown delivery pricing roughly 10x the real CHF amount.
+// these drifted out of sync once already during the INR->CHF->INR currency
+// history (see pricing.js's own header), leaving a fresh install's
+// /api/settings showing delivery pricing ~10x off from the real amount.
+// Keep this in lockstep with pricing.js's DEFAULTS, not just at conversion time.
 const SETTINGS = {
-  currency:'CHF', storeName:'Archery.Services',
-  taxRate:0.10, platformFeeRate:0.05, deliveryStandard:5, deliverySameDay:15,
-  freeDeliveryThreshold:99, sameDayEnabled:true,
+  currency:'INR', storeName:'Archery.Services',
+  taxRate:0.10, platformFeeRate:0.05, deliveryStandard:49, deliverySameDay:149,
+  freeDeliveryThreshold:999, sameDayEnabled:true,
   maintenanceMode:false, shopEnabled:true, tournamentsEnabled:true, communityEnabled:true,
   registrationOpen:true, announcementText:'', announcementActive:false, heroImage:'',
 };

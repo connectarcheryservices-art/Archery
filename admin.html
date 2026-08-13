@@ -492,8 +492,8 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
           <div class="form-group"><label class="form-label">Product Name</label><input class="form-input" id="p-name" placeholder="e.g. Pro Recurve Bow 68&quot;"></div>
           <div class="form-group"><label class="form-label">Brand <span style="opacity:.6;font-weight:400;">(only formally-registered brands)</span></label><input class="form-input" id="p-brand" placeholder="e.g. registered seller / brand name"></div>
           <div class="form-group"><label class="form-label">Category</label><select class="form-select" id="p-cat"><option>Recurve Bows</option><option>Compound Bows</option><option>Arrows</option><option>Targets</option><option>Accessories</option><option>Protective Gear</option></select></div>
-          <div class="form-group"><label class="form-label">Price (CHF)</label><input class="form-input" id="p-price" type="number" placeholder="24500"></div>
-          <div class="form-group"><label class="form-label">Was Price (CHF) — leave blank if no discount</label><input class="form-input" id="p-was" type="number" placeholder="29900"></div>
+          <div class="form-group"><label class="form-label">Price (₹)</label><input class="form-input" id="p-price" type="number" placeholder="24500"></div>
+          <div class="form-group"><label class="form-label">Was Price (₹) — leave blank if no discount</label><input class="form-input" id="p-was" type="number" placeholder="29900"></div>
           <div class="form-group"><label class="form-label">Stock Quantity</label><input class="form-input" id="p-stock" type="number" placeholder="10"></div>
           <div class="form-group" style="grid-column:1/-1;">
             <label class="form-label">Product Photo</label>
@@ -530,7 +530,7 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
           <div class="form-group full"><label class="form-label">Tournament Name</label><input class="form-input" id="t-name" placeholder="e.g. Assam Open Archery Championship 2025"></div>
           <div class="form-group"><label class="form-label">Date</label><input class="form-input" id="t-date" type="date"></div>
           <div class="form-group"><label class="form-label">Location</label><input class="form-input" id="t-location" placeholder="City, State"></div>
-          <div class="form-group"><label class="form-label">Prize Money (CHF)</label><input class="form-input" id="t-prize" type="number" placeholder="240000"></div>
+          <div class="form-group"><label class="form-label">Prize Money (₹)</label><input class="form-input" id="t-prize" type="number" placeholder="240000"></div>
           <div class="form-group"><label class="form-label">Total Slots</label><input class="form-input" id="t-slots" type="number" placeholder="320"></div>
           <div class="form-group"><label class="form-label">Status</label><select class="form-select" id="t-status"><option value="open">Registration Open</option><option value="soon">Coming Soon</option><option value="live">Live Now</option><option value="done">Completed</option></select></div>
         </div>
@@ -585,7 +585,7 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
           <div class="form-group"><label class="form-label">Organisation</label><input class="form-input" id="j-org" placeholder="e.g. SAI Guwahati"></div>
           <div class="form-group"><label class="form-label">Location</label><input class="form-input" id="j-loc" placeholder="City, State"></div>
           <div class="form-group"><label class="form-label">Type</label><select class="form-select" id="j-type"><option>Full Time</option><option>Part Time</option><option>Contract</option><option>Volunteer</option></select></div>
-          <div class="form-group"><label class="form-label">Salary (optional)</label><input class="form-input" id="j-salary" placeholder="e.g. CHF 60,000/yr — leave blank if not disclosed"></div>
+          <div class="form-group"><label class="form-label">Salary (optional)</label><input class="form-input" id="j-salary" placeholder="e.g. ₹6,00,000/yr — leave blank if not disclosed"></div>
           <div class="form-group" style="grid-column:1/-1;"><label class="form-label">Description (what the role is, responsibilities, requirements)</label><textarea class="form-input" id="j-desc" rows="6" placeholder="Full job description. Line breaks are preserved."></textarea></div>
         </div>
         <div class="form-actions">
@@ -800,10 +800,10 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
             <div class="form-group" style="margin-bottom:14px;"><label class="form-label">Tax Rate (%)</label><input class="form-input" id="set-tax" type="number" min="0" max="100" step="0.1"></div>
             <div class="form-group" style="margin-bottom:14px;"><label class="form-label">Platform Fee (%)</label><input class="form-input" id="set-platform-fee" type="number" min="0" max="100" step="0.1"></div>
-            <div class="form-group" style="margin-bottom:14px;"><label class="form-label">Standard Delivery (CHF)</label><input class="form-input" id="set-delivery-std" type="number" min="0" step="1"></div>
-            <div class="form-group" style="margin-bottom:14px;"><label class="form-label">Same-Day Delivery (CHF)</label><input class="form-input" id="set-delivery-sameday" type="number" min="0" step="1"></div>
+            <div class="form-group" style="margin-bottom:14px;"><label class="form-label">Standard Delivery (₹)</label><input class="form-input" id="set-delivery-std" type="number" min="0" step="1"></div>
+            <div class="form-group" style="margin-bottom:14px;"><label class="form-label">Same-Day Delivery (₹)</label><input class="form-input" id="set-delivery-sameday" type="number" min="0" step="1"></div>
           </div>
-          <div class="form-group" style="margin-bottom:14px;"><label class="form-label">Free Delivery Threshold (CHF)</label><input class="form-input" id="set-free-threshold" type="number" min="0" step="1"></div>
+          <div class="form-group" style="margin-bottom:14px;"><label class="form-label">Free Delivery Threshold (₹)</label><input class="form-input" id="set-free-threshold" type="number" min="0" step="1"></div>
           <label class="toggle-row">
             <div class="toggle-info"><div class="toggle-title">Same-Day Delivery</div><div class="toggle-desc">Offer same-day delivery at checkout</div></div>
             <label class="toggle-switch"><input type="checkbox" id="set-sameday-enabled"><div class="toggle-slider"></div></label>
@@ -1314,7 +1314,7 @@ async function loadStats(){
   const a = await get('analytics');
   if(!a || a.error) return;
   const c = a.counts || {};
-  const inr = n => Number(n||0).toLocaleString('de-CH');
+  const inr = n => Number(n||0).toLocaleString('en-IN');
   const setCard = (id, val, label) => {
     const el = document.getElementById(id); if(!el) return;
     el.innerHTML = val;
@@ -1324,7 +1324,7 @@ async function loadStats(){
   setCard('s-athletes', inr(c.athletes), 'Athletes');
   setCard('s-clubs', inr(c.products), 'Products Listed');
   setCard('s-tournaments', inr(c.tournaments), 'Tournaments');
-  setCard('s-revenue', 'CHF '+inr(a.revenue), 'Revenue (paid)');
+  setCard('s-revenue', '₹'+inr(a.revenue), 'Revenue (paid)');
   setCard('s-views', inr(c.pageviews), 'Page Views');
   setCard('s-signups', inr(c.orders_total), 'Total Orders');
 }
@@ -1338,7 +1338,7 @@ async function loadProducts(){
       <td class="td-name">${escA(p.name)}</td>
       <td>${escA(p.brand)}</td>
       <td>${escA(p.category)}</td>
-      <td>CHF ${Number(p.price).toLocaleString('de-CH')}</td>
+      <td>₹${Number(p.price).toLocaleString('en-IN')}</td>
       <td>${p.stock}</td>
       <td><span class="td-badge ${p.active?'badge-active':'badge-inactive'}">${p.active?'Active':'Hidden'}</span></td>
       <td class="td-actions">
@@ -1432,7 +1432,7 @@ async function loadTournaments(){
       <td class="td-name">${escA(t.name)}</td>
       <td>${escA(t.date)}</td>
       <td>${escA(t.location)}</td>
-      <td>CHF ${Number(t.prize).toLocaleString('de-CH')}</td>
+      <td>₹${Number(t.prize).toLocaleString('en-IN')}</td>
       <td>${escA(t.slots)}</td>
       <td>${escA(t.registered)}</td>
       <td><span class="td-badge badge-${escA(t.status)}">${escA(t.status)}</span></td>
@@ -1542,7 +1542,7 @@ async function loadSettings(){
   document.getElementById('ann-text').value           = s.announcementText||'';
   document.getElementById('ann-active').checked       = s.announcementActive||false;
   document.getElementById('ann-preview').textContent  = s.announcementText||'Preview will appear here';
-  document.getElementById('set-currency').value        = s.currency||'CHF';
+  document.getElementById('set-currency').value        = s.currency||'INR';
   document.getElementById('set-tax').value              = s.taxRate!=null ? Math.round(s.taxRate*1000)/10 : '';
   document.getElementById('set-platform-fee').value     = s.platformFeeRate!=null ? Math.round(s.platformFeeRate*1000)/10 : '';
   document.getElementById('set-delivery-std').value     = s.deliveryStandard!=null ? s.deliveryStandard : '';
@@ -1601,7 +1601,7 @@ async function loadOfficiating(){
       <td>${escA(CLEARANCE_LABEL[c.clearanceType||c.clearance_type]||(c.clearanceType||c.clearance_type))}</td>
       <td>${escA(c.issuingBody||c.issuing_body||'—')}</td>
       <td>${escA(c.referenceNumber||c.reference_number||'—')}</td>
-      <td style="font-size:12px;">${c.createdAt||c.created_at ? new Date(c.createdAt||c.created_at).toLocaleString('de-CH') : ''}</td>
+      <td style="font-size:12px;">${c.createdAt||c.created_at ? new Date(c.createdAt||c.created_at).toLocaleString('en-IN') : ''}</td>
       <td class="td-actions"><button class="btn-toggle" onclick="respondClearance(${c.id},true)">Approve</button><button class="btn-delete" onclick="respondClearance(${c.id},false)">Reject</button></td>
     </tr>`).join('') : '<tr><td colspan="6" style="padding:22px;color:var(--text-2);">No pending safeguarding clearance requests.</td></tr>';
   const complianceRows = Array.isArray(dopingCompliance) ? dopingCompliance : [];
@@ -1610,7 +1610,7 @@ async function loadOfficiating(){
       <td>${escA(r.memberRole||r.member_role||'')}</td>
       <td>${escA(r.email||'')}</td>
       <td>${r.modulesCompleted ?? r.modules_completed ?? 0} / 6</td>
-      <td style="font-size:12px;">${(r.lastCompleted||r.last_completed) ? new Date(r.lastCompleted||r.last_completed).toLocaleDateString('de-CH') : 'Never'}</td>
+      <td style="font-size:12px;">${(r.lastCompleted||r.last_completed) ? new Date(r.lastCompleted||r.last_completed).toLocaleDateString('en-IN') : 'Never'}</td>
     </tr>`).join('') : '<tr><td colspan="5" style="padding:22px;color:var(--text-2);">No athletes, coaches, or officials registered yet.</td></tr>';
 
   const claimsRows = Array.isArray(claims) ? claims : [];
@@ -1621,7 +1621,7 @@ async function loadOfficiating(){
   document.getElementById('claims-tbody').innerHTML = claimsRows.length ? claimsRows.map(c => `<tr>
       <td class="td-name">${escA(c.userName||c.user_name||'—')}<br><span style="color:var(--text-2);font-size:11px;">${escA(c.email||'')}</span></td>
       <td>${escA(c.athleteName||c.athlete_name||'—')}</td>
-      <td style="font-size:12px;">${c.createdAt||c.created_at ? new Date(c.createdAt||c.created_at).toLocaleString('de-CH') : ''}</td>
+      <td style="font-size:12px;">${c.createdAt||c.created_at ? new Date(c.createdAt||c.created_at).toLocaleString('en-IN') : ''}</td>
       <td class="td-actions"><button class="btn-toggle" onclick="respondClaim(${c.id},true)">Approve</button><button class="btn-delete" onclick="respondClaim(${c.id},false)">Reject</button></td>
     </tr>`).join('') : '<tr><td colspan="4" style="padding:22px;color:var(--text-2);">No pending claims.</td></tr>';
 
@@ -1631,7 +1631,7 @@ async function loadOfficiating(){
       <td class="td-name">${escA(c.name||'—')}<br><span style="color:var(--text-2);font-size:11px;">${escA(c.email||'')}</span></td>
       <td>${escA(c.level||'')}</td>
       <td>${escA(c.issuingBody||c.issuing_body||'—')}</td>
-      <td style="font-size:12px;">${c.createdAt||c.created_at ? new Date(c.createdAt||c.created_at).toLocaleString('de-CH') : ''}</td>
+      <td style="font-size:12px;">${c.createdAt||c.created_at ? new Date(c.createdAt||c.created_at).toLocaleString('en-IN') : ''}</td>
       <td class="td-actions"><button class="btn-toggle" onclick="respondCertification(${c.id},true)">Approve</button><button class="btn-delete" onclick="respondCertification(${c.id},false)">Reject</button></td>
     </tr>`).join('') : '<tr><td colspan="5" style="padding:22px;color:var(--text-2);">No pending certification requests.</td></tr>';
 
@@ -1648,7 +1648,7 @@ async function loadOfficiating(){
   const eventRows = Array.isArray(events) ? events : [];
   const eventSelect = document.getElementById('assign-event-select');
   eventSelect.innerHTML = eventRows.length
-    ? eventRows.map(e => `<option value="${e.id}">${escA(e.name)}${e.startsOn ? ' — ' + new Date(e.startsOn).toLocaleDateString('de-CH') : ''}</option>`).join('')
+    ? eventRows.map(e => `<option value="${e.id}">${escA(e.name)}${e.startsOn ? ' — ' + new Date(e.startsOn).toLocaleDateString('en-IN') : ''}</option>`).join('')
     : '<option value="">No events yet</option>';
 
   const clic = document.getElementById('coach-licenses-count'); if (clic) clic.textContent = coachLicenseRows.length + ' Pending';
@@ -1657,14 +1657,14 @@ async function loadOfficiating(){
       <td>${escA(c.level||'')}</td>
       <td>${escA(c.discipline||'—')}</td>
       <td>${escA(c.issuingBody||c.issuing_body||'—')}</td>
-      <td style="font-size:12px;">${c.createdAt||c.created_at ? new Date(c.createdAt||c.created_at).toLocaleString('de-CH') : ''}</td>
+      <td style="font-size:12px;">${c.createdAt||c.created_at ? new Date(c.createdAt||c.created_at).toLocaleString('en-IN') : ''}</td>
       <td class="td-actions"><button class="btn-toggle" onclick="respondCoachLicense(${c.id},true)">Approve</button><button class="btn-delete" onclick="respondCoachLicense(${c.id},false)">Reject</button></td>
     </tr>`).join('') : '<tr><td colspan="6" style="padding:22px;color:var(--text-2);">No pending coach license requests.</td></tr>';
 
   const clc = document.getElementById('classifications-count'); if (clc) clc.textContent = classRows.length + ' Pending';
   document.getElementById('classifications-tbody').innerHTML = classRows.length ? classRows.map(c => `<tr>
       <td class="td-name">${escA(c.athlete_name||c.athleteName||'—')}</td>
-      <td style="font-size:12px;">${escA(c.sport_class_requested||c.sportClassRequested||'')}${c.created_at||c.createdAt ? '<br><span style="color:var(--text-2);">'+new Date(c.created_at||c.createdAt).toLocaleDateString('de-CH')+'</span>' : ''}</td>
+      <td style="font-size:12px;">${escA(c.sport_class_requested||c.sportClassRequested||'')}${c.created_at||c.createdAt ? '<br><span style="color:var(--text-2);">'+new Date(c.created_at||c.createdAt).toLocaleDateString('en-IN')+'</span>' : ''}</td>
       <td style="max-width:220px;font-size:12px;color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escA(c.note||'')}">${escA(c.note||'—')}</td>
       <td>
         <select class="form-input" id="cls-status-${c.id}" style="font-size:12px;padding:5px 6px;margin-bottom:4px;">
@@ -1773,7 +1773,7 @@ document.getElementById('ann-text').addEventListener('input',function(){
 });
 
 // ── ANALYTICS CHART ──
-// Was: a hardcoded 14-day revenue series (fake dates, fake CHF figures) shown
+// Was: a hardcoded 14-day revenue series (fake dates, fake ₹ figures) shown
 // whenever the real series was empty — which is the expected state for a new
 // or low-traffic site. That rendered invented numbers as this site's actual
 // history (CLAUDE.md §1.1). An empty chart with an honest label is correct;
@@ -1809,7 +1809,7 @@ async function reconcile(dryRun){
     const label={marked_paid:'✅ recovered — marked paid',would_mark_paid:'would recover — Razorpay has a captured payment',
       no_payment:'no payment at Razorpay — left pending',razorpay_unreachable:'⚠ Razorpay unreachable',
       amount_mismatch:'⚠ AMOUNT MISMATCH — needs a human',already_paid:'already paid',unknown_order:'unknown order'}[x.action]||x.action;
-    d.textContent=`${x.orderNo} — ${label}${x.amount?` (CHF ${x.amount})`:''}${x.reason?` — ${x.reason}`:''}`;
+    d.textContent=`${x.orderNo} — ${label}${x.amount?` (₹${x.amount})`:''}${x.reason?` — ${x.reason}`:''}`;
     if(x.action==='amount_mismatch') d.style.color='var(--red)';
     out.appendChild(d);
   });
@@ -1823,7 +1823,7 @@ async function loadOrders(){
   const c=document.getElementById('ord-count'); if(c) c.textContent=data.length+' orders';
   const tb=document.getElementById('orders-tbody'); if(!tb) return;
   tb.innerHTML=data.length?data.map(o=>{
-    const when=o.createdAt?new Date(o.createdAt).toLocaleString('de-CH'):'';
+    const when=o.createdAt?new Date(o.createdAt).toLocaleString('en-IN'):'';
     const items=(o.items||[]).map(i=>`${i.qty}× ${escA(i.name)}`).join('<br>');
     const cust=escA(o.customerName||'Guest')+(o.customerPhone?`<br><span style="color:var(--text-2);font-size:11px;">${escA(o.customerPhone)}</span>`:'')+(o.city?`<br><span style="color:var(--text-2);font-size:11px;">${escA([o.city,o.state,o.pincode].filter(Boolean).join(', '))}</span>`:'');
     const pay=o.paymentStatus==='paid'?'<span class="td-badge badge-active">paid</span>':`<span class="td-badge badge-inactive">${escA(o.paymentStatus||'pending')}</span>`;
@@ -1832,7 +1832,7 @@ async function loadOrders(){
     const nextBtn=next?`<button class="btn-toggle" onclick="setOrder(${o.id},'${next}')">Mark ${next}</button>`:'';
     const cancel=(o.status!=='cancelled'&&o.status!=='delivered')?`<button class="btn-edit" onclick="setOrder(${o.id},'cancelled')">Cancel</button>`:'';
     const map=(o.geoLat&&o.geoLng)?`<a class="btn-edit" href="https://www.google.com/maps?q=${o.geoLat},${o.geoLng}" target="_blank" style="text-decoration:none;">Map</a>`:'';
-    return `<tr><td>#${o.id}</td><td class="td-name">${cust}</td><td style="font-size:12px;line-height:1.6;">${items}</td><td>CHF ${Number(o.total).toLocaleString('de-CH')}</td><td>${pay}</td><td style="font-size:12px;">${when}</td><td class="td-actions"><span class="td-badge ${sb}">${escA(o.status)}</span> ${nextBtn}${cancel}${map}<button class="btn-delete" onclick="delOrder(${o.id})">Delete</button></td></tr>`;
+    return `<tr><td>#${o.id}</td><td class="td-name">${cust}</td><td style="font-size:12px;line-height:1.6;">${items}</td><td>₹${Number(o.total).toLocaleString('en-IN')}</td><td>${pay}</td><td style="font-size:12px;">${when}</td><td class="td-actions"><span class="td-badge ${sb}">${escA(o.status)}</span> ${nextBtn}${cancel}${map}<button class="btn-delete" onclick="delOrder(${o.id})">Delete</button></td></tr>`;
   }).join(''):'<tr><td colspan="8" style="padding:22px;color:var(--text-2);">No paid orders yet.</td></tr>';
 }
 async function setOrder(id,status){ const r=await put('orders',id,{status}); if(!r||r.error){ toast((r&&r.error)||'Could not update the order.'); return; } loadOrders(); toast('Order '+status); }
@@ -1841,10 +1841,10 @@ async function delOrder(id){ if(!confirm('Delete this order?'))return; const r=a
 // ── ANALYTICS (real revenue series; honest empty state when there isn't one) ──
 async function loadAnalytics(){
   const a=await get('analytics');
-  if(a && !a.error){ const c=a.counts||{}; const inr=n=>Number(n||0).toLocaleString('de-CH');
+  if(a && !a.error){ const c=a.counts||{}; const inr=n=>Number(n||0).toLocaleString('en-IN');
     const set=(id,v)=>{const el=document.getElementById(id); if(el)el.innerHTML=v;};
     set('an-views', inr(c.pageviews30)); set('an-orders', inr(c.orders_total));
-    set('an-paid', inr(a.paidOrders)); set('an-rev', 'CHF '+inr(a.revenue));
+    set('an-paid', inr(a.paidOrders)); set('an-rev', '₹'+inr(a.revenue));
     // Top pages (real) + traffic sources reuse the dashboard renderers.
     const tp=document.getElementById('top-pages');
     if(tp){ const pages=a.topPages||[]; const tot=pages.reduce((s,x)=>s+x.n,0)||1; const cols=['var(--gold)','var(--blue)','var(--purple)','var(--green)','var(--orange)','var(--red)'];
@@ -1852,7 +1852,7 @@ async function loadAnalytics(){
     if(typeof loadDashboard==='function') loadDashboard(); }
   if(!a||a.error||!a.revenueSeries||!a.revenueSeries.length){ loadAnalyticsChart(); return; }
   const series=a.revenueSeries, max=Math.max(1,...series.map(s=>Number(s.v)));
-  document.getElementById('analytics-chart').innerHTML=series.map(s=>`<div class="chart-bar" style="height:${(Number(s.v)/max*100).toFixed(0)}%;" title="CHF ${Number(s.v).toLocaleString('de-CH')}"></div>`).join('');
+  document.getElementById('analytics-chart').innerHTML=series.map(s=>`<div class="chart-bar" style="height:${(Number(s.v)/max*100).toFixed(0)}%;" title="₹${Number(s.v).toLocaleString('en-IN')}"></div>`).join('');
   document.getElementById('analytics-labels').innerHTML=series.map(s=>`<div class="chart-label">${s.d}</div>`).join('');
 }
 
@@ -1866,7 +1866,7 @@ async function loadRegistrations(){
   const tb=document.getElementById('registrations-tbody'); if(!tb)return;
   tb.innerHTML=data.length?data.map(r=>{
     const name=escA(((r.firstName||'')+' '+(r.lastName||'')).trim()||'—');
-    const when=r.createdAt?new Date(r.createdAt).toLocaleString('de-CH'):'';
+    const when=r.createdAt?new Date(r.createdAt).toLocaleString('en-IN'):'';
     const badge=r.status==='approved'?'badge-active':r.status==='rejected'?'badge-inactive':'badge-soon';
     const act=r.status==='pending'
       ?`<button class="btn-toggle" onclick="setInbox('registrations',${r.id},'approved')">Approve</button><button class="btn-delete" onclick="setInbox('registrations',${r.id},'rejected')">Reject</button>`
@@ -1881,7 +1881,7 @@ async function loadReports(){
   const tb=document.getElementById('reports-tbody'); if(!tb)return;
   const STATUS_BADGE={open:'badge-soon',investigating:'badge-pending',resolved:'badge-active'};
   tb.innerHTML=data.length?data.map(r=>{
-    const when=r.createdAt?new Date(r.createdAt).toLocaleString('de-CH'):'';
+    const when=r.createdAt?new Date(r.createdAt).toLocaleString('en-IN'):'';
     const reporter=r.name?escA(r.name)+(r.email?`<br><span style="color:var(--text-2);font-size:11px;">${escA(r.email)}</span>`:''):'<em style="color:var(--text-2);">Anonymous</em>';
     const urgent=/urgent|emergency/i.test(r.urgency||'');
     const caseCell=`<input class="form-input" id="rep-assign-${r.id}" value="${escA(r.assignedTo||r.assigned_to||'')}" placeholder="Assigned to" style="font-size:11px;padding:5px 6px;margin-bottom:4px;width:120px;">
@@ -2285,8 +2285,8 @@ function loadPanel(name){
   ov.addEventListener('click',function(e){if(e.target===ov)closeEdit();});
 })();
 const EDIT_SCHEMA={
-  products:[{k:'name',l:'Name'},{k:'brand',l:'Brand'},{k:'category',l:'Category'},{k:'price',l:'Price (CHF)',t:'number'},{k:'was',l:'Was / MRP (CHF)',t:'number'},{k:'stock',l:'Stock',t:'number'},{k:'description',l:'Description',t:'area'},{k:'imgUrl',l:'Product photo',t:'image'},{k:'active',l:'Visible in shop',t:'bool'}],
-  tournaments:[{k:'name',l:'Name'},{k:'date',l:'Date',t:'date'},{k:'location',l:'Location'},{k:'prize',l:'Prize pool (CHF)',t:'number'},{k:'slots',l:'Slots',t:'number'},{k:'registered',l:'Registered',t:'number'},{k:'status',l:'Status',t:'select',opts:['open','soon','live','done']},{k:'active',l:'Visible',t:'bool'}],
+  products:[{k:'name',l:'Name'},{k:'brand',l:'Brand'},{k:'category',l:'Category'},{k:'price',l:'Price (₹)',t:'number'},{k:'was',l:'Was / MRP (₹)',t:'number'},{k:'stock',l:'Stock',t:'number'},{k:'description',l:'Description',t:'area'},{k:'imgUrl',l:'Product photo',t:'image'},{k:'active',l:'Visible in shop',t:'bool'}],
+  tournaments:[{k:'name',l:'Name'},{k:'date',l:'Date',t:'date'},{k:'location',l:'Location'},{k:'prize',l:'Prize pool (₹)',t:'number'},{k:'slots',l:'Slots',t:'number'},{k:'registered',l:'Registered',t:'number'},{k:'status',l:'Status',t:'select',opts:['open','soon','live','done']},{k:'active',l:'Visible',t:'bool'}],
   athletes:[{k:'name',l:'Name'},{k:'state',l:'State'},{k:'discipline',l:'Discipline'},{k:'rank',l:'Rank',t:'number'},{k:'pb',l:'Personal best',t:'number'},{k:'imgUrl',l:'Photo',t:'image'},{k:'active',l:'Active',t:'bool'}],
   jobs:[{k:'title',l:'Title'},{k:'org',l:'Organisation'},{k:'location',l:'Location'},{k:'type',l:'Type'},{k:'salary',l:'Salary'},{k:'description',l:'Description',t:'area'},{k:'active',l:'Open',t:'bool'}],
   knowledge:[{k:'title',l:'Title'},{k:'category',l:'Category'},{k:'level',l:'Level'},{k:'readTime',l:'Read time'},{k:'excerpt',l:'Excerpt',t:'area'},{k:'body',l:'Body',t:'area'},{k:'published',l:'Published',t:'bool'},{k:'active',l:'Active',t:'bool'}],
@@ -2410,7 +2410,7 @@ async function loadStaff(){
       <td style="font-family:ui-monospace,Menlo,monospace;font-size:12.5px;">${escA(s.loginId||s.username)}</td>
       <td><span class="td-badge badge-soon">${escA(s.role)}</span></td>
       <td>${s.twoFactor?'<span class="td-badge badge-active">On</span>':'<span class="td-badge badge-inactive">Off</span>'}</td>
-      <td style="font-size:12px;">${s.lastLogin?new Date(s.lastLogin).toLocaleString('de-CH'):'never'}</td>
+      <td style="font-size:12px;">${s.lastLogin?new Date(s.lastLogin).toLocaleString('en-IN'):'never'}</td>
       <td><span class="td-badge ${s.active!==false?'badge-active':'badge-inactive'}">${s.active!==false?'Active':'Disabled'}</span></td>
       <td class="td-actions">
         <button class="btn-edit" onclick='openStaffForm(${s.id})'>Edit</button>
