@@ -82,6 +82,25 @@ production just because it's in `supabase/migrations/` and works locally;
 verify against the live API (or ask for direct confirmation) before
 shipping code that depends on it.
 
+**Same day, fourth pass — federation tier: rankings roll-up, member sync,
+communications board shipped (commit `96e0f04`).** The rankings engine
+already existed in full (api/_lib/ranking.js + scoring.js's record/
+publish/read cycle) — reading it closely first avoided rebuilding it from
+scratch. Added federation-scoping to the existing `GET /api/scoring/
+ranking` endpoint instead. New: `api/_handlers/federation-roster.js`
+(member sync), `api/_handlers/federation-board.js` + migration 042
+(communications board), `api/_lib/federation-lib.js` (shared
+hasJurisdiction + new clubIdsUnderFederation, de-duplicated out of
+federation.js). Deliberately deferred: a "compliance dashboard" (never
+specified what it should show — needs a real product conversation) and a
+federation-consumable external API (a new API-key auth surface deserving
+its own security design pass). `checkout-fee.js`'s `FOR_SALE` stays empty
+— 5 of 7 promised federation-tier features, even now, isn't a tier worth
+charging for. Verified end-to-end against a real seeded 3-level hierarchy
+with a deliberately-unrelated club/athlete used to prove scoping actually
+excludes them. Migration 042 needs manual application to production (same
+drift pattern as 037-041 — see the note above).
+
 **Same day, second pass — external audit, "do not deploy/merge yet":** while club-analytics/
 currency work was in progress (see below), the user relayed a 6-finding external security audit
 of the uncommitted tree. Every finding was independently re-verified against the real code before
