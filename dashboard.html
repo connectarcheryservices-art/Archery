@@ -393,6 +393,69 @@ function renderClubManage(clubId){
     <input class="field-input" id="new-session-date-${clubId}" type="date">
     <button class="btn btn-primary" onclick="createClubSession(${clubId})">Add session</button>
   </div>`;
+  h += `<div style="margin-top:14px;"><button class="btn btn-ghost" id="analytics-toggle-${clubId}" onclick="toggleClubAnalytics(${clubId})">View analytics</button></div>
+    <div id="club-analytics-${clubId}" style="display:none;margin-top:10px;"></div>`;
+  return h;
+}
+
+// ── CLUB ANALYTICS — real membership/attendance/competitive stats (backed
+// by api/_handlers/club-analytics.js). Loaded on demand, separately from
+// the rest of the manage panel: it's a heavier query (7 parallel SELECTs)
+// than most people opening "Manage" actually want on every visit. ──
+async function toggleClubAnalytics(clubId){
+  const el = document.getElementById('club-analytics-' + clubId);
+  const btn = document.getElementById('analytics-toggle-' + clubId);
+  if (!el) return;
+  if (el.style.display === 'block') { el.style.display = 'none'; if (btn) btn.textContent = 'View analytics'; return; }
+  el.style.display = 'block';
+  if (btn) btn.textContent = 'Hide analytics';
+  el.innerHTML = '<div class="msg msg-info">Loading…</div>';
+  const data = await jget('/club-analytics?clubId=' + clubId);
+  el.innerHTML = (data && !data.error) ? renderClubAnalytics(data) : `<div class="msg msg-info">${esc((data && data.error) || 'Could not load analytics.')}</div>`;
+}
+function renderClubAnalytics(d){
+  const m = d.membership, c = d.competitive;
+  const stat = (label, val) => `<div style="background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px;text-align:center;">
+    <div style="font-size:19px;font-weight:700;">${esc(val)}</div>
+    <div style="font-size:9.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--faint);">${esc(label)}</div></div>`;
+  let h = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:8px;margin-bottom:14px;">'
+    + stat('Members', m.total) + stat('Active', m.active) + stat('Coaches', m.coaches)
+    + stat('Officials', m.officials) + stat('Joined 30d', m.joined30d) + stat('Sessions', d.sessions.total)
+    + '</div>';
+
+  if (d.byDiscipline.length) {
+    h += '<div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);margin-bottom:6px;">By discipline</div>';
+    const maxD = Math.max(1, ...d.byDiscipline.map(x => x.count));
+    d.byDiscipline.forEach(x => {
+      h += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+        <div style="width:76px;font-size:12px;text-transform:capitalize;">${esc(x.discipline)}</div>
+        <div style="flex:1;background:var(--bg);border-radius:4px;overflow:hidden;height:12px;"><div style="width:${Math.round(x.count / maxD * 100)}%;background:var(--ty);height:100%;"></div></div>
+        <div style="width:22px;font-size:12px;text-align:right;">${x.count}</div></div>`;
+    });
+  }
+
+  if (d.attendanceByMonth.length) {
+    h += '<div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);margin:14px 0 6px;">Attendance rate by month</div>';
+    d.attendanceByMonth.forEach(x => {
+      h += `<div class="row"><div>${esc(x.month)}</div><div>${x.rate != null ? x.rate + '%' : '—'}
+        <span style="color:var(--faint);font-size:12px;">(${x.present}p / ${x.absent}a${x.excused ? (' / ' + x.excused + 'e') : ''})</span></div></div>`;
+    });
+  } else {
+    h += '<div class="msg msg-info" style="margin-top:10px;">No attendance recorded yet.</div>';
+  }
+
+  if (d.lowAttendance.length) {
+    h += '<div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);margin:14px 0 6px;">Below 75% attendance (3+ sessions)</div>';
+    d.lowAttendance.forEach(x => {
+      h += `<div class="row"><div>${esc(x.name)}</div><span class="badge badge-revoked">${x.rate}%</span></div>`;
+    });
+  }
+
+  h += `<div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);margin:14px 0 6px;">Competitive activity</div>
+    <div class="row"><div>Athletes linked to this club</div><div>${c.athletesLinked}</div></div>
+    <div class="row"><div>Tournaments entered</div><div>${c.tournamentsEntered}</div></div>
+    <div class="row" style="border-bottom:none;"><div>Total entries</div><div>${c.totalEntries}</div></div>`;
+
   return h;
 }
 async function approveClubJoinReq(requestId, approve, clubId){

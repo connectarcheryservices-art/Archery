@@ -70,6 +70,8 @@ module.exports = (req, res) => {
       if (n === 3) q.action = seg[2];
       return H('club-sessions')(req, res);
     }
+    // Club analytics: /api/club-analytics?clubId=N (read-only).
+    if (r0 === 'club-analytics' && n === 1) return H('club-analytics')(req, res);
     // Seller accounts (admin): /api/sellers, /api/sellers/<id>
     if (r0 === 'sellers') {
       if (n === 2) q.id = seg[1];
