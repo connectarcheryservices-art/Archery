@@ -541,15 +541,19 @@ function renderEvents(list){
 fetch('/api/tournaments').then(r=>r.json()).then(d=>renderEvents(Array.isArray(d)?d:[])).catch(()=>renderEvents([]));
 
 /* Live chat (talks to /api/chat; admin replies appear in the panel) */
-let chatId=parseInt(localStorage.getItem('archery_chat_thread'))||null,chatPoll=null,chatOpen=false;
+let chatId=parseInt(localStorage.getItem('archery_chat_thread'))||null,chatToken=localStorage.getItem('archery_chat_token')||null,chatPoll=null,chatOpen=false;
 function chatRender(msgs){
   const b=document.getElementById('chat-body');
   b.innerHTML=msgs.map(m=>`<div class="cmsg ${m.from==='admin'?'a':'u'}">${esc(m.text)}</div>`).join('');
   b.scrollTop=b.scrollHeight;
 }
 async function chatRefresh(){
-  if(!chatId)return;
-  try{const t=await fetch('/api/chat/'+chatId).then(r=>r.json());if(t&&t.messages)chatRender(t.messages);}catch(e){}
+  if(!chatId||!chatToken)return;
+  try{
+    const res=await fetch('/api/chat/'+chatId+'?token='+encodeURIComponent(chatToken));
+    if(res.status===404){chatId=null;chatToken=null;localStorage.removeItem('archery_chat_thread');localStorage.removeItem('archery_chat_token');return;}
+    const t=await res.json();if(t&&t.messages)chatRender(t.messages);
+  }catch(e){}
 }
 function toggleChat(){
   chatOpen=!chatOpen;
@@ -569,8 +573,16 @@ async function sendChat(e){
   const cur=[...document.querySelectorAll('#chat-body .cmsg')].map(el=>({from:el.classList.contains('a')?'admin':'user',text:el.textContent}));
   chatRender([...cur,{from:'user',text}]);
   let user=null;try{user=JSON.parse(localStorage.getItem('archery_user')||'null');}catch(err){}
-  const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:chatId,text,name:user?user.name:'Guest',email:user?user.email:''})}).then(x=>x.json()).catch(()=>null);
-  if(r&&r.id){chatId=r.id;localStorage.setItem('archery_chat_thread',chatId);}
+  let r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:chatId,token:chatToken,text,name:user?user.name:'Guest',email:user?user.email:''})}).then(x=>x.json()).catch(()=>null);
+  if((!r||!r.id)&&chatId){
+    // Stale/pre-migration thread id with no valid token: start a fresh thread rather than silently dropping the message.
+    chatId=null;chatToken=null;localStorage.removeItem('archery_chat_thread');localStorage.removeItem('archery_chat_token');
+    r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text,name:user?user.name:'Guest',email:user?user.email:''})}).then(x=>x.json()).catch(()=>null);
+  }
+  if(r&&r.id){
+    chatId=r.id;localStorage.setItem('archery_chat_thread',chatId);
+    if(r.token){chatToken=r.token;localStorage.setItem('archery_chat_token',r.token);}
+  }
   return false;
 }
 </script>

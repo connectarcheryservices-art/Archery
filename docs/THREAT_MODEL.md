@@ -349,6 +349,39 @@ column type to fail safely. Verified: `analytics-hardening-test.js` — real eve
 accepted, an unknown type/non-numeric/negative/non-finite value all rejected, zero
 out-of-allowlist rows exist in the table.
 
+### T15 — Public chat widget IDOR (found during the T12 audit) · **HIGH**
+`chats.id` is a bare sequential integer, generated with no binding to the caller who created it.
+`GET /api/chat/<id>` had **zero authorization** — any caller could enumerate `1..N` and read
+every visitor's name, email, and full message history. `POST /api/chat {id, text}` let anyone
+append a message to **any existing thread** with no proof of ownership — a stranger could inject
+fake messages into someone else's live support conversation. This is the same underlying defect
+class T12 names (no binding between actor and resource instance), but on a completely
+unauthenticated public surface rather than a cross-role privilege escalation — found as a
+byproduct of that audit, not one of T12's four originally-named relationships, so it gets its own
+entry rather than folding into T12's already-precise "still open" status above.
+
+**Status: fixed (2026-08-13).** Same "unguessable bearer token doubles as a possession-based
+credential" pattern already used four times in this codebase (`users.parent_consent_token`,
+`registrations.parent_consent_token`, `orders.order_no` for the invoice endpoint) — reused here
+rather than inventing a new mechanism. Migration `040_chat_access_token.sql` adds
+`chats.access_token text` (unique when set). `api/_handlers/chat.js`'s POST mints a real
+`crypto.randomBytes(24).toString('base64url')` token when a thread is created and returns it to
+the caller once; appending to an existing thread now requires that exact token (or
+`checkAdmin()`) and returns an indistinguishable 404 on mismatch or non-existence (no
+enumeration signal). `api/_handlers/chat-id.js`'s GET requires the same token-or-admin check.
+Existing (pre-migration) rows have no token and so fail closed — admin-only-readable, not
+publicly enumerable, which is the safe direction to fail in. `index.html`'s widget now stores
+the token alongside the existing thread-id in `localStorage` and sends it on every read/append;
+a stale pre-migration id with no valid token transparently starts a fresh thread rather than
+silently dropping the visitor's message. `admin.html`'s existing chat panel needed **no changes**
+— it already authenticates via a Bearer admin token, which satisfies the `checkAdmin()` bypass.
+Verified end-to-end against the local dev stack (`chat-idor-fix-test.js`,
+`chat-admin-path-test.js`): a real visitor can create/read/append to their own thread; GET with
+no token, GET with a wrong token, POST-append with no token, and POST-append with a wrong token
+are all rejected (404); a swept range of 6 sequential ids around a real thread leaks nothing;
+the token is never echoed back in any GET response or in the admin list view; the admin panel's
+list/read/reply/mark-read flow is unaffected.
+
 ---
 
 ## 4. Non-goals (v1)

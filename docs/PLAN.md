@@ -12,7 +12,7 @@
 |---|---|
 | **Current phase** | **Phase 2 — The sport, substantially built** (see below) |
 | **Phase 0 progress** | **9 / 9 code complete** — gate needs the deploy + an external pentest |
-| **Last updated** | 2026-08-12 |
+| **Last updated** | 2026-08-13 |
 | **Live** | https://archery.services — **Phase 0 IS DEPLOYED** (2026-07-15) and verified live: real `/api/stats` counts, CSP header present, pinned CA serving the DB, webhook rejects forged signatures (400), coach requires sign-in (401). **Phases 1-2 and the new member-capability/selection/federation work below are NOT deployed** — built and tested entirely against a local dev stack (PGlite + a thin router-preserving dev server) per explicit instruction: the user will hand over `DATABASE_URL` and say when to deploy, only after the local build is fully tested. Migrations 016-026 are applied locally only, not to production Supabase. |
 
 ### 2026-08-12 session — what actually got built (read this before assuming Phase 2 is still todo)
@@ -40,6 +40,29 @@ misattributed every certified official's scoring action to `'owner'` in the audi
 **Do NOT re-run Phase 2's "build the domain model" work** — read `docs/DOMAIN.md` and the
 migrations listed below first. As of 2026-08-12, Phase 2 is complete — both items that used to
 be open here (Para classification 2.7, offline-capable scoring 2.2) are now built and tested.
+
+### 2026-08-13 session — tournament registration → scoring bridge, club sessions/attendance, chat IDOR fix
+
+Built the registrations→scoring-engine bridge (migrations 037-038: age-assurance on tournament
+registration itself, `athletes.dob/email/club_id`, `bridgeRegistrationToEntry()` in
+`api/_lib/registration-bridge.js` — find-or-create athlete, compute age class via the real cited
+WA Book 2 calendar-year rule, find-or-create categories/events, insert entries, all in one
+transaction; refuses rather than guesses for non-binary gender or unclassified Para entries) and
+club sessions/attendance (migration 039: `club_sessions`/`club_attendance`, gated by staff OR
+`isClubAdmin` OR the new narrower `isCoachOfClub`). Also corrected a real, longstanding error in
+this repo's own domain vocabulary: CLAUDE.md §3 and DOMAIN.md said age classes are "U18 cadet |
+U21 junior" — fetched World Archery Rule Book Book 2 directly and confirmed those terms don't
+appear in it; the real cited terms are plainly "Under 18" / "Under 21" (Art. 4.2.1, 4.2.3-4.2.5).
+Both docs corrected with the citation.
+
+A T12 capability-scoping re-audit (delegated, then independently verified) confirmed T12's four
+originally-named relationships (club/coach/federation/athlete) are genuinely well-mitigated by
+existing point-solution functions — no framework rewrite landed here, and none was needed for
+those four. It surfaced one unrelated, live, HIGH-severity finding instead: the public chat
+widget's `GET /api/chat/<id>` had **zero authorization** (any sequential id readable by anyone)
+and `POST /api/chat {id,text}` let anyone append to any thread. Fixed same-day, ahead of
+everything else queued, per CLAUDE.md's CISO-first precedence — see **THREAT_MODEL.md T15** for
+the full writeup and `chat-idor-fix-test.js`/`chat-admin-path-test.js` for the verification.
 
 ### Where we stopped
 Committed so far:
@@ -80,7 +103,7 @@ payment has completed. The first real payment would have hit it.
 | Hardcoded stats "in `schema.sql` (50240/1247)" | Not found in `supabase/schema.sql`. **Confirmed in `seed.js`** (52000/1400/142) and `index.html`; `resource.js:32` `{...SEED, ...(data||{})}` makes seed the answer. Substance holds. |
 | "WA-compliant equipment claimed on the shop" | **Not currently present** (grep = 0 in `shop.html`/`product.html`). May be stale or removed. Flagged in DOMAIN §7 if re-added. |
 | "8–8 tie in a bronze match" | Under Art. 12.1.4.1 a set-play match ends at **6** set points → **8–8 set points cannot occur**. Tie state is **5–5** → shoot-off. 8–8 is an **arrow-score** tie within a set (→ 1 set point each), or a compound cumulative tie. **Open question — ask which.** DOMAIN §3.4. |
-| §3 findings otherwise | **All confirmed.** T1–T14 in THREAT_MODEL. |
+| §3 findings otherwise | **All confirmed.** T1–T15 in THREAT_MODEL (T15 added 2026-08-13, found during a T12 audit — public chat widget IDOR, fixed same day). |
 
 **Everything else in §3 verified true**, including the central one: **there is no scores table.
 The only occurrence of "arrow" in the schema is a product name.**

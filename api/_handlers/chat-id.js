@@ -14,7 +14,20 @@ module.exports = async (req, res) => {
   try {
     if (req.method === 'GET') {
       const r = await q('select * from chats where id=$1', [id]);
-      return r.rows[0] ? json(res, rowToObj(r.rows[0])) : json(res, { error: 'Not found' }, 404);
+      const row = r.rows[0];
+      if (!row) return json(res, { error: 'Not found' }, 404);
+      // THREAT_MODEL.md finding, 2026-08-13 (T12 audit): this used to be
+      // fully public — any integer id returned the visitor's name, email and
+      // full message history. Now the caller must present the token minted
+      // when the thread was created, or be staff.
+      const token = String(req.query.token || '');
+      const isStaff = await checkAdmin(req);
+      if (!isStaff && (!row.access_token || row.access_token !== token)) {
+        return json(res, { error: 'Not found' }, 404);
+      }
+      const out = rowToObj(row);
+      if (!isStaff) delete out.accessToken;
+      return json(res, out);
     }
     if (!(await checkAdmin(req))) return json(res, { error: 'Unauthorised' }, 401);
     if (req.method === 'PUT') { await q('update chats set unread=false where id=$1', [id]); return json(res, { ok: true }); }
