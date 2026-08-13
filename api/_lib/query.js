@@ -21,6 +21,7 @@ const SORTABLE = {
   // Team is a curated, hand-ordered list — sort_order first, then id.
   team:       { order:'sort_order asc, id asc', name:'name asc' },
   clubs:      { name:'name asc', newest:'id desc' },
+  product_categories: { order:'sort_order asc, id asc', name:'name asc' },
 };
 
 // A resource supports free-text search if it has a `search` tsvector column.

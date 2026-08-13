@@ -40,6 +40,9 @@ const TABLES = {
   // forge a link to someone else's registration application. Members live in the
   // separate club_members table via /api/club-members (admin-only, never public).
   clubs:       ['name','city','region','country','discipline','about','email','phone','website','img_url','active'],
+  // Product taxonomy (migration 046) — real rows an admin can manage (rename,
+  // deactivate, reorder, add a new one) without a code deploy.
+  product_categories: ['name','icon','color','active','sort_order'],
 };
 
 const toSnake = o => { const out = {}; for (const [k, v] of Object.entries(o)) out[k.replace(/([A-Z])/g, c => '_' + c.toLowerCase())] = v; return out; };

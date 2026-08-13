@@ -495,13 +495,23 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
     <div class="panel" id="panel-products">
       <div class="breadcrumb">Admin <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg> <span>Shop Products</span></div>
       <button class="btn-add-new" onclick="toggleInlineForm('product-form')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add New Product</button>
+      <button class="btn-add-new" style="background:transparent;border:1px solid var(--line);color:var(--text-2);" onclick="toggleInlineForm('category-form');loadCategoryManage();">Manage Categories</button>
+
+      <div class="inline-form" id="category-form">
+        <div class="card-title" style="margin-bottom:16px;">Product Categories</div>
+        <div id="category-list" style="margin-bottom:16px;"></div>
+        <div style="display:flex;gap:10px;align-items:end;flex-wrap:wrap;">
+          <div class="form-group" style="margin-bottom:0;flex:1;min-width:160px;"><label class="form-label">New category name</label><input class="form-input" id="cat-new-name" placeholder="e.g. Field Archery Gear"></div>
+          <button class="btn-save" style="margin-bottom:0;" onclick="addCategory()">Add category</button>
+        </div>
+      </div>
 
       <div class="inline-form" id="product-form">
         <div class="card-title" style="margin-bottom:16px;">New Product</div>
         <div class="form-grid">
           <div class="form-group"><label class="form-label">Product Name</label><input class="form-input" id="p-name" placeholder="e.g. Pro Recurve Bow 68&quot;"></div>
           <div class="form-group"><label class="form-label">Brand <span style="opacity:.6;font-weight:400;">(only formally-registered brands)</span></label><input class="form-input" id="p-brand" placeholder="e.g. registered seller / brand name"></div>
-          <div class="form-group"><label class="form-label">Category</label><select class="form-select" id="p-cat"><option>Recurve Bows</option><option>Compound Bows</option><option>Arrows</option><option>Targets</option><option>Accessories</option><option>Protective Gear</option></select></div>
+          <div class="form-group"><label class="form-label">Category</label><select class="form-select" id="p-cat"></select></div>
           <div class="form-group"><label class="form-label">Price (CHF)</label><input class="form-input" id="p-price" type="number" placeholder="245"></div>
           <div class="form-group"><label class="form-label">Was Price (CHF) — leave blank if no discount</label><input class="form-input" id="p-was" type="number" placeholder="299"></div>
           <div class="form-group"><label class="form-label">Stock Quantity</label><input class="form-input" id="p-stock" type="number" placeholder="10"></div>
@@ -1418,6 +1428,42 @@ async function loadProducts(){
         <button class="btn-delete" onclick="deleteItem('products',${p.id})">Delete</button>
       </td>
     </tr>`).join('');
+}
+
+// ── PRODUCT CATEGORIES (migration 046) — real rows, not hardcoded <option> tags ──
+let CATEGORY_CACHE = [];
+async function loadCategoriesForForm(){
+  const data = await get('product_categories?sort=order');
+  if(!Array.isArray(data)) return;
+  CATEGORY_CACHE = data;
+  const sel = document.getElementById('p-cat');
+  if(sel) sel.innerHTML = data.filter(c=>c.active!==false).map(c=>`<option value="${escA(c.name)}">${escA(c.name)}</option>`).join('');
+}
+async function loadCategoryManage(){
+  const data = await get('product_categories?sort=order');
+  if(!Array.isArray(data)) return;
+  CATEGORY_CACHE = data;
+  const el = document.getElementById('category-list');
+  if(!el) return;
+  el.innerHTML = data.map(c=>`
+    <div class="row"><div>${escA(c.name)}</div><div>
+      <span class="td-badge ${c.active!==false?'badge-active':'badge-inactive'}">${c.active!==false?'Active':'Hidden'}</span>
+      <button class="btn-toggle ${c.active!==false?'':'off'}" onclick="toggleCategory(${c.id},${c.active!==false})">${c.active!==false?'Hide':'Show'}</button>
+    </div></div>`).join('');
+}
+async function addCategory(){
+  const name = document.getElementById('cat-new-name').value.trim();
+  if(!name){ toast('A category name is required.'); return; }
+  const r = await post('product_categories', { name, sortOrder: CATEGORY_CACHE.length + 1 });
+  if(!r || r.error){ toast((r&&r.error)||'Could not add category.'); return; }
+  document.getElementById('cat-new-name').value='';
+  loadCategoryManage(); loadCategoriesForForm();
+  toast('Category added');
+}
+async function toggleCategory(id, currentlyActive){
+  const r = await put('product_categories', id, { active: !currentlyActive });
+  if(!r || r.error){ toast((r&&r.error)||'Could not update category.'); return; }
+  loadCategoryManage(); loadCategoriesForForm();
 }
 
 // ── ONE image reader for every upload on this page ──────────────────────────
@@ -2430,7 +2476,7 @@ async function delKnowledge(id){ if(!confirm('Delete this article?'))return; con
 
 function loadPanel(name){
   if(name==='dashboard'){loadStats();loadDashboard();}
-  else if(name==='products'){loadProducts();}
+  else if(name==='products'){loadProducts();loadCategoriesForForm();}
   else if(name==='orders'){loadOrders();}
   else if(name==='tournaments'){loadTournaments();}
   else if(name==='athletes'){loadAthletes();}
