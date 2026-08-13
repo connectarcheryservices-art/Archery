@@ -82,6 +82,17 @@ production just because it's in `supabase/migrations/` and works locally;
 verify against the live API (or ask for direct confirmation) before
 shipping code that depends on it.
 
+**Same day, sixth pass — real verified-purchase reviews shipped (commit
+`aebbfba`).** product.html had carried its own removal comment since
+2026-07-16 naming this exact requirement. New `reviews` table + `api/
+_handlers/reviews.js`: POST requires a real DB-verified match (logged-in
+account email == a PAID order's customer_email, that order's items JSONB
+genuinely contains the product) — computed server-side every time, never
+trusted from the client. GET is public, average is null (not 0) with no
+reviews. Verified: a real buyer can review exactly once (second attempt
+409s), a non-buyer is refused both eligibility and a direct POST attempt
+(403). Migration 044 needs manual application to production.
+
 **Same day, fifth pass — Consumer Protection (E-Commerce) Rules 2020
 compliance shipped (commit `0a32c0c`).** Was flagged plainly as "Currently:
 none implemented" — closed the three concretely-specifiable pieces:
