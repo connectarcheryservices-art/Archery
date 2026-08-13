@@ -499,7 +499,14 @@ been run as a live tournament by a real federation yet, and isn't deployed to pr
 > views, reviews from verified purchasers, equipment tied to the athletes and events that use it
 > — the thing a general retailer cannot do.
 
-- [ ] Product taxonomy; **WA equipment-compliance as a modelled, cited field** — or drop the claim.
+- [x] **WA equipment-compliance claim dropped** (2026-08-13). A prior PLAN.md note claimed this
+      was "not currently present" — re-verified directly (grep, not memory) and found it WAS
+      live: shop.html's brand-showcase panel asserted "...are World Archery compliant" with no
+      `products.wa_compliant` field or verification process anywhere in the codebase to back it
+      (CLAUDE.md §1.1). Removed. Separately noted, out of scope for this fix: the whole
+      brand-showcase panel is currently dead code (`BRAND_INFO={}`, never populated, so
+      `filterBrand()` never actually shows it for any real tab) — a real bug, not touched here.
+      **Product taxonomy** itself remains open — not built.
 - [ ] Seller marketplace: verified identity, obligations, payouts, settlement, returns.
 - [ ] **Consumer Protection (E-Commerce) Rules 2020**: published **Grievance Officer**, 48-hour
       acknowledgement, 1-month resolution, **country of origin** per listing, seller identity

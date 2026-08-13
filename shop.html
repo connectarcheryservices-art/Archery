@@ -519,7 +519,14 @@ footer{background:var(--ink-2);border-top:.5px solid rgba(255,255,255,.06);paddi
         <span class="brand-showcase-name" id="bs-name">Verified Seller</span>
         <span class="brand-verified"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Verified Seller</span>
       </div>
-      <p class="brand-showcase-desc" id="bs-desc">All products are sold by registered sellers and are World Archery compliant.</p>
+      <!-- "World Archery compliant" removed 2026-08-13 (CLAUDE.md §1.1 / docs/PLAN.md
+           "WA equipment-compliance... or drop the claim") — no products.wa_compliant
+           field or verification process exists anywhere in this codebase, so it was
+           an unbacked claim. Note this whole panel is currently unreachable dead code
+           regardless (BRAND_INFO below is `{}` and nothing ever populates it, so
+           filterBrand() never sets showcase.style.display='block' for any real brand
+           tab) — left as a separate, out-of-scope gap; this fix is only the claim. -->
+      <p class="brand-showcase-desc" id="bs-desc">Sold by a registered seller on Archery.Services.</p>
       <div class="brand-showcase-stats">
         <div class="bs-stat"><div class="bs-stat-val" id="bs-products">–</div><div class="bs-stat-label">Products</div></div>
         <div class="bs-stat"><div class="bs-stat-val" id="bs-rating">–</div><div class="bs-stat-label">Avg Rating</div></div>
