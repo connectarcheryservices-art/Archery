@@ -163,7 +163,8 @@ async function fulfil(order) {
   if (order.customer_email) {
     try {
       const { sendMail, branded } = require('./mailer');
-      const lines = items.map(i => `${i.name} × ${i.qty || 1} — ₹${Number(i.price).toLocaleString('en-IN')}`).join('<br>');
+      const money = n => 'CHF ' + Number(n || 0).toLocaleString('de-CH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const lines = items.map(i => `${i.name} × ${i.qty || 1} — ${money(i.price)}`).join('<br>');
       // A relative path is meaningless inside an email — there's no page
       // origin for a mail client to resolve it against, so it must be
       // absolute. No PUBLIC_BASE_URL (or equivalent) env var convention
@@ -181,7 +182,7 @@ async function fulfil(order) {
         html: branded({
           heading: 'Order confirmed 🎯',
           preheader: 'Payment received — ' + order.order_no,
-          body: `Thank you${order.customer_name ? ', ' + order.customer_name.split(' ')[0] : ''}! We've received your payment and your order is confirmed.<br><br><b>Order ${order.order_no}</b><br>${lines}<br><br><b>Total paid: ₹${Number(order.total).toLocaleString('en-IN')}</b><br><br>We'll notify you as it ships across India.${invoiceLine}`,
+          body: `Thank you${order.customer_name ? ', ' + order.customer_name.split(' ')[0] : ''}! We've received your payment and your order is confirmed.<br><br><b>Order ${order.order_no}</b><br>${lines}<br><br><b>Total paid: ${money(order.total)}</b><br><br>We'll notify you as it ships across India.${invoiceLine}`,
         }),
       }).catch(() => {});
     } catch (e) { /* mail is best-effort; never fails a payment */ }

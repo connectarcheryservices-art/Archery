@@ -168,7 +168,8 @@
 </div>
 
 <script>
-const INR = n => '₹' + Number(n||0).toLocaleString('en-IN');
+const CHF = n => new Intl.NumberFormat('de-CH',{style:'currency',currency:'CHF'}).format(Number(n||0));
+const INR = CHF; // legacy call sites; storefront currency is CHF
 let cart = [];
 let delivery = 'standard';
 let geo = null;
@@ -328,7 +329,7 @@ async function payNow(){
   const rp = new Razorpay({
     key: data.razorpay.keyId,
     amount: data.razorpay.amount,
-    currency: data.razorpay.currency || 'INR',
+    currency: data.razorpay.currency || 'CHF',
     name: 'Archery.Services',
     description: 'Order ' + data.orderNo,
     order_id: data.razorpay.orderId,

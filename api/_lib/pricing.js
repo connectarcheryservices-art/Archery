@@ -7,10 +7,15 @@
 'use strict';
 const { normState, isValidGstin, stateFromGstin } = require('./gst');
 
-// Currency changed INR -> CHF on 2026-07-16, then back to INR on 2026-08-12
-// at the owner's explicit instruction (real GST compliance is inherently
-// INR-denominated — CGST/SGST/IGST returns are always filed in rupees
-// regardless of storefront currency). See migration 035/036 and pricing.test.js.
+// Currency history: INR -> CHF (2026-07-16) -> INR (2026-08-12, owner's
+// instruction) -> CHF again (2026-08-13, confirmed directly with the owner —
+// see migration 041). The one constant through all of this: CGST/SGST/IGST
+// are always filed with the Indian government in rupees, regardless of
+// whatever the storefront's DEFAULTS.currency says — see order-invoice.js's
+// renderInvoiceHtml(), which keeps every GST figure literally ₹ and only
+// lets goods/delivery/platform-fee amounts (what the customer actually paid)
+// follow the order's own stored currency. See migration 035/036/041 and
+// pricing.test.js.
 //
 // GST 2.0 rate rationalisation (Notification 9/2025-Integrated Tax (Rate),
 // 17-Sep-2025, effective 22-Sep-2025, 56th GST Council meeting): sporting
@@ -20,12 +25,12 @@ const { normState, isValidGstin, stateFromGstin } = require('./gst');
 // 036 gives every product row a real per-item rate; this is only a safety
 // net for rows created before that migration or a config override).
 const DEFAULTS = {
-  currency: 'INR',
+  currency: 'CHF',
   taxRate: 0.05,               // default/fallback GST rate (HSN 9506, GST 2.0)
   platformFeeRate: 0.05,       // 5% platform commission, applied to the goods subtotal
-  deliveryStandard: 49,        // standard PAN-India delivery (INR)
-  deliverySameDay: 149,        // super-fast same-day PAN-India delivery (INR)
-  freeDeliveryThreshold: 999,  // standard delivery is free at/above this goods value
+  deliveryStandard: 5,         // standard delivery (CHF)
+  deliverySameDay: 15,         // same-day delivery (CHF)
+  freeDeliveryThreshold: 99,   // free delivery at/above this goods value
 };
 
 // The platform's own commission/convenience fee is a separate SUPPLY OF

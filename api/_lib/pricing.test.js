@@ -56,11 +56,11 @@ q = computeQuote(
     { id: 1, name: 'A', price: 300, qty: 1 },
     { id: 2, name: 'B', price: 200, qty: 1 },
   ],
-  { delivery: 'standard' } // goods=500 < 999 threshold -> real delivery fee applies
+  { delivery: 'standard', config: { freeDeliveryThreshold: 999 } } // force a paid delivery case
 );
-eq('goods', q.goods, 500); eq('deliveryFee', q.deliveryFee, 49);
+eq('goods', q.goods, 500); eq('deliveryFee', q.deliveryFee, 5);
 const goodsTaxable = q.gstBreakdown.filter(g => g.hsnCode === '9506').reduce((s, g) => s + g.taxableValue, 0);
-eq('sum of goods-line taxable value == goods + deliveryFee (delivery fully allocated)', goodsTaxable, 549);
+eq('sum of goods-line taxable value == goods + deliveryFee (delivery fully allocated)', goodsTaxable, 505);
 
 console.log('\n5) same-day delivery + admin-overridden default rate/platform rate (platform-fee GST rate is NOT admin-configurable)');
 q = computeQuote([{ name: 'Recurve', price: 1000, qty: 1 }], {
@@ -92,7 +92,7 @@ q = computeQuote(
   { delivery: 'standard', config: { freeDeliveryThreshold: 999999 } }
 );
 let sum89 = q.gstBreakdown.filter(g => g.hsnCode === '9506').reduce((s, g) => s + g.taxableValue, 0);
-eq('3x333.33 cart: goods+deliveryFee', round2(q.goods + q.deliveryFee), 1048.99);
+eq('3x333.33 cart: goods+deliveryFee', round2(q.goods + q.deliveryFee), 1004.99);
 eq('3x333.33 cart: breakdown reconciles exactly (was 1048.98, short by a paisa)', round2(sum89), round2(q.goods + q.deliveryFee));
 
 q = computeQuote(

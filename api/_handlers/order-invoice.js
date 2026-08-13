@@ -36,7 +36,7 @@ const { loadPricingConfig } = require('../_lib/settings');
 // reach raw HTML unescaped, so this file carries its own tiny sanitiser.
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-const money = n => Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const money = n => Number(n || 0).toLocaleString('de-CH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const pct = r => {
   const n = Number(r || 0) * 100;
   return (Number.isInteger(n) ? String(n) : n.toFixed(2)) + '%';
@@ -45,6 +45,12 @@ const pct = r => {
 function renderInvoiceHtml(order, cfg) {
   const items = Array.isArray(order.items) ? order.items : [];
   const breakdown = Array.isArray(order.gst_breakdown) ? order.gst_breakdown : [];
+  // Goods/delivery/platform-fee amounts follow what the customer was actually
+  // charged (the order's own stored currency). CGST/SGST/IGST + the taxable
+  // value they're computed from stay literally rupee-denominated everywhere
+  // below, regardless of CUR — that's a legal fact (GST returns are filed in
+  // INR), not a display choice. See api/_lib/pricing.js's DEFAULTS comment.
+  const CUR = (order.currency || 'CHF') + ' ';
 
   const issuedAt = order.invoice_issued_at
     ? new Date(order.invoice_issued_at).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: '2-digit' })
@@ -91,8 +97,8 @@ function renderInvoiceHtml(order, cfg) {
       <td>${esc(it.name)}</td>
       <td>${esc(it.hsnCode || '')}</td>
       <td class="num">${esc(String(it.qty || 1))}</td>
-      <td class="num">₹${money(it.price)}</td>
-      <td class="num">₹${money((Number(it.price) || 0) * (Number(it.qty) || 1))}</td>
+      <td class="num">${CUR}${money(it.price)}</td>
+      <td class="num">${CUR}${money((Number(it.price) || 0) * (Number(it.qty) || 1))}</td>
     </tr>`).join('');
 
   return `<!doctype html>
@@ -165,13 +171,13 @@ function renderInvoiceHtml(order, cfg) {
   </table>
 
   <table class="totals">
-    <tr><td>Items subtotal</td><td class="num">₹${money(order.goods)}</td></tr>
-    <tr><td>Delivery fee</td><td class="num">₹${money(order.delivery_fee)}</td></tr>
-    <tr><td>Platform fee</td><td class="num">₹${money(order.platform_fee)}</td></tr>
+    <tr><td>Items subtotal</td><td class="num">${CUR}${money(order.goods)}</td></tr>
+    <tr><td>Delivery fee</td><td class="num">${CUR}${money(order.delivery_fee)}</td></tr>
+    <tr><td>Platform fee</td><td class="num">${CUR}${money(order.platform_fee)}</td></tr>
     <tr><td>CGST</td><td class="num">₹${money(order.cgst)}</td></tr>
     <tr><td>SGST</td><td class="num">₹${money(order.sgst)}</td></tr>
     <tr><td>IGST</td><td class="num">₹${money(order.igst)}</td></tr>
-    <tr class="grand"><td>Grand total</td><td class="num">${esc(order.currency || 'INR')} ${money(order.total)}</td></tr>
+    <tr class="grand"><td>Grand total</td><td class="num">${esc(order.currency || 'CHF')} ${money(order.total)}</td></tr>
   </table>
 
   <div class="print-note">This is a computer-generated tax invoice and does not require a signature. Use your browser's Print → Save as PDF to keep a copy.</div>

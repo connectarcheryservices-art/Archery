@@ -36,9 +36,9 @@ const ROWS = {
     {id:5,name:'Rohit Krishnan',state:'Tamil Nadu',discipline:'Recurve Open',rank:5,pb:658,active:true},
   ],
   jobs: [
-    {id:1,title:'Head Recurve Coach',org:'National Training Centre',location:'On-site',type:'Full Time',salary:'₹80,000–₹1,10,000/month',active:true},
-    {id:2,title:'Club Development Officer',org:'Regional Archery Council',location:'Hybrid',type:'Full Time',salary:'₹55,000/month',active:true},
-    {id:3,title:'Junior Coach — U-18 Programme',org:'Metro Archery Academy',location:'On-site',type:'Contract',salary:'₹40,000/month',active:true},
+    {id:1,title:'Head Recurve Coach',org:'National Training Centre',location:'On-site',type:'Full Time',salary:'CHF 842–1,158/month',active:true},
+    {id:2,title:'Club Development Officer',org:'Regional Archery Council',location:'Hybrid',type:'Full Time',salary:'CHF 579/month',active:true},
+    {id:3,title:'Junior Coach — U-18 Programme',org:'Metro Archery Academy',location:'On-site',type:'Contract',salary:'CHF 421/month',active:true},
   ],
   knowledge: [
     {id:1,title:'The Complete 8-Step Shot Cycle',category:'Technique',level:'Beginner–Intermediate',readTime:'8 min',excerpt:'Stance, nocking, set, draw, anchor, aim, release, follow-through.',body:'',published:true,active:true},
@@ -61,9 +61,9 @@ const ROWS = {
 // /api/settings showing delivery pricing ~10x off from the real amount.
 // Keep this in lockstep with pricing.js's DEFAULTS, not just at conversion time.
 const SETTINGS = {
-  currency:'INR', storeName:'Archery.Services',
-  taxRate:0.10, platformFeeRate:0.05, deliveryStandard:49, deliverySameDay:149,
-  freeDeliveryThreshold:999, sameDayEnabled:true,
+  currency:'CHF', storeName:'Archery.Services',
+  taxRate:0.10, platformFeeRate:0.05, deliveryStandard:5, deliverySameDay:15,
+  freeDeliveryThreshold:99, sameDayEnabled:true,
   maintenanceMode:false, shopEnabled:true, tournamentsEnabled:true, communityEnabled:true,
   registrationOpen:true, announcementText:'', announcementActive:false, heroImage:'',
 };

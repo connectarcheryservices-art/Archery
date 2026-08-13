@@ -115,7 +115,7 @@ module.exports = async (req, res) => {
       ok: true, applicationId, orderId, orderNo: no, fee: tier.fee, level, label: tier.label,
       razorpay: {
         keyId: process.env.PUBLIC_RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID,
-        orderId: rp.order.id, amount: tier.fee * 100, currency: 'INR',
+        orderId: rp.order.id, amount: tier.fee * 100, currency: CURRENCY,
       },
     });
   } catch (e) {
