@@ -143,8 +143,21 @@ async function isClubAdmin(userId, clubId) {
   return !!row;
 }
 
+// Is userId an ACTIVE coach-role member of THIS specific club (migration
+// 039)? Deliberately narrower than isClubAdmin — a coach can run/attend
+// sessions and mark attendance for their own club, but is not handed the
+// admin's roster-management/join-approval powers just by also holding
+// this row (those stay gated by isClubAdmin above, checked separately).
+async function isCoachOfClub(userId, clubId) {
+  if (!userId || !clubId) return false;
+  const row = (await q(
+    `select 1 from club_members where user_id=$1 and club_id=$2 and member_role='coach' and status='active'`,
+    [userId, clubId])).rows[0];
+  return !!row;
+}
+
 module.exports = {
   isOwnAthlete, isActiveCoach, canActForAthlete, isAthleteConsentBlocked,
   isAssignedCertifiedOfficial, eventIdForMatchEntry, eventIdForEnd,
-  requireScorerForMatchEntry, requireScorerForEnd, isClubAdmin,
+  requireScorerForMatchEntry, requireScorerForEnd, isClubAdmin, isCoachOfClub,
 };

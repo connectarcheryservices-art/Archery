@@ -63,6 +63,13 @@ module.exports = (req, res) => {
       if (n === 2) q.id = seg[1];
       return H('club-members')(req, res);
     }
+    // Club sessions + attendance: /api/club-sessions[?clubId=N],
+    // /api/club-sessions/<id>, /api/club-sessions/<id>/attendance (PUT).
+    if (r0 === 'club-sessions') {
+      if (n >= 2) q.id = seg[1];
+      if (n === 3) q.action = seg[2];
+      return H('club-sessions')(req, res);
+    }
     // Seller accounts (admin): /api/sellers, /api/sellers/<id>
     if (r0 === 'sellers') {
       if (n === 2) q.id = seg[1];

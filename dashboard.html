@@ -130,7 +130,19 @@ function render(){
   if (!memberships.length && !pendingClubs.length) {
     html += '<div class="msg msg-info">Not a member of any club yet. Request to join one from the Discover page.</div>';
   } else {
-    memberships.forEach(m => { html += `<div class="row"><div>${esc(m.clubName || m.club_name)}</div><span class="badge badge-active">${esc(m.memberRole || m.member_role)}${(m.status||'').toLowerCase()==='inactive'?' · inactive':''}</span></div>`; });
+    memberships.forEach(m => {
+      const clubId = m.clubId || m.club_id;
+      const role = (m.memberRole || m.member_role || '').toLowerCase();
+      // A club admin runs the roster/join queue; a coach runs sessions and
+      // attendance for the same club — both get a "Manage" toggle here,
+      // an archer-only membership does not (nothing to manage).
+      const canManage = role === 'admin' || role === 'coach';
+      html += `<div class="row"><div>${esc(m.clubName || m.club_name)}</div><div style="display:flex;gap:8px;align-items:center;">
+        <span class="badge badge-active">${esc(role)}${(m.status||'').toLowerCase()==='inactive'?' · inactive':''}</span>
+        ${canManage ? `<button class="btn btn-ghost" onclick="toggleClubManage(${clubId},'${role}')" id="manage-toggle-${clubId}">Manage</button>` : ''}
+      </div></div>`;
+      if (canManage) html += `<div id="manage-panel-${clubId}" style="display:none;padding:10px 0 4px 12px;border-left:2px solid var(--line);margin:4px 0 8px;"></div>`;
+    });
     pendingClubs.forEach(p => { html += `<div class="msg msg-info" style="margin-top:6px;">Requested to join ${esc(p.clubName || p.club_name)} — awaiting the club admin.</div>`; });
   }
   html += '</div>';
@@ -310,6 +322,130 @@ async function requestCertification(){
   const issuingBody = document.getElementById('cert-body').value;
   const r = await jpost('/members/request-certification', { level, issuingBody });
   if (r && r.ok) { await loadStatus(); } else { notify((r && r.error) || 'Could not submit request.', false); }
+}
+
+// ── CLUB MANAGEMENT (admin/coach) — join requests + sessions/attendance.
+// Loaded on demand, not on every dashboard visit: most members hold no
+// club-admin/coach role, so eagerly fetching this for everyone would be a
+// wasted round trip on the common case. ──
+const CLUB_MANAGE = {};
+async function toggleClubManage(clubId, role){
+  const panel = document.getElementById('manage-panel-' + clubId);
+  const btn = document.getElementById('manage-toggle-' + clubId);
+  if (panel.style.display === 'block') { panel.style.display = 'none'; btn.textContent = 'Manage'; return; }
+  panel.style.display = 'block';
+  btn.textContent = 'Hide';
+  await refreshClubManage(clubId, role);
+}
+// Reloads and re-renders an already-open manage panel — used both by the
+// initial open (above) and after any mutation (approve/reject a join,
+// add a session, save attendance) so the panel reflects reality rather
+// than an optimistic guess at what just happened.
+async function refreshClubManage(clubId, role){
+  role = role || (CLUB_MANAGE[clubId] && CLUB_MANAGE[clubId].role) || 'coach';
+  const panel = document.getElementById('manage-panel-' + clubId);
+  const [pendingJoins, sessions] = await Promise.all([
+    role === 'admin' ? jget('/members/pending-club-joins?clubId=' + clubId) : Promise.resolve([]),
+    jget('/club-sessions?clubId=' + clubId),
+  ]);
+  CLUB_MANAGE[clubId] = { role, pendingJoins: Array.isArray(pendingJoins) ? pendingJoins : [], sessions: Array.isArray(sessions) ? sessions : [] };
+  if (panel) panel.innerHTML = renderClubManage(clubId);
+}
+function renderClubManage(clubId){
+  const state = CLUB_MANAGE[clubId] || { role: 'coach', pendingJoins: [], sessions: [] };
+  let h = '';
+  if (state.role === 'admin') {
+    h += '<div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);margin-bottom:6px;">Pending join requests</div>';
+    if (!state.pendingJoins.length) h += '<div class="msg msg-info">None right now.</div>';
+    state.pendingJoins.forEach(r => {
+      h += `<div class="row"><div>${esc(r.name)} <span style="color:var(--faint);font-size:12px;">${esc(r.email || '')}</span></div><div>
+        <button class="btn btn-gold" onclick="approveClubJoinReq(${r.id},true,${clubId})">Approve</button>
+        <button class="btn btn-ghost" onclick="approveClubJoinReq(${r.id},false,${clubId})">Reject</button></div></div>`;
+    });
+  }
+  h += '<div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);margin:14px 0 6px;">Sessions</div>';
+  if (!state.sessions.length) h += '<div class="msg msg-info">No sessions logged yet.</div>';
+  state.sessions.forEach(s => {
+    h += `<div class="row"><div>${esc(s.title)} <span style="color:var(--faint);font-size:12px;">${esc(s.sessionDate)}${s.startTime?(' · '+esc(s.startTime)):''}</span></div>
+      <div><span class="badge badge-active">${s.presentCount} present</span> <span class="badge">${s.absentCount} absent</span>
+      <button class="btn btn-ghost" onclick="openAttendance(${s.id},${clubId})">Take attendance</button></div></div>`;
+  });
+  h += `<div class="inline-form">
+    <input class="field-input" id="new-session-title-${clubId}" placeholder="Session title (e.g. Saturday practice)">
+    <input class="field-input" id="new-session-date-${clubId}" type="date">
+    <button class="btn btn-primary" onclick="createClubSession(${clubId})">Add session</button>
+  </div>`;
+  return h;
+}
+async function approveClubJoinReq(requestId, approve, clubId){
+  const r = await jpost('/members/approve-club-join', { requestId, approve });
+  if (r && r.ok) await refreshClubManage(clubId);
+  else notify((r && r.error) || 'Could not process this request.', false);
+}
+async function createClubSession(clubId){
+  const title = document.getElementById('new-session-title-' + clubId).value.trim();
+  const sessionDate = document.getElementById('new-session-date-' + clubId).value;
+  if (!title || !sessionDate) { notify('A title and date are required.', false); return; }
+  const r = await jpost('/club-sessions', { clubId, title, sessionDate });
+  if (r && r.ok) await refreshClubManage(clubId);
+  else notify((r && r.error) || 'Could not add the session.', false);
+}
+
+// ── ATTENDANCE modal — a lightweight overlay, matching the pattern used
+// elsewhere in this codebase (e.g. seller.html's product editor) rather
+// than a whole separate page for a rarely-open action. ──
+let ATTENDANCE_SESSION = null;
+async function openAttendance(sessionId, clubId){
+  const detail = await jget('/club-sessions/' + sessionId);
+  if (!detail || detail.error) { notify((detail && detail.error) || 'Could not load this session.', false); return; }
+  ATTENDANCE_SESSION = { id: sessionId, clubId, roster: detail.roster };
+  const ov = document.createElement('div'); ov.id = 'att-ov';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:9998;background:rgba(13,27,46,.6);display:flex;align-items:center;justify-content:center;padding:18px;overflow:auto;';
+  ov.innerHTML = `<div style="background:var(--bg2);border:1px solid var(--line);border-radius:12px;width:100%;max-width:480px;max-height:86vh;overflow:auto;padding:22px;">
+    <h2 style="margin-bottom:12px;">Attendance — ${esc(detail.title)}</h2>
+    <div id="att-rows"></div>
+    <div style="display:flex;gap:10px;margin-top:16px;">
+      <button class="btn btn-primary" onclick="saveAttendance()">Save attendance</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('att-ov').remove()">Close</button>
+    </div>
+  </div>`;
+  document.body.appendChild(ov);
+  ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+  renderAttendanceRows();
+}
+function setAttendanceStatus(memberId, status){
+  // String comparison, not strict === : r.memberId arrives as a STRING
+  // (bigint ids serialise as strings over JSON) but the onclick attribute
+  // below interpolates it as a bare numeric literal, so a strict ===
+  // between "14" and 14 always failed silently — clicking P/A/E updated
+  // nothing. Real bug, caught by club-sessions-ui-test.js actually
+  // clicking the buttons rather than only checking the API.
+  const m = ATTENDANCE_SESSION.roster.find(r => String(r.memberId) === String(memberId));
+  if (m) m.status = status;
+  renderAttendanceRows();
+}
+function renderAttendanceRows(){
+  const el = document.getElementById('att-rows');
+  if (!el || !ATTENDANCE_SESSION) return;
+  el.innerHTML = ATTENDANCE_SESSION.roster.map(r => {
+    const opt = (v, label) => `<button class="btn ${r.status===v?'btn-gold':'btn-ghost'}" style="padding:6px 10px;" onclick="setAttendanceStatus(${r.memberId},'${v}')">${label}</button>`;
+    return `<div class="row"><div>${esc(r.name)}</div><div style="display:flex;gap:6px;">${opt('present','P')}${opt('absent','A')}${opt('excused','E')}</div></div>`;
+  }).join('');
+}
+async function saveAttendance(){
+  const records = ATTENDANCE_SESSION.roster.filter(r => r.status).map(r => ({ memberId: r.memberId, status: r.status }));
+  // jpost() is POST-only; attendance is a PUT, so call fetch directly here.
+  const resp = await fetch('/api/club-sessions/' + ATTENDANCE_SESSION.id + '/attendance', {
+    method: 'PUT', headers: { 'Content-Type': 'application/json', ...ArcheryAuth.authHeaders() },
+    body: JSON.stringify({ records }),
+  }).then(x => x.json()).catch(() => null);
+  if (resp && resp.ok) {
+    notify('Attendance saved (' + resp.recordsWritten + ' record' + (resp.recordsWritten === 1 ? '' : 's') + ')', true);
+    document.getElementById('att-ov').remove();
+    await refreshClubManage(ATTENDANCE_SESSION.clubId);
+  } else {
+    notify((resp && resp.error) || 'Could not save attendance.', false);
+  }
 }
 
 (function init(){

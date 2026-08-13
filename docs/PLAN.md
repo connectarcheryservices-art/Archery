@@ -462,6 +462,34 @@ seller-marketplace/Consumer-Protection-Rules items above are still open.
       visible to both admin and public reads (club affiliation isn't PII, unlike the `dob`/`email`
       columns added in the same migration), CDP-verified the admin dropdown and `athletes.html`
       both render it live. Full regression suite re-run clean.
+- [~] Club attendance + scheduling (2026-08-13, migration 039). Closes the exact promise
+      `checkout-fee.js`'s Club/Range tier copy has made since it was written ("class scheduling,
+      attendance") and migration 013's own header already flagged as audited-and-not-built.
+      `club_sessions`/`club_attendance` — a flat pair modelled on `tournaments`, not the deep
+      events/event_categories scoring-domain chain (a club practice isn't a sanctioned
+      competition). New `isCoachOfClub()` capability (`member-capability.js`, alongside the
+      existing `isClubAdmin`) deliberately narrower than admin: a coach can run sessions and mark
+      attendance for their own club, but not review/approve join requests — that stays the
+      admin's job. **Also closes a real, separate gap found while building this**: the backend
+      for a club admin to review/approve join requests (`pending-club-joins`/`approve-club-join`,
+      already shipped in migration 031) had **no UI anywhere** a non-staff club admin could
+      reach — `dashboard.html`'s "My Clubs" was read-only. Both are now one feature: a "Manage"
+      panel on `dashboard.html` for any member who is an admin or coach of a club, with join-
+      request approval, a session list with real (never fabricated/defaulted) attendance counts,
+      and an attendance-taking modal. A real bug was caught and fixed while CDP-testing the
+      modal, not just the API: `setAttendanceStatus()` compared `r.memberId` (a string — bigint
+      ids serialise as strings over JSON) against the onclick handler's bare numeric literal with
+      strict `===`, so clicking Present/Absent/Excused silently updated nothing; fixed to compare
+      as strings. Verified end-to-end: `club-sessions-test.js` (18 API assertions — a plain
+      member is fully blocked, admin vs. coach capability boundaries, unmarked roster is null not
+      defaulted, idempotent re-marking, cross-club member IDs are rejected, staff parity, audit
+      trail) and `club-sessions-ui-test.js` (a real signed-in club admin opens Manage, approves a
+      real join request, creates a real session, takes attendance in the real modal — the bug
+      above was caught here). Full regression suite (member-capability-test.js,
+      club-federation-test.js, dashboard-test.js) re-run clean. **Not built**: an `admin.html`
+      staff-facing companion panel (staff already have full API access via their own token —
+      `requireStaffClubAdminOrCoach` checks `checkAdmin` first — just no dedicated UI yet); a
+      finance module (no scope taken on this yet at all).
 - [~] Coaching: **consent-based coach-athlete linking is real** (migration 024 — either side can
       initiate, the other must accept, either can revoke). **Licensing is now real too**
       (2026-08-12, migration 032): a separate `coach_certifications` table, not a reuse of
