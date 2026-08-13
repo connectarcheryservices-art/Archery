@@ -9,7 +9,8 @@
 // The browser is never asked how much anything cost.
 'use strict';
 const crypto = require('crypto');
-const { q } = require('./db');
+const { q, withTransaction } = require('./db');
+const { mintInvoiceNo } = require('./gst');
 
 // ── signature verification ─────────────────────────────────────────────────
 // Razorpay docs (https://razorpay.com/docs/webhooks/validate-test/):
@@ -129,17 +130,58 @@ async function fulfil(order) {
   await q(`insert into analytics_events (type, value, order_id) values ('purchase', $1, $2)`,
     [order.total, order.id]).catch(() => {});
 
+  // GST tax invoice number — minted exactly once per order. CGST Rule 46(b)
+  // requires a consecutive serial number unique to a financial year, so
+  // reissuing one for the same order (e.g. if fulfil() is ever invoked twice
+  // by both the webhook and reconcile racing) would itself be a compliance
+  // violation.
+  //
+  // Mint-and-persist runs inside ONE db.js withTransaction() — adversarial
+  // review, 2026-08-13: doing this as two separate autocommit statements
+  // (mint, then a follow-up UPDATE) meant a failure in between permanently
+  // burned an invoice_counters sequence number that no order ever carried,
+  // silently breaking Rule 46(b)'s "consecutive" guarantee. This is the
+  // exact bug shape already found and fixed once in api/_handlers/selection.js
+  // (see db.js's withTransaction comment) — same fix, applied here too. The
+  // `for update` row lock also closes a narrower race: two near-simultaneous
+  // fulfil() calls for the SAME order (shouldn't happen given markPaid()'s
+  // own idempotency guard, but this makes it impossible regardless) can no
+  // longer both see invoice_no as null and each mint a number.
+  let invoiceNo = null;
+  try {
+    invoiceNo = await withTransaction(async (client) => {
+      const existing = await client.query('select invoice_no from orders where id=$1 for update', [order.id]);
+      const row = existing.rows[0];
+      if (!row) return null;
+      if (row.invoice_no) return row.invoice_no;
+      const no = await mintInvoiceNo(new Date(), client.query.bind(client));
+      await client.query('update orders set invoice_no=$1, invoice_issued_at=now() where id=$2', [no, order.id]);
+      return no;
+    });
+  } catch (e) { console.error('fulfil: invoice mint failed:', e?.message); }
+
   if (order.customer_email) {
     try {
       const { sendMail, branded } = require('./mailer');
       const lines = items.map(i => `${i.name} × ${i.qty || 1} — ₹${Number(i.price).toLocaleString('en-IN')}`).join('<br>');
+      // A relative path is meaningless inside an email — there's no page
+      // origin for a mail client to resolve it against, so it must be
+      // absolute. No PUBLIC_BASE_URL (or equivalent) env var convention
+      // exists anywhere in this codebase; api/_handlers/users-action.js's
+      // safeOrigin() already hardcodes the same real production fallback
+      // for exactly this reason (a password-reset link built with no
+      // request-time origin available) — matching that here rather than
+      // inventing a second convention.
+      const invoiceLine = invoiceNo
+        ? `<br><br><a href="https://archery.services/api/orders/${order.id}/invoice?on=${encodeURIComponent(order.order_no)}" style="color:#C9A227;">View your GST tax invoice</a>`
+        : '';
       await sendMail({
         to: order.customer_email,
         subject: `Order confirmed — ${order.order_no}`,
         html: branded({
           heading: 'Order confirmed 🎯',
           preheader: 'Payment received — ' + order.order_no,
-          body: `Thank you${order.customer_name ? ', ' + order.customer_name.split(' ')[0] : ''}! We've received your payment and your order is confirmed.<br><br><b>Order ${order.order_no}</b><br>${lines}<br><br><b>Total paid: ₹${Number(order.total).toLocaleString('en-IN')}</b><br><br>We'll notify you as it ships across India.`,
+          body: `Thank you${order.customer_name ? ', ' + order.customer_name.split(' ')[0] : ''}! We've received your payment and your order is confirmed.<br><br><b>Order ${order.order_no}</b><br>${lines}<br><br><b>Total paid: ₹${Number(order.total).toLocaleString('en-IN')}</b><br><br>We'll notify you as it ships across India.${invoiceLine}`,
         }),
       }).catch(() => {});
     } catch (e) { /* mail is best-effort; never fails a payment */ }

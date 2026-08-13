@@ -13,6 +13,7 @@ const { writeAudit } = require('../_lib/audit');
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const { sign, authedUserChecked, revokeSessions } = require('../_lib/userauth');
 const { isMinor, validateDob } = require('../_lib/age');
+const { isValidGstin } = require('../_lib/gst');
 
 // A reset/welcome link must point back at a real, known Archery.Services
 // origin — never at whatever `origin` a caller puts in the request body.
@@ -311,8 +312,17 @@ module.exports = async (req, res) => {
       const u = await authedUserChecked(req); if (!u) return json(res, { ok: false }, 401);
       const b = readBody(req);
       if (!String(b.businessName || '').trim()) return json(res, { ok: false, error: 'Business name is required.' }, 400);
+      // GSTIN is optional at application time (not every seller is GST-
+      // registered yet), but if one is given it must be a real, well-formed
+      // GSTIN — its first two digits are read as the seller's registered
+      // state for CGST/SGST/IGST purposes (api/_lib/gst.js), so a malformed
+      // value would silently break tax splitting on every order later.
+      const gst = String(b.gst || '').trim().toUpperCase() || null;
+      if (gst && !isValidGstin(gst)) {
+        return json(res, { ok: false, error: 'That GSTIN doesn’t look valid — it should be 15 characters, e.g. 29ABCDE1234F1Z5.' }, 400);
+      }
       await q(`update users set account_type='seller', seller_status='pending', business_name=$1, gst_number=$2, payout_upi=$3 where id=$4`,
-        [String(b.businessName).trim(), b.gst || null, b.payoutUpi || null, u.id]);
+        [String(b.businessName).trim(), gst, b.payoutUpi || null, u.id]);
       await writeAudit({ req, actor: { role: 'customer', sid: u.id, name: u.name }, action: 'update', resourceType: 'users', resourceId: u.id,
         after: { accountType: 'seller', sellerStatus: 'pending', businessName: String(b.businessName).trim() } });
       return json(res, { ok: true, message: 'Application received — you will be notified once approved.' });

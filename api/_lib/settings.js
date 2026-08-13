@@ -23,6 +23,16 @@ async function loadPricingConfig() {
     deliverySameDay:       num(d.deliverySameDay ?? d.delivery_same_day, DEFAULTS.deliverySameDay),
     freeDeliveryThreshold: num(d.freeDeliveryThreshold ?? d.free_delivery_threshold, DEFAULTS.freeDeliveryThreshold),
     sameDayEnabled:        (d.sameDayEnabled ?? d.same_day_enabled) !== false,
+    // The platform's own GST registration — supplier of record for house
+    // inventory (products with no seller_id) and always the supplier for
+    // the platform service fee (api/_lib/pricing.js). Left blank until the
+    // real owner enters their real registration in admin.html; a
+    // placeholder-looking value here would be exactly the fabricated-data
+    // problem CLAUDE.md §1.1 exists to prevent.
+    platformGstin:           d.platformGstin || '',
+    platformLegalName:       d.platformLegalName || '',
+    platformRegisteredState: d.platformRegisteredState || '',
+    platformAddress:         d.platformAddress || '',
   };
 }
 

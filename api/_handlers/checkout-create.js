@@ -7,6 +7,7 @@ const { cors, json, readBody } = require('../_lib/respond');
 const { computeQuote } = require('../_lib/pricing');
 const { loadPricingConfig, getSettings } = require('../_lib/settings');
 const { q } = require('../_lib/db');
+const { isKnownState, canonicalState, isValidGstin, stateFromGstin } = require('../_lib/gst');
 
 function orderNo() {
   return 'ARC-' + Date.now().toString(36).toUpperCase() + '-' +
@@ -40,6 +41,14 @@ module.exports = async (req, res) => {
     const cust = b.customer || {};
     if (!cust.name || !cust.phone) return json(res, { ok: false, error: 'Name and phone are required.' }, 400);
     if (!cust.address1 || !cust.pincode) return json(res, { ok: false, error: 'A delivery address and pincode are required.' }, 400);
+    if (!cust.state || !isKnownState(cust.state)) return json(res, { ok: false, error: 'Please select a valid delivery state.' }, 400);
+    const buyerState = canonicalState(cust.state);
+
+    let buyerGstin = null;
+    if (b.buyerGstin) {
+      if (!isValidGstin(b.buyerGstin)) return json(res, { ok: false, error: "That GSTIN doesn't look valid." }, 400);
+      buyerGstin = String(b.buyerGstin).toUpperCase().trim();
+    }
 
     const settings = await getSettings();
     if (settings.maintenanceMode === true) {
@@ -53,11 +62,23 @@ module.exports = async (req, res) => {
     const ids = items.map(i => parseInt(i.id)).filter(Boolean);
     let priced = [];
     if (ids.length) {
-      const r = await q('select id, name, price from products where id = any($1) and active is not false', [ids]);
+      const r = await q(
+        `select p.id, p.name, p.price, p.seller_id, p.hsn_code, p.gst_rate, u.gst_number
+           from products p
+           left join users u on u.id = p.seller_id
+          where p.id = any($1) and p.active is not false`,
+        [ids]
+      );
       const map = new Map(r.rows.map(row => [Number(row.id), row]));
       priced = items.map(i => {
         const p = map.get(parseInt(i.id));
-        return p ? { id: Number(p.id), name: p.name, price: Number(p.price), qty: Math.max(1, parseInt(i.qty) || 1) } : null;
+        if (!p) return null;
+        return {
+          id: Number(p.id), name: p.name, price: Number(p.price), qty: Math.max(1, parseInt(i.qty) || 1),
+          hsnCode: p.hsn_code || undefined,
+          gstRate: p.gst_rate != null ? Number(p.gst_rate) : null,
+          sellerState: stateFromGstin(p.gst_number),
+        };
       }).filter(Boolean);
     }
     if (!priced.length) return json(res, { ok: false, error: 'Cart items are no longer available.' }, 400);
@@ -65,7 +86,8 @@ module.exports = async (req, res) => {
     const config = await loadPricingConfig();
     let delivery = b.delivery === 'sameday' ? 'sameday' : 'standard';
     if (delivery === 'sameday' && config.sameDayEnabled === false) delivery = 'standard';
-    const quote = computeQuote(priced, { delivery, config });
+    const platformState = config.platformRegisteredState || null;
+    const quote = computeQuote(priced, { delivery, config, buyerState, platformState });
 
     const no = orderNo();
     const geo = b.geo || {};
@@ -73,13 +95,16 @@ module.exports = async (req, res) => {
       `insert into orders (order_no, customer_name, customer_email, customer_phone,
          address_line1, address_line2, city, state, pincode, country,
          geo_lat, geo_lng, geo_accuracy, delivery_type, items,
-         goods, delivery_fee, tax, platform_fee, total, currency, payment_status, status)
-       values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,'pending','new')
+         goods, delivery_fee, tax, platform_fee, total, currency, payment_status, status,
+         cgst, sgst, igst, place_of_supply_state, buyer_gstin, gst_breakdown)
+       values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,'pending','new',
+         $22,$23,$24,$25,$26,$27)
        returning id`,
       [no, cust.name, cust.email || null, cust.phone,
-       cust.address1, cust.address2 || null, cust.city || null, cust.state || null, cust.pincode, cust.country || 'India',
+       cust.address1, cust.address2 || null, cust.city || null, buyerState, cust.pincode, cust.country || 'India',
        geo.lat ?? null, geo.lng ?? null, geo.accuracy ?? null, delivery,
-       JSON.stringify(quote.items), quote.goods, quote.deliveryFee, quote.tax, quote.platformFee, quote.total, quote.currency]
+       JSON.stringify(quote.items), quote.goods, quote.deliveryFee, quote.tax, quote.platformFee, quote.total, quote.currency,
+       quote.cgst, quote.sgst, quote.igst, buyerState, buyerGstin, JSON.stringify(quote.gstBreakdown)]
     );
     const orderId = ins.rows[0].id;
 

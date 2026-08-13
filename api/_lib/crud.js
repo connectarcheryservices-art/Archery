@@ -25,7 +25,7 @@ async function filterUnconsentedMinorProfiles(rows) {
 }
 
 const TABLES = {
-  products:    ['name','brand','description','price','was','category','stock','img_url','active'],
+  products:    ['name','brand','description','price','was','category','stock','img_url','active','hsn_code','gst_rate'],
   tournaments: ['name','date','location','prize','slots','registered','status','active'],
   athletes:    ['name','state','discipline','rank','pb','img_url','active'],
   jobs:        ['title','org','location','type','salary','description','active'],

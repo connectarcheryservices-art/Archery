@@ -126,7 +126,9 @@
           <div class="fg"><label>Address line 2</label><input id="c-a2" autocomplete="address-line2" placeholder="Area, landmark (optional)"></div>
           <div class="row">
             <div class="fg"><label>City</label><input id="c-city" autocomplete="address-level2" placeholder="City"></div>
-            <div class="fg"><label>State</label><input id="c-state" autocomplete="address-level1" placeholder="State"></div>
+            <div class="fg"><label class="req">State</label>
+              <select id="c-state" autocomplete="address-level1" onchange="refreshQuote()"></select>
+            </div>
           </div>
           <div class="row">
             <div class="fg"><label class="req">Pincode</label><input id="c-pin" inputmode="numeric" autocomplete="postal-code" placeholder="6-digit PIN"></div>
@@ -136,6 +138,7 @@
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
             <span id="loc-label">Use my current location (faster, accurate delivery)</span>
           </button>
+          <div class="fg" style="margin-top:14px;"><label>GSTIN (for a business invoice, optional)</label><input id="c-gstin" autocomplete="off" placeholder="15-character GSTIN" style="text-transform:uppercase;"></div>
         </div>
 
         <div class="card">
@@ -154,8 +157,7 @@
         <div class="brk" id="brk">
           <div class="brk-row"><span>Items subtotal</span><span id="b-goods">—</span></div>
           <div class="brk-row"><span id="b-deliv-label">Delivery</span><span id="b-deliv">—</span></div>
-          <div class="brk-row"><span>Tax</span><span id="b-tax">—</span></div>
-          <div class="brk-row"><span>Platform fee</span><span id="b-fee">—</span></div>
+          <div id="brk-dynamic"><!-- CGST/SGST/IGST + platform fee rows, rendered from q.lines by refreshQuote() --></div>
           <div class="brk-row total"><span>Total</span><span class="amt" id="b-total">—</span></div>
         </div>
         <button class="pay" id="pay" onclick="payNow()">Pay <span id="pay-amt"></span></button>
@@ -172,6 +174,16 @@ let delivery = 'standard';
 let geo = null;
 let lastQuote = null;
 
+// Must stay in sync with api/_lib/gst.js's GST_STATES (36 real, currently-
+// live GST state/UT names, alphabetical). Duplicated here rather than
+// fetched because this is a static page with no auth'd config endpoint —
+// see checkout-quote.js/checkout-create.js for the server-side source of truth.
+const GST_STATES = ["Andaman and Nicobar Islands","Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chandigarh","Chhattisgarh","Dadra and Nagar Haveli and Daman and Diu","Delhi","Goa","Gujarat","Haryana","Himachal Pradesh","Jammu and Kashmir","Jharkhand","Karnataka","Kerala","Ladakh","Lakshadweep","Madhya Pradesh","Maharashtra","Manipur","Meghalaya","Mizoram","Nagaland","Odisha","Puducherry","Punjab","Rajasthan","Sikkim","Tamil Nadu","Telangana","Tripura","Uttar Pradesh","Uttarakhand","West Bengal"];
+(function populateStates(){
+  const sel = document.getElementById('c-state');
+  sel.innerHTML = '<option value="">Select state</option>' + GST_STATES.map(s=>`<option value="${s}">${s}</option>`).join('');
+})();
+
 // Client-side fallback pricing so the page still shows a total if the quote
 // API is briefly unreachable. Must actually mirror api/_lib/pricing.js's
 // DEFAULTS. Currency went INR -> CHF (2026-07-16) -> back to INR (2026-08-12,
@@ -180,13 +192,21 @@ let lastQuote = null;
 // quote-API hiccup silently shows the wrong currency's numbers under the
 // right currency's label (CLAUDE.md §1.6) — exactly what happened here once
 // already during the CHF conversion, when this was left at the old values.
-const FALLBACK = { taxRate:0.10, platformFeeRate:0.05, deliveryStandard:49, deliverySameDay:149, freeDeliveryThreshold:999 };
+const FALLBACK = { taxRate:0.05, platformFeeRate:0.05, deliveryStandard:49, deliverySameDay:149, freeDeliveryThreshold:999 };
 function localQuote(items, deliv){
   const goods = items.reduce((s,i)=>s+i.price*i.qty,0);
   let fee = goods===0?0 : deliv==='sameday'?FALLBACK.deliverySameDay : (goods>=FALLBACK.freeDeliveryThreshold?0:FALLBACK.deliveryStandard);
   const tax = Math.round(goods*FALLBACK.taxRate), platformFee = Math.round(goods*FALLBACK.platformFeeRate);
+  // Flat estimate only — no real CGST/SGST/IGST split (that needs the live
+  // quote API's DB-backed rates + buyer/seller state). Low-stakes: this only
+  // renders on a rare network hiccup, and checkout/create always re-prices
+  // authoritatively server-side regardless of what this showed.
   return { goods, deliveryFee:fee, tax, platformFee, total: goods+fee+tax+platformFee, delivery:deliv,
-    lines:[{key:'delivery',label: deliv==='sameday'?'Same-day delivery (PAN India)':(fee===0?'Delivery (free)':'Standard delivery (PAN India)')}] };
+    lines:[
+      {key:'delivery',label: deliv==='sameday'?'Same-day delivery (PAN India)':(fee===0?'Delivery (free)':'Standard delivery (PAN India)')},
+      {key:'tax',label:'Tax (est.)',amount:tax},
+      {key:'platformFee',label:'Platform fee (est.)',amount:platformFee},
+    ] };
 }
 
 function svgFor(it){
@@ -207,9 +227,10 @@ function renderItems(){
 
 async function refreshQuote(){
   const items = cart.map(i=>({id:i.id,name:i.name,price:i.price,qty:i.qty}));
+  const state = val('c-state');
   let q;
   try {
-    const r = await fetch('/api/checkout/quote',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items,delivery})});
+    const r = await fetch('/api/checkout/quote',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items,delivery,state})});
     const d = await r.json();
     q = (d && d.ok && d.quote) ? d.quote : localQuote(items,delivery);
   } catch(e){ q = localQuote(items,delivery); }
@@ -218,8 +239,14 @@ async function refreshQuote(){
   const dl = (q.lines||[]).find(l=>l.key==='delivery');
   document.getElementById('b-deliv-label').textContent = dl?dl.label:'Delivery';
   document.getElementById('b-deliv').textContent = q.deliveryFee===0?'FREE':INR(q.deliveryFee);
-  document.getElementById('b-tax').textContent = INR(q.tax);
-  document.getElementById('b-fee').textContent = INR(q.platformFee);
+  // Dynamic breakdown rows: everything except goods/delivery (which keep
+  // their own dedicated rows above) — CGST/SGST/IGST/platform fee lines
+  // come straight from the server so the intra/inter-state split updates
+  // live as the buyer picks their delivery state.
+  document.getElementById('brk-dynamic').innerHTML = (q.lines||[])
+    .filter(l=>l.key!=='goods' && l.key!=='delivery')
+    .map(l=>`<div class="brk-row"><span>${esc(l.label)}</span><span>${INR(l.amount)}</span></div>`)
+    .join('');
   document.getElementById('b-total').textContent = INR(q.total);
   document.getElementById('pay-amt').textContent = INR(q.total);
   // show delivery fees on the option cards
@@ -248,7 +275,16 @@ function useLocation(){
       const setIf=(id,v)=>{ const el=document.getElementById(id); if(el && v && !el.value.trim()){ el.value=v; el.dispatchEvent(new Event('input')); } };
       const city = r.city || r.locality || (r.localityInfo&&r.localityInfo.administrative&&r.localityInfo.administrative.slice(-1)[0]&&r.localityInfo.administrative.slice(-1)[0].name) || '';
       setIf('c-city', city);
-      setIf('c-state', r.principalSubdivision || '');
+      // c-state is a <select> now — match the reverse-geocoded subdivision
+      // name against the option list case-insensitively; if nothing matches
+      // (abbreviation, alternate spelling, UT vs state naming, etc.) this is
+      // a graceful no-op and the buyer just picks their state manually.
+      const stateSel = document.getElementById('c-state');
+      const geoState = r.principalSubdivision || '';
+      if (stateSel && geoState && !stateSel.value) {
+        const hit = GST_STATES.find(s => s.toLowerCase() === geoState.trim().toLowerCase());
+        if (hit) { stateSel.value = hit; stateSel.dispatchEvent(new Event('change')); }
+      }
       setIf('c-pin', r.postcode || '');
       const cs=[city, r.principalSubdivision].filter(Boolean).join(', ');
       lbl.textContent = cs ? ('Location captured ✓ — '+cs) : 'Location captured ✓ (helps us deliver accurately)';
@@ -271,12 +307,14 @@ async function payNow(){
   if(!/^\d{10}$/.test(cust.phone.replace(/\D/g,'').slice(-10))) return showErr('Please enter a valid 10-digit phone number.');
   if(!cust.address1) return showErr('Please enter your delivery address.');
   if(!/^\d{6}$/.test(cust.pincode)) return showErr('Please enter a valid 6-digit pincode.');
+  if(!cust.state) return showErr('Please select your state.');
 
   const pay=document.getElementById('pay'); pay.disabled=true; pay.textContent='Starting secure payment…';
   const items=cart.map(i=>({id:i.id,name:i.name,price:i.price,qty:i.qty}));
+  const buyerGstin = val('c-gstin') || undefined;
   let data;
   try{
-    data = await fetch('/api/checkout/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items,customer:cust,delivery,geo})}).then(r=>r.json());
+    data = await fetch('/api/checkout/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items,customer:cust,delivery,geo,buyerGstin})}).then(r=>r.json());
   }catch(e){ data=null; }
   if(!data || !data.ok || !data.razorpay || !data.razorpay.keyId){
     pay.disabled=false; pay.innerHTML='Pay <span id="pay-amt">'+INR(lastQuote?lastQuote.total:0)+'</span>';

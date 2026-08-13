@@ -354,7 +354,27 @@ been run as a live tournament by a real federation yet, and isn't deployed to pr
 - [ ] **Consumer Protection (E-Commerce) Rules 2020**: published **Grievance Officer**, 48-hour
       acknowledgement, 1-month resolution, **country of origin** per listing, seller identity
       disclosure. *(Currently: none implemented.)*
-- [ ] **GST**: HSN codes, compliant invoices, **TCS u/s 52 CGST**, e-invoicing thresholds.
+- [x] **GST**: HSN codes (per product, `products.hsn_code`/`gst_rate`, default HSN 9506 / 5% —
+      GST 2.0 rate rationalisation, Notification 9/2025-Integrated Tax (Rate), eff. 2025-09-22),
+      real CGST/SGST/IGST split (`api/_lib/pricing.js` — intra vs inter-state determined by
+      comparing seller/platform registered state, derived from a real GSTIN via
+      `api/_lib/gst.js`'s state-code table, against the buyer's canonical delivery-address
+      state), GSTIN capture + format validation (seller at `apply-seller`, buyer optionally at
+      checkout), compliant tax invoices (`api/_handlers/order-invoice.js`, cites CGST Rule 46,
+      sequential per-financial-year numbering via `invoice_counters` — migration 036). Verified
+      end-to-end against the local dev stack: real checkout → real order row with correct
+      cgst/sgst/igst + HSN breakdown → real invoice HTML with the right numbers, correct
+      escaping, and correct 403 on a wrong access token. `api/_lib/pricing.test.js`: 44/44,
+      including the state-guess-invariant-total property and exact delivery-fee reconciliation
+      (adversarial review, 2026-08-13, found and fixed: state-name canonicalisation drift,
+      non-transactional invoice-number minting, UTC-vs-IST financial-year boundary, and a
+      paisa-level rounding leak in the delivery-fee allocation — all four fixed and
+      regression-tested). **Not built, on purpose** (see migration 036's header): **TCS u/s 52
+      CGST** (needs a seller payout/settlement ledger this codebase doesn't have yet) and
+      **e-invoicing/IRN** (needs a real government IRP integration this business likely doesn't
+      need yet at its current scale — the mandatory threshold is turnover-based). Also not built:
+      true per-seller multi-invoice splitting for a mixed-seller cart (v1 always shows the
+      platform as supplier of record — a documented simplification, not a silent gap).
 - [ ] Order lifecycle, returns, refunds, shipping; courier restrictions on archery equipment
       (investigate state-level constraints).
 - [ ] Server-side recommendations from **aggregate real** behaviour; **under-18s excluded**.
@@ -362,6 +382,9 @@ been run as a live tournament by a real federation yet, and isn't deployed to pr
 
 **Gate:** a real order ships, is **GST-correct**, can be returned, and **every number traces to
 a row**. Grievance Officer published; 48-hour clock instrumented.
+**GST half is now met** (see above) — real HSN/CGST/SGST/IGST/invoicing, tested. The gate as a
+whole is **not yet fully met**: no Grievance Officer/48h clock, no returns/refunds flow, and the
+seller-marketplace/Consumer-Protection-Rules items above are still open.
 
 ---
 

@@ -52,7 +52,7 @@ module.exports = async (req, res) => {
       const urow = (await q('select account_type, seller_status from users where id=$1', [u.id])).rows[0] || {};
       if (urow.seller_status !== 'approved') return json(res, { ok: false, error: 'Your seller account is not approved yet.' }, 403);
       const pid = req.query.pid;
-      const COLS = ['name', 'brand', 'description', 'price', 'was', 'category', 'stock', 'img_url', 'active'];
+      const COLS = ['name', 'brand', 'description', 'price', 'was', 'category', 'stock', 'img_url', 'active', 'hsn_code', 'gst_rate'];
       const toSnake = k => k.replace(/([A-Z])/g, c => '_' + c.toLowerCase());
       if (req.method === 'GET') {
         const r = await q('select * from products where seller_id=$1 order by id desc', [u.id]);
@@ -62,7 +62,7 @@ module.exports = async (req, res) => {
         const b = readBody(req);
         if (!String(b.name || '').trim() || !(Number(b.price) >= 0)) return json(res, { ok: false, error: 'Name and a valid price are required.' }, 400);
         const cols = ['seller_id'], vals = [u.id];
-        for (const camel of ['name', 'brand', 'description', 'price', 'was', 'category', 'stock', 'imgUrl', 'active']) {
+        for (const camel of ['name', 'brand', 'description', 'price', 'was', 'category', 'stock', 'imgUrl', 'active', 'hsnCode', 'gstRate']) {
           if (b[camel] === undefined) continue; const c = toSnake(camel); if (!COLS.includes(c)) continue;
           cols.push(c); vals.push(b[camel]);
         }
@@ -82,7 +82,7 @@ module.exports = async (req, res) => {
           return json(res, { ok: true });
         }
         const b = readBody(req); const sets = [], vals = [];
-        for (const camel of ['name', 'brand', 'description', 'price', 'was', 'category', 'stock', 'imgUrl', 'active']) {
+        for (const camel of ['name', 'brand', 'description', 'price', 'was', 'category', 'stock', 'imgUrl', 'active', 'hsnCode', 'gstRate']) {
           if (b[camel] === undefined) continue; const c = toSnake(camel); if (!COLS.includes(c)) continue;
           sets.push(`${c}=$${vals.push(b[camel])}`);
         }

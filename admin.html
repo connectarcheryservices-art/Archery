@@ -495,6 +495,8 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
           <div class="form-group"><label class="form-label">Price (₹)</label><input class="form-input" id="p-price" type="number" placeholder="24500"></div>
           <div class="form-group"><label class="form-label">Was Price (₹) — leave blank if no discount</label><input class="form-input" id="p-was" type="number" placeholder="29900"></div>
           <div class="form-group"><label class="form-label">Stock Quantity</label><input class="form-input" id="p-stock" type="number" placeholder="10"></div>
+          <div class="form-group"><label class="form-label">HSN Code</label><input class="form-input" id="p-hsn" placeholder="9506"></div>
+          <div class="form-group"><label class="form-label">GST Rate (%)</label><input class="form-input" id="p-gst" type="number" step="0.01" placeholder="5"></div>
           <div class="form-group" style="grid-column:1/-1;">
             <label class="form-label">Product Photo</label>
             <div id="p-img-drop" onclick="document.getElementById('p-img-file').click()" style="border:2px dashed rgba(201,162,39,.3);border-radius:10px;padding:22px;text-align:center;cursor:pointer;background:rgba(201,162,39,.04);">
@@ -798,7 +800,7 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
           <div class="card-title">Pricing &amp; Delivery</div>
           <div class="form-group" style="margin-bottom:14px;"><label class="form-label">Currency</label><input class="form-input" id="set-currency" disabled></div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-            <div class="form-group" style="margin-bottom:14px;"><label class="form-label">Tax Rate (%)</label><input class="form-input" id="set-tax" type="number" min="0" max="100" step="0.1"></div>
+            <div class="form-group" style="margin-bottom:14px;"><label class="form-label">Default GST Rate (%)</label><input class="form-input" id="set-tax" type="number" min="0" max="100" step="0.1"></div>
             <div class="form-group" style="margin-bottom:14px;"><label class="form-label">Platform Fee (%)</label><input class="form-input" id="set-platform-fee" type="number" min="0" max="100" step="0.1"></div>
             <div class="form-group" style="margin-bottom:14px;"><label class="form-label">Standard Delivery (₹)</label><input class="form-input" id="set-delivery-std" type="number" min="0" step="1"></div>
             <div class="form-group" style="margin-bottom:14px;"><label class="form-label">Same-Day Delivery (₹)</label><input class="form-input" id="set-delivery-sameday" type="number" min="0" step="1"></div>
@@ -808,6 +810,12 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
             <div class="toggle-info"><div class="toggle-title">Same-Day Delivery</div><div class="toggle-desc">Offer same-day delivery at checkout</div></div>
             <label class="toggle-switch"><input type="checkbox" id="set-sameday-enabled"><div class="toggle-slider"></div></label>
           </label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;">
+            <div class="form-group" style="margin-bottom:14px;"><label class="form-label">Platform GSTIN</label><input class="form-input" id="set-gstin" placeholder="29ABCDE1234F1Z5"></div>
+            <div class="form-group" style="margin-bottom:14px;"><label class="form-label">Platform Legal Name</label><input class="form-input" id="set-legal-name" placeholder="Registered legal entity name"></div>
+          </div>
+          <div class="form-group" style="margin-bottom:14px;"><label class="form-label">Platform Registered State</label><select class="form-select" id="set-reg-state"><option value="">Select state</option></select></div>
+          <div class="form-group" style="margin-bottom:14px;"><label class="form-label">Platform Address</label><textarea class="form-input" id="set-address" rows="3" placeholder="Registered business address"></textarea></div>
           <div class="form-actions" style="margin-top:16px;">
             <button class="btn-save" onclick="savePricing()">Save Pricing</button>
           </div>
@@ -1206,6 +1214,19 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
 
 <script>
 const API = '/api';
+// Must stay in sync with api/_lib/gst.js's GST_STATES (36 real, currently-
+// live GST state/UT names, alphabetical — same literal list used by
+// checkout.html). A free-text "state" field here previously let an admin
+// type a spelling ("Jammu & Kashmir") that wouldn't string-match checkout's
+// canonical form ("Jammu and Kashmir"), silently miscomputing a real
+// intra-state sale as inter-state IGST — adversarial review, 2026-08-13.
+// Forcing this field to the same fixed option list makes that whole class
+// of drift structurally impossible, not just less likely.
+const GST_STATES = ["Andaman and Nicobar Islands","Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chandigarh","Chhattisgarh","Dadra and Nagar Haveli and Daman and Diu","Delhi","Goa","Gujarat","Haryana","Himachal Pradesh","Jammu and Kashmir","Jharkhand","Karnataka","Kerala","Ladakh","Lakshadweep","Madhya Pradesh","Maharashtra","Manipur","Meghalaya","Mizoram","Nagaland","Odisha","Puducherry","Punjab","Rajasthan","Sikkim","Tamil Nadu","Telangana","Tripura","Uttar Pradesh","Uttarakhand","West Bengal"];
+(function populateRegStateSelect(){
+  const sel = document.getElementById('set-reg-state');
+  if (sel) sel.innerHTML = '<option value="">Select state</option>' + GST_STATES.map(s=>`<option value="${s}">${s}</option>`).join('');
+})();
 let AUTH_TOKEN = sessionStorage.getItem('archery_admin_token') || '';
 const authH = () => ({'Content-Type':'application/json','Authorization':'Bearer '+AUTH_TOKEN});
 // Every write used to end in `.catch(() => null)`, so ANY failure — an expired
@@ -1408,7 +1429,7 @@ function handleProductImg(input){
   });
 }
 async function saveProduct(){
-  const d={name:document.getElementById('p-name').value,brand:document.getElementById('p-brand').value,category:document.getElementById('p-cat').value,price:+document.getElementById('p-price').value,was:+document.getElementById('p-was').value||null,stock:+document.getElementById('p-stock').value,imgUrl:productImg||null,active:true};
+  const d={name:document.getElementById('p-name').value,brand:document.getElementById('p-brand').value,category:document.getElementById('p-cat').value,price:+document.getElementById('p-price').value,was:+document.getElementById('p-was').value||null,stock:+document.getElementById('p-stock').value,imgUrl:productImg||null,active:true,hsnCode:document.getElementById('p-hsn').value||'9506',gstRate:(parseFloat(document.getElementById('p-gst').value)||5)/100};
   if(!d.name||!d.price){toast('Fill in name and price');return;}
   // This used to `await post(...)` and then say "Product saved" unconditionally,
   // without ever looking at the result — so a failed save (expired session,
@@ -1420,7 +1441,7 @@ async function saveProduct(){
   productImg=null;
   const pv=document.getElementById('p-img-preview'); if(pv){pv.style.display='none';pv.src='';}
   const dz=document.getElementById('p-img-drop'); if(dz) dz.style.borderColor='rgba(201,162,39,.3)';
-  ['p-name','p-brand','p-price','p-was','p-stock'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['p-name','p-brand','p-price','p-was','p-stock','p-hsn','p-gst'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
 }
 
 // ── TOURNAMENTS ──
@@ -1549,6 +1570,10 @@ async function loadSettings(){
   document.getElementById('set-delivery-sameday').value = s.deliverySameDay!=null ? s.deliverySameDay : '';
   document.getElementById('set-free-threshold').value   = s.freeDeliveryThreshold!=null ? s.freeDeliveryThreshold : '';
   document.getElementById('set-sameday-enabled').checked = s.sameDayEnabled!==false;
+  document.getElementById('set-gstin').value            = s.platformGstin||'';
+  document.getElementById('set-legal-name').value       = s.platformLegalName||'';
+  document.getElementById('set-reg-state').value        = s.platformRegisteredState||'';
+  document.getElementById('set-address').value          = s.platformAddress||'';
 }
 
 // ── AUDIT LOG ──
@@ -1734,6 +1759,10 @@ async function savePricing(){
     deliverySameDay: num('set-delivery-sameday', 15),
     freeDeliveryThreshold: num('set-free-threshold', 99),
     sameDayEnabled: document.getElementById('set-sameday-enabled').checked,
+    platformGstin: document.getElementById('set-gstin').value,
+    platformLegalName: document.getElementById('set-legal-name').value,
+    platformRegisteredState: document.getElementById('set-reg-state').value,
+    platformAddress: document.getElementById('set-address').value,
   };
   const r = await post('settings', d);
   toast(r&&!r.error ? 'Pricing saved' : ((r&&r.error)||'Could not save pricing.'));
@@ -1832,7 +1861,12 @@ async function loadOrders(){
     const nextBtn=next?`<button class="btn-toggle" onclick="setOrder(${o.id},'${next}')">Mark ${next}</button>`:'';
     const cancel=(o.status!=='cancelled'&&o.status!=='delivered')?`<button class="btn-edit" onclick="setOrder(${o.id},'cancelled')">Cancel</button>`:'';
     const map=(o.geoLat&&o.geoLng)?`<a class="btn-edit" href="https://www.google.com/maps?q=${o.geoLat},${o.geoLng}" target="_blank" style="text-decoration:none;">Map</a>`:'';
-    return `<tr><td>#${o.id}</td><td class="td-name">${cust}</td><td style="font-size:12px;line-height:1.6;">${items}</td><td>₹${Number(o.total).toLocaleString('en-IN')}</td><td>${pay}</td><td style="font-size:12px;">${when}</td><td class="td-actions"><span class="td-badge ${sb}">${escA(o.status)}</span> ${nextBtn}${cancel}${map}<button class="btn-delete" onclick="delOrder(${o.id})">Delete</button></td></tr>`;
+    // Plain <a href>, not the bearer-authed fetch() the rest of this page uses:
+    // order_no is already trusted as a bearer-style credential for this same
+    // unauthenticated-invoice path (api/_handlers/order-invoice.js), so a
+    // direct link works without carrying the admin Authorization header.
+    const invoice=o.invoiceNo?`<a class="btn-edit" href="/api/orders/${o.id}/invoice?on=${encodeURIComponent(o.orderNo)}" target="_blank" style="text-decoration:none;">Invoice</a>`:'';
+    return `<tr><td>#${o.id}</td><td class="td-name">${cust}</td><td style="font-size:12px;line-height:1.6;">${items}</td><td>₹${Number(o.total).toLocaleString('en-IN')}</td><td>${pay}</td><td style="font-size:12px;">${when}</td><td class="td-actions"><span class="td-badge ${sb}">${escA(o.status)}</span> ${nextBtn}${cancel}${map}${invoice}<button class="btn-delete" onclick="delOrder(${o.id})">Delete</button></td></tr>`;
   }).join(''):'<tr><td colspan="8" style="padding:22px;color:var(--text-2);">No paid orders yet.</td></tr>';
 }
 async function setOrder(id,status){ const r=await put('orders',id,{status}); if(!r||r.error){ toast((r&&r.error)||'Could not update the order.'); return; } loadOrders(); toast('Order '+status); }
@@ -2285,7 +2319,7 @@ function loadPanel(name){
   ov.addEventListener('click',function(e){if(e.target===ov)closeEdit();});
 })();
 const EDIT_SCHEMA={
-  products:[{k:'name',l:'Name'},{k:'brand',l:'Brand'},{k:'category',l:'Category'},{k:'price',l:'Price (₹)',t:'number'},{k:'was',l:'Was / MRP (₹)',t:'number'},{k:'stock',l:'Stock',t:'number'},{k:'description',l:'Description',t:'area'},{k:'imgUrl',l:'Product photo',t:'image'},{k:'active',l:'Visible in shop',t:'bool'}],
+  products:[{k:'name',l:'Name'},{k:'brand',l:'Brand'},{k:'category',l:'Category'},{k:'price',l:'Price (₹)',t:'number'},{k:'was',l:'Was / MRP (₹)',t:'number'},{k:'stock',l:'Stock',t:'number'},{k:'hsnCode',l:'HSN Code'},{k:'gstRate',l:'GST Rate (decimal, e.g. 0.05 = 5%)',t:'number'},{k:'description',l:'Description',t:'area'},{k:'imgUrl',l:'Product photo',t:'image'},{k:'active',l:'Visible in shop',t:'bool'}],
   tournaments:[{k:'name',l:'Name'},{k:'date',l:'Date',t:'date'},{k:'location',l:'Location'},{k:'prize',l:'Prize pool (₹)',t:'number'},{k:'slots',l:'Slots',t:'number'},{k:'registered',l:'Registered',t:'number'},{k:'status',l:'Status',t:'select',opts:['open','soon','live','done']},{k:'active',l:'Visible',t:'bool'}],
   athletes:[{k:'name',l:'Name'},{k:'state',l:'State'},{k:'discipline',l:'Discipline'},{k:'rank',l:'Rank',t:'number'},{k:'pb',l:'Personal best',t:'number'},{k:'imgUrl',l:'Photo',t:'image'},{k:'active',l:'Active',t:'bool'}],
   jobs:[{k:'title',l:'Title'},{k:'org',l:'Organisation'},{k:'location',l:'Location'},{k:'type',l:'Type'},{k:'salary',l:'Salary'},{k:'description',l:'Description',t:'area'},{k:'active',l:'Open',t:'bool'}],

@@ -63,6 +63,7 @@ module.exports = (req, res) => {
     if (r0 === 'orders') {
       if (n === 1) return H('orders')(req, res);
       if (n === 2) { q.id = seg[1]; return H('orders-id')(req, res); }
+      if (n === 3 && seg[2] === 'invoice') { q.id = seg[1]; return H('order-invoice')(req, res); }
     }
     if (r0 === 'posts' || r0 === 'chat') {
       if (n === 1) return H(r0)(req, res);
