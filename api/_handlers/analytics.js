@@ -13,11 +13,30 @@ module.exports = async (req, res) => {
     const b = readBody(req);
     const type = String(b.type || '').slice(0, 40);
     if (!type) return json(res, { ok: false }, 400);
+    // THREAT_MODEL.md T14: `value` is `numeric(10,2)` (schema.sql), which
+    // already rejects a non-numeric string at INSERT — verified empirically
+    // (a bad value silently fails this try/catch and no row is written, so
+    // the originally-feared "one bad row crashes the trending ::bigint
+    // cast" does not actually reproduce). This is still hardened here
+    // rather than left to rely on that column type never changing: an
+    // allow-list for `type` (never an arbitrary 40-char client string) and
+    // an explicit finite/non-negative check for `value` before it ever
+    // reaches a query, so a public unauthenticated endpoint can't record
+    // semantically-nonsensical events (e.g. a negative "purchase" amount)
+    // even though none of them were ever a crash risk.
+    const KNOWN_TYPES = new Set(['pageview', 'product_view', 'add_to_cart', 'begin_checkout', 'purchase', 'wishlist_add']);
+    if (!KNOWN_TYPES.has(type)) return json(res, { ok: false }, 400);
+    let value = null;
+    if (b.value !== undefined && b.value !== null) {
+      const n = Number(b.value);
+      if (!Number.isFinite(n) || n < 0) return json(res, { ok: false }, 400);
+      value = Math.round(n * 100) / 100; // matches numeric(10,2)'s own scale
+    }
     try {
       await q(
         `insert into analytics_events (type, path, value, geo_lat, geo_lng, ua, referrer)
          values ($1,$2,$3,$4,$5,$6,$7)`,
-        [type, (b.path || '').slice(0, 300), b.value ?? null,
+        [type, (b.path || '').slice(0, 300), value,
          b.geo?.lat ?? null, b.geo?.lng ?? null,
          (req.headers['user-agent'] || '').slice(0, 300), (b.referrer || '').slice(0, 300)]
       );

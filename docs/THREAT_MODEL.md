@@ -88,6 +88,15 @@ rationale for `vercel.json` belongs here.)
 their token keeps its role until the master password rotates.
 → **Read role from DB per request; sessions revocable (CLAUDE §1.3).**
 
+**Status: fixed** — reconciled 2026-08-13 against PLAN.md's 1.2/1.3 claims by re-reading the
+current code, not trusting the claim. `api/_lib/auth.js`'s `checkAdmin()` is `async` and, for
+staff, runs `select role, name, username, active, token_valid_after from staff where id=$1` on
+**every call** — the token itself (`staffToken`) carries only `{sid}`, no role. Owner path
+re-checks `owner_security.token_valid_after` against the token's `iat` each request. A real call
+site (`api/_handlers/staff.js:16`, `await checkAdmin(req)`) confirms callers actually await the
+DB-backed version. A demotion/deactivation takes effect on the demoted actor's *next request*,
+not next login.
+
 ### T4 — One secret signs everything · **CRITICAL**
 `auth.js:14` `SECRET = ADMIN_PASSWORD` signs the **owner token and staff tokens**;
 `users-action.js:12` `'archery-users-v1:' + ADMIN_PASSWORD` signs **customer** tokens.
@@ -95,6 +104,12 @@ their token keeps its role until the master password rotates.
 - Every token holder has a **plaintext/MAC pair signed with the master password**. HMAC-SHA256
   is fast by design → **offline cracking oracle**.
 → **Split secrets. Never sign with a human-chosen password (CLAUDE §1.2).**
+
+**Status: fixed** — reconciled 2026-08-13. `api/_lib/auth.js:35` reads `SESSION_SECRET` (a
+distinct env var) to sign owner+staff tokens; `api/_lib/userauth.js:20` reads `USER_TOKEN_SECRET`
+independently for customer tokens — two real, separate secrets, not aliases of the same env var.
+`ADMIN_PASSWORD` is now used only as the owner's *login credential*, compared via `timingEq` in
+`admin-login.js:61`, never as a signing key.
 
 ### T5 — Owner token is constant, no expiry, no revocation · **CRITICAL**
 `auth.js:35` `HMAC(ADMIN_PASSWORD,'archery-admin-v1')` — constant. No `exp`, no `jti`, no
@@ -104,6 +119,16 @@ accepts unlimited guesses (`admin-login.js:16` uses plain `===`, though `timingE
 `auth.js`), and the owner has **no 2FA while staff do** — *the most privileged account is the
 least protected*. `/admin.html` is linked from **11 public pages**.
 → **exp+jti, revocation table, rate limit, owner TOTP, unlink from public footers.**
+
+**Status: fixed** — reconciled 2026-08-13, all five sub-claims checked individually: (a) every
+signed token bakes in a real `exp` (`auth.js:82`, 12h TTL, checked in `verify()`); revocation is
+a `token_valid_after` watermark rather than a literal `jti`, but functionally equivalent —
+`revokeStaffSessions` invalidates every previously-issued token on demand. (b) a real, DB-backed
+rate limiter (`api/_lib/ratelimit.js`, table `login_attempts`) gates `admin-login.js` before any
+password check, fails closed on a DB error. (c) the owner has real TOTP (`admin-login.js:64-78`,
+symmetric with the staff path) — no longer staff-only. (d) `grep -rn "admin.html" *.html` across
+the whole repo returns zero links from any public page (the sole hit is a code comment). Plain
+`===` password compare replaced with `timingEq`.
 
 ### T6 — Payment integrity · **HIGH**
 - **No webhook exists** (verified: 0 matches in `api/`). The **only** trigger marking an order
@@ -115,11 +140,26 @@ least protected*. `/admin.html` is linked from **11 public pages**.
   It's correct — it just never runs.
 → **Webhook = source of truth; authenticate verify; reconcile stuck pendings (real money).**
 
+**Status: fixed** — reconciled 2026-08-13. `api/razorpay-webhook.js` is a real webhook: raw-body
+HMAC verification (`payments.js`'s `verifyWebhookSignature`) before anything is parsed or
+written, idempotent via a unique index on `webhook_events(provider,event_id)`, only ever moves
+`pending→paid`/`failed`. `razorpay-verify.js` now requires `verifyCallbackSignature` (HMAC over
+`order_id|payment_id` with the key secret) and writes nothing on a bad signature — the old
+unauthenticated-fail branch is gone. `markPaid()` checks the captured amount against `orders.total`
+before ever fulfilling — server-priced, never client-claimed (§1.6).
+
 ### T7 — Unmetered anonymous LLM · **HIGH (financial)**
 `/api/coach`: no auth, no rate limit, no spend cap, `claude-opus-4-8` (`coach.js:40`), and
 `b.history` client-supplied and trusted (`coach.js:33`) → forged assistant turns = trivial
 jailbreak, **on our card**.
 → **ADR-0008.**
+
+**Status: fixed** — reconciled 2026-08-13. `api/_handlers/coach.js` now requires real auth
+(`authedUserChecked`, 401 if absent), a per-user + per-IP rate limit, and a real spend cap with a
+kill switch (`api/_lib/ai.js`'s `checkBudget`/`recordUsage`, backed by per-user and global 24h
+paise sums in `ai_usage`) — matching ADR-0008. The model is read from `ai_config`, not hardcoded
+Opus. Conversation history is loaded server-side from `coach_messages` keyed by an
+ownership-checked `conversationId`; a client-supplied `history` body field is never read.
 
 ### T8 — TLS not verified to the database · **HIGH**
 `db.js:13` `ssl: { rejectUnauthorized: false }` → MITM-able. → **Pin the Supabase CA.**
@@ -208,10 +248,15 @@ grant click flipping the DB) — all green. Full regression suite (`age-assuranc
 the shared `safeOrigin()` extraction (moved from `users-action.js` into `api/_lib/origin.js` so
 both consent flows use one origin allow-list, not two that could drift) didn't regress the
 existing account-consent path.
-`dashboard.html` does not yet render the `isMinor`/`parentConsentStatus`/`consentBlocked` fields
-`members/my-status` now returns — a blocked minor sees only the generic 403 message, not a
-persistent status explanation (UX gap, not a compliance gap: the block itself is fully
-server-enforced regardless of what the UI shows).
+**2026-08-13: the residual UX gap above is closed.** `dashboard.html` now renders an "Account
+Status" card, shown only for a minor account, explaining a pending parent/guardian email, a
+granted "full access" confirmation, or an honest denial citing the DPDP Act — never a bare 403
+with no explanation. The no-profiling protection notice is stated unconditionally in every state.
+Verified end-to-end (`dashboard-consent-test.js`): a real minor sees the pending explanation,
+granting consent via the real `parental-consent.html` flow flips it to granted on reload, a
+second minor whose parent denies sees the denial explained, and an adult account shows no card
+at all. This was always a UX gap, never a compliance one — the block itself was fully
+server-enforced throughout.
 
 ### T10 — Fabricated data / dark patterns · **CRITICAL (legal + constitutional)**
 `reco.js:113/118` `liveViewers()` / `soldRecently()` are LCGs (6–45 "viewers", 3–24 "sold");
@@ -228,11 +273,32 @@ Verified: no audit table, no audit writes. **You cannot answer "who deleted this
 Disqualifying for a system of record; unsellable to a federation.
 → **CLAUDE §1.5 + ADR-0003.**
 
+**Status: fixed** — reconciled 2026-08-13. `api/_lib/audit.js`'s `writeAudit()` inserts into a
+real `audit_log` table (actor/action/resource/before/after/ip), never throws into the caller.
+66 call sites across 14 handler files; spot-checked `staff.js` (create/update/delete all call it
+with real before/after) and `sellers.js` (status_change) directly.
+
 ### T12 — Scope confusion (federation / club / seller) · **HIGH**
 Roles exist; **scope does not**. A federation officer is an actor *within a federation*; a club
 admin within a club; a seller over their own listings. Nothing in the code expresses "this
 actor, over this resource". `can(actor, action)` (2 handlers) has no **resource** argument.
 → **`can(actor, action, resource)`. Scope is the boundary.**
+
+**Status: still open** — reconciled 2026-08-13, confirmed by re-reading the code, not assuming
+the fix landed just because several sessions' worth of features shipped since this was written.
+`api/_lib/auth.js`'s `can(actor, action)` signature is **unchanged** — still no resource/scope
+argument; all 9 call sites (`crud.js`, `staff.js`, `orders.js`, `orders-id.js`, `mail.js`,
+`audit-log.js`, `order-invoice.js`, `razorpay-reconcile.js`) pass only a role/action pair, never
+a resource id. What exists instead is a pile of **one-off, hand-rolled point functions** — each
+specific to one relationship, not the general pattern this threat calls for:
+`isOwnAthlete`/`isActiveCoach`/`canActForAthlete`/`isAssignedCertifiedOfficial`/`isClubAdmin`/
+`isCoachOfClub`/`requireScorerForMatchEntry`/`requireScorerForEnd` (all in
+`api/_lib/member-capability.js`) plus `federation.js`'s `hasJurisdiction`. No shared abstraction;
+no generic mechanism a new resource type (e.g. a seller's own listings — `sellers.js` is still
+admin-only, no owner-scoped capability exists for it at all) could plug into without writing yet
+another bespoke function. **Genuinely still the open, general architectural gap T12 describes** —
+mitigated only for the four specific relationships (club/coach/federation/athlete) that happen to
+have point solutions today.
 
 ### T13 — Offline sync integrity (future, ADR-0006) · **HIGH**
 When scoring goes offline: a malicious/buggy device could replay, reorder, or forge arrows.
@@ -265,6 +331,23 @@ the control for that, not this fix. Full detail: `docs/PLAN.md` 2.2.
 ### T14 — Polymorphic analytics column · **MEDIUM**
 `analytics_events.value` holds **product IDs and rupee totals**; `crud.js:46` casts
 `value::bigint`. One bad row = 500 on trending. → **ADR-0004.**
+
+**Status: the described crash does not reproduce, but hardened anyway (2026-08-13).**
+Reconciled by actually attempting the exploit against the local dev stack, not just tracing
+code: `analytics_events.value` is `numeric(10,2)` (schema.sql), which already rejects a
+non-numeric string at INSERT — a `POST /api/analytics {type:'product_view', value:'garbage'}`
+returns `{ok:true}` (the write path's own try/catch swallows the DB type error) but **no row is
+ever persisted** — confirmed by querying the table directly after the attempt. So the originally-
+feared "one bad row crashes the trending `::bigint` cast" was never actually reachable through
+the public endpoint, and the semantic-polymorphism concern (money amounts, pageview counts, and
+product ids sharing one column) remains a real design smell but not a live crash vector.
+Hardened regardless, since relying on a column type never changing is fragile: `api/_handlers/
+analytics.js`'s public POST now validates `type` against a real allow-list (matching every event
+type actually emitted by `reco.js`/`shared.js`) and requires `value`, when present, to be a
+finite, non-negative number, rejecting both at the boundary (400) rather than depending on the
+column type to fail safely. Verified: `analytics-hardening-test.js` — real event types still
+accepted, an unknown type/non-numeric/negative/non-finite value all rejected, zero
+out-of-allowlist rows exist in the table.
 
 ---
 
