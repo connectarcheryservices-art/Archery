@@ -78,6 +78,24 @@ function render(){
 
   let html = '';
 
+  // ── CONSENT STATUS (minors only) — THREAT_MODEL.md T9 / PLAN.md 1.9's own
+  // documented residual gap: the server has always enforced this fully
+  // regardless of what the UI shows, but a blocked minor previously saw
+  // only a bare 403 on whatever they tried to do, with nothing on this
+  // page explaining WHY or what happens next. ──
+  if (STATUS.isMinor) {
+    html += '<div class="card"><h2>Account Status</h2>';
+    if (STATUS.parentConsentStatus === 'granted') {
+      html += '<div class="msg" style="background:rgba(34,197,94,.12);color:#16803C;">Your parent/guardian has confirmed consent. Your account has full access.</div>';
+    } else if (STATUS.parentConsentStatus === 'denied') {
+      html += '<div class="msg" style="background:rgba(210,39,48,.12);color:#B91C24;">Your parent/guardian did not grant consent. Coaching, tournament entry, and a public profile stay unavailable until they do — this is required by Indian law (the DPDP Act), not a setting you can change yourself.</div>';
+    } else {
+      html += '<div class="msg msg-info">Because you\'re under 18, we\'ve emailed your parent/guardian for consent — that\'s what unlocks connecting with a coach, entering a tournament, and having a public profile. Nothing further to do on your side; check back once they\'ve responded.</div>';
+    }
+    html += '<div class="msg msg-info" style="margin-top:8px;">Regardless of what they choose: we never show you personalised ads or track your activity for marketing — that protection is always on for an under-18 account and is not something consent changes.</div>';
+    html += '</div>';
+  }
+
   // ── ATHLETE ──
   html += '<div class="card"><h2>Athlete Profile</h2>';
   if (STATUS.athlete) {
@@ -103,7 +121,7 @@ function render(){
       const c = STATUS.classification;
       const statusLabel = { confirmed: 'Confirmed', review_nao: 'Review — next opportunity', review_frd: 'Review — fixed date', not_eligible: 'Not eligible' }[c.status] || c.status;
       html += `<div class="row"><div>${esc(c.sportClass || c.sport_class)} — ${esc(statusLabel)}</div><span class="badge badge-active">on record</span></div>
-        <div class="match-sub" style="margin-top:4px;">Classified by: ${esc(c.classifiedBy || c.classified_by || '—')}${(c.reviewDueDate || c.review_due_date) ? ' · review due ' + esc(new Date(c.reviewDueDate || c.review_due_date).toLocaleDateString('de-CH')) : ''}</div>`;
+        <div class="match-sub" style="margin-top:4px;">Classified by: ${esc(c.classifiedBy || c.classified_by || '—')}${(c.reviewDueDate || c.review_due_date) ? ' · review due ' + esc(new Date(c.reviewDueDate || c.review_due_date).toLocaleDateString('en-IN')) : ''}</div>`;
     } else if (STATUS.pendingClassificationRequest) {
       html += `<div class="msg msg-info">Classification requested (${esc(STATUS.pendingClassificationRequest.sportClassRequested || STATUS.pendingClassificationRequest.sport_class_requested)}) — awaiting staff to record the panel's outcome.</div>`;
     } else {
