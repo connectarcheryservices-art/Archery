@@ -82,6 +82,23 @@ production just because it's in `supabase/migrations/` and works locally;
 verify against the live API (or ask for direct confirmation) before
 shipping code that depends on it.
 
+**Same day, seventh pass — T12 re-verified, one stale claim corrected, scoped documentation
+added (no auth-code behavior changed).** Chose not to touch the 9 `can(actor,action)` call sites
+or reorganize the working point-solution functions — real regression risk on a live payment
+platform for architectural cleanliness alone, with no live exploit to justify it (confirmed
+again this pass). Instead: re-read `my-profile.js`'s `/api/me/products` directly rather than
+trusting THREAT_MODEL.md's own prior text, and found its claim that "sellers.js... no
+owner-scoped capability exists for it at all" was **wrong** — a real, correctly-scoped,
+already-working seller-ownership system exists (verified: cross-seller edit/delete both 403,
+price/existence genuinely unchanged, a spoofed `sellerId` in the request body is silently
+overridden by the server-verified one). Corrected THREAT_MODEL.md's T12 entry, added
+`test/seller-scope.test.js` (19 assertions — this specific claim had ZERO regression coverage
+before now, wrong or not) and `docs/DOMAIN_SCOPING.md` (a single catalogue of every existing
+scope-check function across the codebase, so the next resource type gets built by copying a
+documented pattern instead of independently reinventing one). `api/_lib/federation-lib.js`'s
+`hasJurisdiction` (extracted earlier this session from `federation.js`) is the one genuine
+code-structure change in this pass, and it was a pure move with no behavior change.
+
 **Same day, sixth pass — real verified-purchase reviews shipped (commit
 `aebbfba`).** product.html had carried its own removal comment since
 2026-07-16 naming this exact requirement. New `reviews` table + `api/
@@ -259,7 +276,10 @@ This is ADR-0005 ("one design system") and it is the honest root of "disconnecte
       have one. Taxonomy chosen as literal labels (system of record favours clarity over
       marketing verbs); revisit with the user if the brand voice should win instead.
 - [ ] **1.11** Every page loads the same stylesheet. 6 currently do not, which is how a CSS fix
-      can land everywhere except the homepage.
+      can land everywhere except the homepage. **Deliberately not touched 2026-08-13**: `style.css`
+      and `index.html` (2 of the 6) currently carry uncommitted, unreviewed design-refresh changes
+      from a concurrent process — migrating other pages onto `style.css` right now would mean
+      building on an unknown, moving target. Revisit once that work is reconciled with the user.
 
 **Already fixed** (2026-07-15, live): the nav no longer greets users by name; `authNav` no
 longer lost a race against `nav.js` (a signed-in user was shown "Sign In / Join Free" on all 11

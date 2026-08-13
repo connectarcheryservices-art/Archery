@@ -284,21 +284,43 @@ admin within a club; a seller over their own listings. Nothing in the code expre
 actor, over this resource". `can(actor, action)` (2 handlers) has no **resource** argument.
 → **`can(actor, action, resource)`. Scope is the boundary.**
 
-**Status: still open** — reconciled 2026-08-13, confirmed by re-reading the code, not assuming
-the fix landed just because several sessions' worth of features shipped since this was written.
-`api/_lib/auth.js`'s `can(actor, action)` signature is **unchanged** — still no resource/scope
-argument; all 9 call sites (`crud.js`, `staff.js`, `orders.js`, `orders-id.js`, `mail.js`,
-`audit-log.js`, `order-invoice.js`, `razorpay-reconcile.js`) pass only a role/action pair, never
-a resource id. What exists instead is a pile of **one-off, hand-rolled point functions** — each
-specific to one relationship, not the general pattern this threat calls for:
-`isOwnAthlete`/`isActiveCoach`/`canActForAthlete`/`isAssignedCertifiedOfficial`/`isClubAdmin`/
-`isCoachOfClub`/`requireScorerForMatchEntry`/`requireScorerForEnd` (all in
-`api/_lib/member-capability.js`) plus `federation.js`'s `hasJurisdiction`. No shared abstraction;
-no generic mechanism a new resource type (e.g. a seller's own listings — `sellers.js` is still
-admin-only, no owner-scoped capability exists for it at all) could plug into without writing yet
-another bespoke function. **Genuinely still the open, general architectural gap T12 describes** —
-mitigated only for the four specific relationships (club/coach/federation/athlete) that happen to
-have point solutions today.
+**Status: partially open, one prior claim corrected** — re-reconciled 2026-08-13. The core
+diagnosis holds: `api/_lib/auth.js`'s `can(actor, action)` signature is still unchanged, no
+resource/scope argument, and this codebase has now accumulated a genuinely large and still-growing
+pile of **one-off, hand-rolled scope-check functions**, each specific to one relationship, with no
+shared abstraction or naming convention: `isOwnAthlete`/`isActiveCoach`/`canActForAthlete`/
+`isAssignedCertifiedOfficial`/`isClubAdmin`/`isCoachOfClub`/`requireScorerForMatchEntry`/
+`requireScorerForEnd` (`api/_lib/member-capability.js`), `hasJurisdiction`/
+`isFederationOfficerOrAncestor`/`isPresidentOrAncestor`/`clubIdsUnderFederation`
+(`api/_lib/federation-lib.js`, extracted 2026-08-13 from `federation.js` where `hasJurisdiction`
+used to be duplicated), plus inline, undocumented ownership checks scattered directly inside
+handlers (`my-profile.js`'s `seller_id=$1 and seller_id=$2`, `reviews.js`'s verified-purchase
+match, `returns.js`'s `order_no` match). See `docs/DOMAIN_SCOPING.md` (new, 2026-08-13) for the
+first attempt at a single, discoverable catalogue of all of them — every new resource type still
+means writing its own function, but at least now there's one place to find the existing ones and
+copy the pattern, rather than re-discovering it independently per file.
+
+**But one specific claim in this entry was WRONG and is corrected here**: this text previously
+said *"a seller's own listings — sellers.js is still admin-only, no owner-scoped capability
+exists for it at all"*. Re-verified directly against the code (not assumed from a prior
+session's summary) — that's false. `api/_handlers/my-profile.js`'s `GET/POST/PUT/DELETE
+/api/me/products` (route: `api/_lib/router.js`'s `/api/me/*` → `my-profile.js`) is a real,
+already-working, resource-scoped ownership system: every list/read is filtered to
+`seller_id = <the authenticated caller's own id>`; every create stamps `seller_id` from the
+server-verified token, never from the client body (verified: a client attempting to spoof
+`sellerId` in the POST body is silently ignored, the row is stamped with the real caller's id
+regardless); every PUT/DELETE requires an explicit `select 1 from products where id=$1 and
+seller_id=$2` ownership match, rejecting a nonexistent id and a real-but-not-theirs id with the
+SAME 403 (no enumeration signal); gated to `seller_status='approved'` only. `sellers.js` itself
+(admin-only) is a *different* endpoint — approving/rejecting who is *allowed to become* a seller,
+a genuinely staff-only decision — and was never the right file to check for this. Verified
+end-to-end both ways: `test/seller-scope.test.js` (19 assertions, `npm test`) and a real-DB pass
+against the local dev stack (cross-seller edit/delete both rejected, price/existence genuinely
+unchanged after the rejected attempts, a client-supplied `sellerId` spoof attempt on create is
+silently overridden by the real one). **T12's own named example — the thing most likely to have
+been read as "proof this is still totally unmitigated" — turns out to be one of the
+better-built parts of this codebase.** The general architectural gap (no shared mechanism for
+the *next* resource type) remains real; the specific alarm about sellers does not.
 
 ### T13 — Offline sync integrity (future, ADR-0006) · **HIGH**
 When scoring goes offline: a malicious/buggy device could replay, reorder, or forge arrows.
