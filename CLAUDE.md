@@ -108,7 +108,13 @@ Full model + rulebook citations: **`docs/DOMAIN.md`**. Never infer a rule; cite 
 - **Division** — recurve | compound | barebow (+ field divisions). **Never rank two divisions
   in one list.**
 - **Category** — division × gender × age_class × para_class. **This is the real unit.**
-- **Age class** — U15 | U18 cadet | U21 junior | senior | 50+ master.
+- **Age class** — U15 | U18 | U21 | senior | 50+ master. Corrected 2026-08-13: this used to say
+  "U18 cadet | U21 junior" — "cadet"/"junior" appear nowhere in the current World Archery Rule
+  Book (Book 2 "Events," fetched 2026-08-13); the classes it actually names are plainly "Under 18"
+  and "Under 21" (Art. 4.2.1/4.2.3/4.2.4, calendar-year eligibility — up to and in the year of the
+  17th/20th birthday respectively; 50+ per Art. 4.2.5). WA defines no international "Under 15"
+  class — U15 here is AAI's own domestic Sub-Junior tier, not independently cited to a primary AAI
+  source (see docs/DOMAIN.md §5 and `api/_lib/age.js`'s `computeAgeClass()`).
 - **Para class** — PI1 | PI2 (physical) | VI1 | VI2 (vision). **Para is classification-first**,
   not a badge — a real classification panel decides, the platform only records the outcome.
   Corrected 2026-08-12: this used to say "W1 | Open | VI1 | VI2 | VI3", which does not match the

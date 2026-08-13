@@ -27,7 +27,7 @@ async function filterUnconsentedMinorProfiles(rows) {
 const TABLES = {
   products:    ['name','brand','description','price','was','category','stock','img_url','active','hsn_code','gst_rate'],
   tournaments: ['name','date','location','prize','slots','registered','status','active'],
-  athletes:    ['name','state','discipline','rank','pb','img_url','active'],
+  athletes:    ['name','state','discipline','rank','pb','img_url','active','dob','email','club_id'],
   jobs:        ['title','org','location','type','salary','description','active'],
   knowledge:   ['title','category','level','read_time','excerpt','body','published','active'],
   news:        ['title','category','date','excerpt','img_url','active'],
@@ -87,7 +87,14 @@ async function listOrCreate(table, req, res) {
       // §1.1 ("no seeded demo rows served to real users as real") — an empty
       // shop is a design problem, not a data problem. The pages render honest
       // empty states.
-      return json(res, rows.map(rowToObj));
+      const objs = rows.map(rowToObj);
+      // athletes.dob/email (migration 038) are real PII — often a MINOR's
+      // date of birth — that this `select *` would otherwise hand to any
+      // anonymous visitor of the public athletes list. Staff need them
+      // (age-category/contact purposes); the public site never did and
+      // never should (CLAUDE.md §1.8).
+      if (table === 'athletes' && !admin) for (const o of objs) { delete o.dob; delete o.email; }
+      return json(res, objs);
     } catch (e) {
       // DB unavailable: fail loudly. Previously this served seed rows, i.e. a
       // database outage silently turned into fabricated inventory with real
@@ -125,7 +132,9 @@ async function itemOps(table, id, req, res) {
     if (!admin && row.active === false) return json(res, { error: 'Not found' }, 404);
     if (!admin && table === 'knowledge' && row.published === false) return json(res, { error: 'Not found' }, 404);
     if (table === 'profiles' && !(await filterUnconsentedMinorProfiles([row])).length) return json(res, { error: 'Not found' }, 404);
-    return json(res, rowToObj(row));
+    const obj = rowToObj(row);
+    if (table === 'athletes' && !admin) { delete obj.dob; delete obj.email; } // see listOrCreate's note
+    return json(res, obj);
   }
   const actor = await checkAdmin(req);
   if (!actor) return json(res, { error: 'Unauthorised' }, 401);

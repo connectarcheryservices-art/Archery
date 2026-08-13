@@ -103,6 +103,7 @@
         <div class="rs"><div class="rs-num">4</div><div class="rs-label">Confirm</div></div>
       </div>
       <div class="form-row"><div class="form-group"><label class="form-label">First Name</label><input class="form-input" id="rf-first" placeholder="Rahul"></div><div class="form-group"><label class="form-label">Last Name</label><input class="form-input" id="rf-last" placeholder="Verma"></div></div>
+      <div class="form-group"><label class="form-label">Email (optional — so we can reach you, and to link your entries across tournaments)</label><input class="form-input" id="rf-email" type="email" maxlength="160" placeholder="you@example.com"></div>
       <div class="form-row"><div class="form-group"><label class="form-label">Date of Birth</label><input class="form-input" id="rf-dob" type="date" required oninput="checkRegMinor()"></div><div class="form-group"><label class="form-label">Gender</label><select class="form-select" id="rf-gender"><option>Male</option><option>Female</option><option>Non-binary</option></select></div></div>
       <div class="form-group" id="rf-parent-email-field" style="display:none;">
         <label class="form-label">Parent / Guardian Email</label>
@@ -361,7 +362,7 @@ async function submitReg(){
   if(minor&&!parentEmail){alert("A parent or guardian's email is required to register an under-18 archer.");return;}
   const b=document.getElementById('modal-submit-btn');const orig=b.textContent;
   b.textContent='Submitting…';b.style.opacity='.7';b.disabled=true;
-  const payload={tournamentId:regT.id,tournamentName:regT.name,firstName:first,lastName:last,dob,gender:v('rf-gender'),fedNumber:v('rf-fed'),country:v('rf-assoc'),discipline:v('rf-disc'),level:v('rf-level'),club:v('rf-club'),parentEmail:minor?parentEmail:undefined,origin:location.origin};
+  const payload={tournamentId:regT.id,tournamentName:regT.name,firstName:first,lastName:last,email:v('rf-email')||undefined,dob,gender:v('rf-gender'),fedNumber:v('rf-fed'),country:v('rf-assoc'),discipline:v('rf-disc'),level:v('rf-level'),club:v('rf-club'),parentEmail:minor?parentEmail:undefined,origin:location.origin};
   const res=await fetch('/api/registrations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).then(r=>r.json()).catch(()=>null);
   b.textContent=orig;b.style.opacity='1';b.disabled=false;
   if(res&&res.ok){
@@ -370,7 +371,7 @@ async function submitReg(){
     alert(res.pendingConsent
       ? "Registration received — because this archer is under 18, we've emailed the parent/guardian for consent. It will be reviewed once they respond. Find it under the My Events tab."
       : 'Registration submitted! Our team will review your entry and confirm by email. Find it under the My Events tab.');
-    ['rf-first','rf-last','rf-dob','rf-fed','rf-club','rf-parent-email'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    ['rf-first','rf-last','rf-email','rf-dob','rf-fed','rf-club','rf-parent-email'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
     document.getElementById('rf-parent-email-field').style.display='none';
   }else{
     alert((res&&res.error)||'Could not submit your registration. Please try again.');

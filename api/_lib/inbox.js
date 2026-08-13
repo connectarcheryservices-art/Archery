@@ -13,7 +13,7 @@ const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const INBOX = {
   registrations: {
     table: 'registrations',
-    fields: ['tournamentId','tournamentName','firstName','lastName','dob','gender','fedNumber','country','discipline','level','club','parentEmail'],
+    fields: ['tournamentId','tournamentName','firstName','lastName','dob','gender','fedNumber','country','discipline','level','club','parentEmail','email'],
     required: r => (String(r.firstName||'').trim() || String(r.lastName||'').trim()) ? null : 'Your name is required.',
     defaultStatus: 'pending',
     // 'pending_consent' — a minor's registration sits here, out of the
@@ -99,6 +99,17 @@ async function inboxCreate(resource, req, res) {
     if (!dobCheck.valid) return json(res, { ok: false, error: dobCheck.error }, 400);
     rec.dob = dobCheck.date;
     minor = isMinor(dobCheck.date) === true;
+    // Optional (a submitter may not have an email, or may be filling this
+    // in on someone else's behalf), but this is also the identity key
+    // api/_lib/registration-bridge.js uses to find the same person across
+    // multiple registrations rather than spawning a duplicate athlete row
+    // — so a malformed value is rejected rather than silently stored and
+    // never matching anything.
+    rec.email = String(rec.email || '').trim().toLowerCase().slice(0, 160);
+    if (rec.email && !EMAIL_RE.test(rec.email)) {
+      return json(res, { ok: false, error: 'Please enter a valid email address.' }, 400);
+    }
+    rec.email = rec.email || null;
     rec.parentEmail = String(rec.parentEmail || '').trim().toLowerCase().slice(0, 160);
     if (minor) {
       if (!rec.parentEmail || !EMAIL_RE.test(rec.parentEmail)) {
@@ -195,9 +206,23 @@ async function inboxItem(resource, id, req, res) {
       }
     }
     if (resource === 'registrations' && status === 'approved') {
-      const cur = (await q('select status, tournament_id from registrations where id=$1', [id])).rows[0];
-      if (cur && cur.status !== 'approved' && cur.tournament_id)
-        await q('update tournaments set registered = greatest(0, registered + 1) where id=$1', [cur.tournament_id]);
+      const cur = (await q('select * from registrations where id=$1', [id])).rows[0];
+      if (cur && cur.status !== 'approved') {
+        if (cur.tournament_id)
+          await q('update tournaments set registered = greatest(0, registered + 1) where id=$1', [cur.tournament_id]);
+        // Bridge into the real scoring domain — see
+        // api/_lib/registration-bridge.js's header for what this closes.
+        // Best-effort: a bridge failure must not block the approval itself
+        // (staff still needs to be able to approve/manage the queue even
+        // if, say, the DB hiccups on this one extra step) — it leaves
+        // athlete_id/entry_id null and needs_manual_category unset, which
+        // just means this registration needs the SAME manual follow-up an
+        // unmappable category would have gotten anyway.
+        try {
+          const { bridgeRegistrationToEntry } = require('./registration-bridge');
+          await bridgeRegistrationToEntry(rowToObj(cur));
+        } catch (e) { console.error('inboxItem: registration->entry bridge failed:', e?.message); }
+      }
     }
     await q(`update ${cfg.table} set status=$1 where id=$2`, [status, id]);
     await writeAudit({ req, actor, action: 'status_change', resourceType: resource, resourceId: id,

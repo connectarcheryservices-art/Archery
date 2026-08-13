@@ -332,6 +332,44 @@ blocks merges.
       /api/scoring/match`/`bracket` endpoints; `draw.html` and the new `score.html` (the actual
       judge-facing scoring UI, previously nonexistent — the domain model had no front end a real
       person could use before this session) both render from it live.
+- [x] **2.9** Registrations actually feed the scoring engine (2026-08-13). Found while scoping
+      club-linkage work: approving a public tournament registration (`tournaments.html` →
+      `registrations`) had only ever incremented `tournaments.registered` — the approved archer
+      was never turned into a real `athletes` row or entered (`entries`) into the tournament's
+      actual scoring domain built in 2.1-2.8 above. The public sign-up path and the real scoring
+      engine had never been connected. Migration `038_registration_scoring_bridge.sql` +
+      `api/_lib/registration-bridge.js` close it: on approval, find-or-create an `athletes` row
+      (matched by email, falling back to exact name+dob — name alone is never trusted), compute
+      `age_class` from the archer's own validated date of birth **as of the tournament's date**
+      (never from the registration form's free-text `discipline`, which DOMAIN.md §5 already
+      flags as unable to express a real category), find-or-create the `events`/`event_categories`
+      row, and insert a real `entries` row. Cited: World Archery Rule Book Book 2 Art. 4.2.1/
+      4.2.3-4.2.5 for U18/U21/senior/50+ (fetched 2026-08-13) — also corrected a real error found
+      while sourcing this: CLAUDE.md/DOMAIN.md's own "U18 cadet / U21 junior" labels don't appear
+      anywhere in the current rulebook (WA names them plainly "Under 18"/"Under 21"; "cadet"/
+      "junior" are legacy FITA terms), fixed in both files. U15 has no WA-international citation
+      (it's AAI's own domestic Sub-Junior tier) — implemented by extending WA's own cited
+      calendar-year pattern one tier down, explicitly flagged in code as a reasoned default, not
+      an independently-verified cutoff. What's honestly refused rather than guessed: a
+      "Non-binary" gender (a real form option) has no individual-category mapping in the current
+      WA class structure (men/women only) and a "Para" discipline has no real sport classification
+      collected on this form — both create the athlete row but leave `entries` empty with
+      `registrations.needs_manual_category` explaining why, surfaced to staff on `admin.html`'s
+      registrations panel rather than silently dropped or auto-approved into the wrong category.
+      Also fixed while building this: `athletes.dob`/`email` (new columns, needed for the
+      find-or-create matching above) would have been exposed by the existing public,
+      unauthenticated `/api/athletes` listing's `select *` — a real child's date of birth leaking
+      to anyone — closed in `api/_lib/crud.js` before the columns ever shipped, not after.
+      Verified end-to-end against the local dev stack: `reg-bridge-test.js` (adult path with
+      correct division/gender/age_class, cross-tournament athlete dedup by email, idempotent
+      re-approval, non-binary and unclassified-Para both flagged not fabricated, admin listing
+      shows dob/email while the public listing does not) and `reg-bridge-minor-test.js` (the
+      migration 037 consent gate and this bridge interact correctly — a minor's entry is not
+      created until a parent actually grants consent) — all green. Full regression suite
+      (`scoring-engine-test.js`, `scoring-api-test.js`, `scoring-conflicts-test.js`,
+      `ranking-api-test.js`, `ranking-engine-test.js`, `admin-test.js`, `flow-test.js`) re-run
+      clean, confirming the new write path into `categories`/`events`/`event_categories`/
+      `entries` doesn't collide with the existing scoring engine.
 
 **Beyond Phase 2's original scope, built this session** (properly belongs under Phase 4, started
 early — see the session note above for why): a real athlete/coach/official member capability

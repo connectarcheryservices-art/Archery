@@ -636,7 +636,7 @@ button,input,select,textarea{font-family:'Inter',sans-serif;}
         <div class="card-title">Tournament Registrations <span class="td-badge badge-soon" style="font-size:11px;" id="reg-count">0 Pending</span></div>
         <p style="font-size:13px;color:var(--text-2);margin-bottom:14px;">Submissions from the public tournament registration form. Approving an entry adds it to that tournament's registered count.</p>
         <table class="data-table">
-          <thead><tr><th>Athlete</th><th>Tournament</th><th>Discipline</th><th>Country</th><th>Consent</th><th>Applied</th><th>Status / Actions</th></tr></thead>
+          <thead><tr><th>Athlete</th><th>Tournament</th><th>Discipline</th><th>Country</th><th>Consent</th><th>Scoring Entry</th><th>Applied</th><th>Status / Actions</th></tr></thead>
           <tbody id="registrations-tbody"></tbody>
         </table>
       </div>
@@ -1916,8 +1916,16 @@ async function loadRegistrations(){
       :r.status==='pending'
       ?`<button class="btn-toggle" onclick="setInbox('registrations',${r.id},'approved')">Approve</button><button class="btn-delete" onclick="setInbox('registrations',${r.id},'rejected')">Reject</button>`
       :`<span class="td-badge ${badge}">${r.status}</span> <button class="btn-delete" onclick="delInbox('registrations',${r.id})">Delete</button>`;
-    return `<tr><td class="td-name">${name}</td><td>${escA(r.tournamentName||'—')}</td><td>${escA(r.discipline||'')}</td><td>${escA(r.country||'')}</td><td>${consent}</td><td style="font-size:12px;">${when}</td><td class="td-actions">${act}</td></tr>`;
-  }).join(''):'<tr><td colspan="7" style="padding:22px;color:var(--text-2);">No registrations yet.</td></tr>';
+    // Whether approving this registration actually got the archer into
+    // the real scoring engine (api/_lib/registration-bridge.js) — an
+    // approved row with no entryId either hasn't been approved yet, or
+    // needs a human to finish the category by hand (needsManualCategory
+    // explains why: non-binary gender, an unclassified Para entry, etc.).
+    const entered = r.status!=='approved' ? '' : r.entryId
+      ? '<span class="td-badge badge-active" title="Entered into the tournament\'s real scoring">Entered</span>'
+      : `<span class="td-badge badge-pending" title="${escA(r.needsManualCategory||'')}">Needs manual entry</span>`;
+    return `<tr><td class="td-name">${name}</td><td>${escA(r.tournamentName||'—')}</td><td>${escA(r.discipline||'')}</td><td>${escA(r.country||'')}</td><td>${consent}</td><td>${entered}</td><td style="font-size:12px;">${when}</td><td class="td-actions">${act}</td></tr>`;
+  }).join(''):'<tr><td colspan="8" style="padding:22px;color:var(--text-2);">No registrations yet.</td></tr>';
 }
 async function loadReports(){
   const data=await get('reports'); if(!Array.isArray(data))return;

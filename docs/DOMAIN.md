@@ -51,7 +51,7 @@ is the fix.
 | **End** | A group of arrows scored together (3 or 6). Scoring happens after each end/set (**Art. 12.1.2**). |
 | **Set** | An end in a set-play match, worth **set points**. |
 | **Division** | recurve · compound · barebow (+ field divisions). |
-| **Age class** | U15 · U18 (cadet) · U21 (junior) · senior · 50+ (master). |
+| **Age class** | U15 · U18 · U21 · senior · 50+ (master). Corrected 2026-08-13 — see §5 (WA's current rulebook names these "Under 18"/"Under 21," not "cadet"/"junior"). |
 | **Para class** | PI1 · PI2 (physical) · VI1 · VI2 (vision). Corrected 2026-08-12 — see §5. |
 | **Category** | division × gender × age_class × para_class — **the real competitive unit**. |
 | **Qualification** | The ranking round. Seeds the elimination bracket. |
@@ -216,6 +216,27 @@ single arrow by each team member.
   typically ≤4 years out (19.1.3.3); **Expired (E)** — 8 years' non-participation, retirement, or
   a missed fixed review date (19.1.4); Art. 20.3: an Expired athlete **cannot** compete until
   re-evaluated. Only Confirmed/R-NAO/R-FRD gate entry into a matching para category.
+- **Age class eligibility, cited (World Archery Rule Book, Book 2 "Events," fetched 2026-08-13
+  from extranet.worldarchery.sport, version 2022-09-01), corrects this section's own earlier
+  "U18 cadet / U21 junior" labels below** — those parenthetical names do not appear anywhere in
+  the current rulebook; the classes World Archery actually recognises (Art. 4.2.1) are named
+  plainly **Under 18** and **Under 21** ("cadet"/"junior" are legacy FITA-era terms, not the
+  current official ones — corrected here rather than silently left wrong). Eligibility is
+  **calendar-year**, not exact-birthdate: **Art. 4.2.3** — Under 18 Class, "up to and in the year
+  of his 17th birthday"; **Art. 4.2.4** — Under 21 Class, "up to and in the year of his 20th
+  birthday"; **Art. 4.2.5** — 50+ Class, "in the year of his 50th birthday and thereafter."
+  **Art. 4.2.1 also confirms World Archery defines no "Under 15" class internationally** — U15
+  in this schema is a real, separate domestic category (AAI's own "Sub-Junior"/"U-15" tier,
+  confirmed to exist via state-association competition-rule documents), not a WA class; its exact
+  cutoff is **not independently cited** to a primary AAI source (implemented as the same
+  calendar-year pattern one tier below Under 18, in `api/_lib/age.js`'s `computeAgeClass()`,
+  flagged in code as a reasoned default rather than a citation — confirm against AAI's current
+  rules before trusting it for a real AAI-sanctioned Sub-Junior event). Implemented in migration
+  038 (`api/_lib/registration-bridge.js`): a tournament registration's age_class is **computed**
+  from the archer's own validated date of birth, evaluated as of the tournament's date — never
+  trusted from the registration form's free-text `discipline` field, which cannot express it
+  reliably (no age axis on some options, no gender axis at all, an unclassified "Para Recurve"
+  with no sport class).
 
 ---
 
@@ -224,7 +245,7 @@ single arrow by each team member.
 ```
 athletes          identity, WA/AAI licence, club, nationality
 divisions         recurve | compound | barebow (+ field)
-age_classes       U15 | U18 cadet | U21 junior | senior | 50+ master
+age_classes       U15 | U18 | U21 | senior | 50+ master
 para_classes      PI1 | PI2 (physical) | VI1 | VI2 (vision)
 categories        division × gender × age_class × para_class   ← the real unit
 
